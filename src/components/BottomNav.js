@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 
 const tabs = [
   { path: '/',        icon: '🏠', label: 'Home'   },
+  { path: '/map',     icon: '🗺️', label: 'Map'    },
   { path: '/jummah',  icon: '🕌', label: 'Jummah' },
   { path: '/events',  icon: '📅', label: 'Events' },
 ]
@@ -13,7 +14,8 @@ export default function BottomNav() {
 
   return (
     <nav style={{
-      position: 'fixed', bottom: 0, left: 0, right: 0,
+      position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+      width: '100%', maxWidth: 430,
       background: 'white',
       borderTop: '1px solid rgba(0,0,0,0.08)',
       display: 'flex',
@@ -29,14 +31,20 @@ export default function BottomNav() {
             style={{
               flex: 1, display: 'flex', flexDirection: 'column',
               alignItems: 'center', gap: 3, padding: '10px 0 8px',
-              background: 'none', border: 'none',
+              background: 'none', border: 'none', cursor: 'pointer',
             }}
           >
             <span style={{ fontSize: 22 }}>{t.icon}</span>
             <span style={{
-              fontSize: 10, fontWeight: 500,
-              color: active ? '#e8a040' : 'rgba(26,42,58,0.4)'
+              fontSize: 10, fontWeight: 600,
+              color: active ? '#1a2a3a' : 'rgba(26,42,58,0.35)'
             }}>{t.label}</span>
+            {active && (
+              <div style={{
+                width: 4, height: 4, borderRadius: '50%',
+                background: '#e8a040', marginTop: 1,
+              }}/>
+            )}
           </button>
         )
       })}

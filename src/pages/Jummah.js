@@ -63,12 +63,22 @@ function MosqueCard({ mosque, season }) {
       </div>
 
       {entries.length > 0 ? (
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+        <div style={{ marginBottom: 14 }}>
           {entries.map((e, i) => (
-            <div key={i} style={{ background: '#f0f7ff', borderRadius: 10, padding: '8px 14px', flex: 1, minWidth: 100 }}>
-              <div style={{ fontSize: 12, color: '#1a2a3a', fontWeight: 600, marginBottom: 3 }}>{e.label}</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: '#1a2a3a' }}>{e.j}</div>
-              {e.iq && <div style={{ fontSize: 15, color: '#1a2a3a', fontWeight: 600, marginTop: 2 }}>Iqama {e.iq}</div>}
+            <div key={i} style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '9px 12px', marginBottom: 6,
+              background: i === 0 ? '#f0f7ff' : '#f7f7f7',
+              borderRadius: 10,
+              borderLeft: `3px solid ${i === 0 ? '#4a90d9' : '#bbb'}`,
+            }}>
+              <span style={{
+                fontSize: 11, fontWeight: 700, color: i === 0 ? '#4a90d9' : '#888',
+                textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: 70,
+              }}>{e.label}</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a' }}>
+                {e.j}{e.iq ? <span style={{ color: '#888', fontWeight: 500 }}> / {e.iq}</span> : ''}
+              </span>
             </div>
           ))}
         </div>
@@ -139,30 +149,35 @@ export default function Jummah() {
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
-        <div style={{ background: 'white', borderRadius: 12, border: '1px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', marginBottom: 12 }}>
-          <span style={{ fontSize: 16 }}>🔍</span>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search mosques..."
-            style={{ flex: 1, border: 'none', outline: 'none', fontSize: 15 }} />
-        </div>
-        <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 12, paddingBottom: 4, scrollbarWidth: 'none' }}>
-          {AREAS.map(a => (
-            <button key={a} onClick={() => setArea(a)} style={{
-              padding: '7px 15px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-              background: area === a ? '#1a2a3a' : 'white', color: area === a ? 'white' : 'rgba(26,42,58,0.6)', border: '1px solid rgba(0,0,0,0.1)',
-            }}>{a}</button>
-          ))}
-        </div>
-        <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, marginBottom: 16, border: '1px solid rgba(0,0,0,0.08)' }}>
-          {['winter', 'summer'].map(s => (
-            <button key={s} onClick={() => setSeason(s)} style={{
-              flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
-              fontSize: 13, fontWeight: 600,
-              background: season === s ? '#1a2a3a' : 'transparent',
-              color: season === s ? 'white' : 'rgba(26,42,58,0.5)',
-            }}>
-              {s === 'winter' ? '❄️ Winter' : '☀️ Summer'}
-            </button>
-          ))}
+        <div style={{
+          position: 'sticky', top: 0, zIndex: 10,
+          background: '#f5f5f5', paddingBottom: 12,
+        }}>
+          <div style={{ background: 'white', borderRadius: 12, border: '1px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', marginBottom: 10 }}>
+            <span style={{ fontSize: 16 }}>🔍</span>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search mosques..."
+              style={{ flex: 1, border: 'none', outline: 'none', fontSize: 15 }} />
+          </div>
+          <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 10, paddingBottom: 2, scrollbarWidth: 'none' }}>
+            {AREAS.map(a => (
+              <button key={a} onClick={() => setArea(a)} style={{
+                padding: '7px 15px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                background: area === a ? '#1a2a3a' : 'white', color: area === a ? 'white' : 'rgba(26,42,58,0.6)', border: '1px solid rgba(0,0,0,0.1)',
+              }}>{a}</button>
+            ))}
+          </div>
+          <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
+            {['winter', 'summer'].map(s => (
+              <button key={s} onClick={() => setSeason(s)} style={{
+                flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
+                fontSize: 13, fontWeight: 600,
+                background: season === s ? '#1a2a3a' : 'transparent',
+                color: season === s ? 'white' : 'rgba(26,42,58,0.5)',
+              }}>
+                {s === 'winter' ? '❄️ Winter' : '☀️ Summer'}
+              </button>
+            ))}
+          </div>
         </div>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '48px 0', color: 'rgba(26,42,58,0.4)', fontSize: 15 }}>Loading mosques...</div>

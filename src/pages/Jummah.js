@@ -68,9 +68,9 @@ function MosqueCard({ mosque, season }) {
             <div key={i} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '9px 12px', marginBottom: 6,
-              background: '#f5f5f5',
+              background: '#fff8f0',
               borderRadius: 10,
-              borderLeft: '3px solid #ccc',
+              borderLeft: '3px solid #e8a040',
             }}>
               <span style={{
                 fontSize: 11, fontWeight: 700, color: '#888',

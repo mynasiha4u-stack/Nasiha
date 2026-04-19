@@ -225,7 +225,7 @@ export default function Jummah() {
           .eq('category_id', catData.id)
           .eq('status', 'published')
         if (area !== 'All') q = q.eq('location_area', area)
-        if (search) q = q.ilike('name', `%${search}%`)
+        if (search) q = q.or(`name.ilike.%${search}%,location_address.ilike.%${search}%,location_area.ilike.%${search}%`)
         const { data } = await q
         setMosques(data || [])
       }

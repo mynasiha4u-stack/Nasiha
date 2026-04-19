@@ -235,19 +235,25 @@ export default function Jummah() {
   }, [area, search])
 
   const sorted = [...mosques].sort((a, b) => {
-    if (sortBy === 'nearest' && userLocation && a.display_lat && b.display_lat) {
+    if (sortBy === 'az') return a.name.localeCompare(b.name)
+
+    if (sortBy === 'nearest' && userLocation) {
+      const aHas = a.display_lat && a.display_lng
+      const bHas = b.display_lat && b.display_lng
+      if (!aHas && !bHas) return a.name.localeCompare(b.name)
+      if (!aHas) return 1
+      if (!bHas) return -1
       return distanceMiles(userLocation.lat, userLocation.lng, a.display_lat, a.display_lng)
            - distanceMiles(userLocation.lat, userLocation.lng, b.display_lat, b.display_lng)
     }
-    if (sortBy === 'popular' || (sortBy === 'nearest' && !userLocation)) {
-      const ai = POPULARITY_ORDER.indexOf(a.name)
-      const bi = POPULARITY_ORDER.indexOf(b.name)
-      if (ai === -1 && bi === -1) return a.name.localeCompare(b.name)
-      if (ai === -1) return 1
-      if (bi === -1) return -1
-      return ai - bi
-    }
-    return a.name.localeCompare(b.name)
+
+    // popular or nearest while waiting for location
+    const ai = POPULARITY_ORDER.indexOf(a.name)
+    const bi = POPULARITY_ORDER.indexOf(b.name)
+    if (ai === -1 && bi === -1) return a.name.localeCompare(b.name)
+    if (ai === -1) return 1
+    if (bi === -1) return -1
+    return ai - bi
   })
 
   return (

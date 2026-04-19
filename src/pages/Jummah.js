@@ -68,16 +68,16 @@ function MosqueCard({ mosque, season }) {
             <div key={i} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '9px 12px', marginBottom: 6,
-              background: i === 0 ? '#f0f7ff' : '#f7f7f7',
+              background: '#f5f5f5',
               borderRadius: 10,
-              borderLeft: `3px solid ${i === 0 ? '#4a90d9' : '#bbb'}`,
+              borderLeft: '3px solid #ccc',
             }}>
               <span style={{
-                fontSize: 11, fontWeight: 700, color: i === 0 ? '#4a90d9' : '#888',
+                fontSize: 11, fontWeight: 700, color: '#888',
                 textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: 70,
               }}>{e.label}</span>
               <span style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a' }}>
-                {e.j}{e.iq ? <span style={{ color: '#888', fontWeight: 500 }}> / {e.iq}</span> : ''}
+                {e.j}{e.iq ? <span style={{ color: '#555', fontWeight: 500 }}> / Iqama {e.iq}</span> : ''}
               </span>
             </div>
           ))}

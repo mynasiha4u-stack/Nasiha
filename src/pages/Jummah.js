@@ -19,16 +19,13 @@ function isSummer() {
   return now >= springForward && now < fallBack
 }
 
-function MosqueInitial({ name }) {
-  const initials = name.split(' ').filter(w => w.length > 2).slice(0, 2).map(w => w[0].toUpperCase()).join('')
-  const colors = ['#b8d8f8', '#c8f0dc', '#fde8c0', '#dddaf8', '#fcd8cc', '#d4edc0']
-  const color = colors[name.charCodeAt(0) % colors.length]
+function MosqueIcon() {
   return (
     <div style={{
-      width: 52, height: 52, borderRadius: 12, background: color,
+      width: 52, height: 52, borderRadius: 12, background: '#f0f0f0',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: 14, fontWeight: 700, color: '#1a2a3a', flexShrink: 0,
-    }}>{initials || '🕌'}</div>
+      fontSize: 26, flexShrink: 0,
+    }}>🕌</div>
   )
 }
 
@@ -49,7 +46,7 @@ function MosqueCard({ mosque, season }) {
       padding: '16px', marginBottom: 12,
     }}>
       <div style={{ display: 'flex', gap: 12, marginBottom: entries.length ? 12 : 0 }}>
-        <MosqueInitial name={mosque.name} />
+        <MosqueIcon />
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a', lineHeight: 1.3, flex: 1, paddingRight: 8 }}>
@@ -69,9 +66,9 @@ function MosqueCard({ mosque, season }) {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
           {entries.map((e, i) => (
             <div key={i} style={{ background: '#f0f7ff', borderRadius: 10, padding: '8px 14px', flex: 1, minWidth: 100 }}>
-              <div style={{ fontSize: 11, color: 'rgba(26,42,58,0.5)', marginBottom: 2 }}>{e.label}</div>
+              <div style={{ fontSize: 12, color: '#1a2a3a', fontWeight: 600, marginBottom: 3 }}>{e.label}</div>
               <div style={{ fontSize: 16, fontWeight: 700, color: '#1a2a3a' }}>{e.j}</div>
-              {e.iq && <div style={{ fontSize: 12, color: '#555', fontWeight: 500, marginTop: 2 }}>Iqama {e.iq}</div>}
+              {e.iq && <div style={{ fontSize: 15, color: '#1a2a3a', fontWeight: 600, marginTop: 2 }}>Iqama {e.iq}</div>}
             </div>
           ))}
         </div>
@@ -136,22 +133,9 @@ export default function Jummah() {
       <div style={{ background: 'linear-gradient(180deg, #7db8e8 0%, #c8e4f8 60%, #f0c090 100%)', padding: '52px 20px 24px' }}>
         <button onClick={() => navigate('/')} style={{ fontSize: 14, color: 'rgba(26,42,58,0.65)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
         <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a2a3a', marginBottom: 4 }}>🕌 Jummah Timings</h1>
-        <p style={{ fontSize: 14, color: 'rgba(26,42,58,0.6)', marginBottom: 16 }}>
+        <p style={{ fontSize: 14, color: 'rgba(26,42,58,0.6)', marginBottom: 4 }}>
           {new Date().getDay() === 5 ? '🟢 Today is Friday · ' : ''}{mosques.length} mosques in the Bay Area
         </p>
-        <div style={{ display: 'inline-flex', background: 'rgba(255,255,255,0.4)', borderRadius: 20, padding: 3, border: '1px solid rgba(255,255,255,0.7)' }}>
-          {['winter', 'summer'].map(s => (
-            <button key={s} onClick={() => setSeason(s)} style={{
-              padding: '6px 18px', borderRadius: 17, border: 'none', cursor: 'pointer',
-              fontSize: 13, fontWeight: 600,
-              background: season === s ? 'white' : 'transparent',
-              color: season === s ? '#1a2a3a' : 'rgba(26,42,58,0.55)',
-              boxShadow: season === s ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
-            }}>
-              {s === 'winter' ? '❄️ Winter' : '☀️ Summer'}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
@@ -160,12 +144,24 @@ export default function Jummah() {
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search mosques..."
             style={{ flex: 1, border: 'none', outline: 'none', fontSize: 15 }} />
         </div>
-        <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 16, paddingBottom: 4, scrollbarWidth: 'none' }}>
+        <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 12, paddingBottom: 4, scrollbarWidth: 'none' }}>
           {AREAS.map(a => (
             <button key={a} onClick={() => setArea(a)} style={{
               padding: '7px 15px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 13, fontWeight: 600, cursor: 'pointer',
               background: area === a ? '#1a2a3a' : 'white', color: area === a ? 'white' : 'rgba(26,42,58,0.6)', border: '1px solid rgba(0,0,0,0.1)',
             }}>{a}</button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, marginBottom: 16, border: '1px solid rgba(0,0,0,0.08)' }}>
+          {['winter', 'summer'].map(s => (
+            <button key={s} onClick={() => setSeason(s)} style={{
+              flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
+              fontSize: 13, fontWeight: 600,
+              background: season === s ? '#1a2a3a' : 'transparent',
+              color: season === s ? 'white' : 'rgba(26,42,58,0.5)',
+            }}>
+              {s === 'winter' ? '❄️ Winter' : '☀️ Summer'}
+            </button>
           ))}
         </div>
         {loading ? (

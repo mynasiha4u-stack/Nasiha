@@ -5,6 +5,79 @@ import BottomNav from '../components/BottomNav'
 
 const AREAS = ['All', 'East Bay', 'South Bay', 'Peninsula', 'San Francisco', 'North Bay']
 
+const POPULARITY_ORDER = [
+  "MCA - Muslim Community Association (Santa Clara)",
+  "MCC - Muslim Community Center East Bay (Pleasanton)",
+  "ISEB (Lowry Masjid) - Islamic Society of East Bay (Fremont)",
+  "SRVIC - San Ramon Valley Islamic Center",
+  "ICF (Irvington) - Islamic Center of Fremont",
+  "ICF - Masjid Zakariya (Fremont)",
+  "Yaseen Belmont Masjid (YBM)",
+  "SBIA (South Bay Islamic Association) Masjid al-Mustafa",
+  "ICL (Islamic Center of Livermore)",
+  "MCC Offsite Jummah - Rosewood Conference Center Building 5 (Pleasanton)",
+  "ICCNC - Islamic Cultural Center of Northern California (Oakland)",
+  "Masjid Muhajireen (Hayward)",
+  "MHMA - Mountain House Unity Center Jummah",
+  "ICA - Quba Masjid (Alameda)",
+  "ICCC - Islamic Center of Contra Costa (Concord)",
+  "Gading Jame Masjid (Hayward)",
+  "MEC - Al-Medina Education Center (Newark)",
+  "IKIC - Ibrahim Khalilullah Islamic Center (Fremont)",
+  "IECRC - Islamic Educational & Cultural Research Center (Newark)",
+  "Masjid Al-Huda (Union City)",
+  "EIC Masjid - Evergreen Islamic Center",
+  "BVMCC - Blossom Valley Muslim Community Center",
+  "Masjid Al-Noor (Santa Clara)",
+  "TIC (Taha Islamic Center)",
+  "SCMCC - Silver Creek Musalla (San Jose)",
+  "Masjid Darus Salaam - Al Hilaal (Milpitas)",
+  "Yaseen Foundation - Belmont Sports Complex (BSC)",
+  "Yaseen Foundation - Burlingame Center (YBC)",
+  "FJIA - Fiji Jamaat ul Islam - Masjid ul Jame (South San Francisco)",
+  "Stanford Campus Jummah (Stanford Masjid)",
+  "MVPA Musalla - Mountain View-Palo Alto Mosque",
+  "Masjid Ul Haqq - Masonic Lodge Jummah (San Mateo)",
+  "Alif Jummah - Fort Mason (San Francisco)",
+  "ICSF - Crescent Street Masjid (San Francisco)",
+  "Masjid Darussalam (Islamic Society San Francisco)",
+  "AlSabeel Masjid Noor Al-Islam (San Francisco)",
+  "Masjid al-Tawheed (San Francisco)",
+  "Lighthouse Mosque",
+  "As-Salam Mosque (Oakland)",
+  "ICO - Islamic Center of Oakland",
+  "MasjId Al-Iman (Oakland)",
+  "Masjid Al Noor (Richmond)",
+  "Masjid Abu Bakr Al-Siddiq (Hayward)",
+  "Masjid Al-Farooq (San Leandro Islamic Center)",
+  "NICCC - Masjid Noor Islamic and Cultural Community Center (Concord)",
+  "Berkeley Masjid",
+  "BMCC - Brentwood Muslim Community Center",
+  "Tracy Islamic Center (TIC) masjid in Tracy مسجد در تریسی",
+  "WCIC (Islamic Center of Walnut Creek)",
+  "Rosewood Conference Center - MCC Offsite Jummah (Pleasanton)",
+  "SVIC (South Valley Islamic Community) - Grange Hall",
+  "WVMA - Saratoga Prospect Center Jummah",
+  "WVMA - West Valley Muslim Association (Los Gatos)",
+  "ICNM (Masjid Aisha) - Islamic Center North Marin",
+  "MV Masjid - Islamic Center of Mill Valley",
+  "ICP - Islamic Center of Petaluma",
+  "ICOV (Islamic Center of Vallejo)",
+  "Islamic Community of Bay Area Bosnians",
+  "Richmond - Masjid Al Rahman",
+  "Lamorinda Muslim Community Center (LMCC)",
+  "Fairfield Masjid",
+  "Vacaville Masjid",
+  "Napa Valley Islamic Center (NVIC)",
+  "Antioch - Masjid Abubakr Al Siddiq",
+  "ICEB Antioch - Islamic Center of East Bay",
+  "Pittsburgh Islamic Center",
+  "Oakland - Masjid As Salaam",
+  "Oakland - Masjid Waritheen",
+  "SBAICC - South Bay Afghan Islamic Center",
+  "Mountain House Musalla",
+]
+
 function isSummer() {
   const now = new Date()
   const year = now.getFullYear()
@@ -19,6 +92,14 @@ function isSummer() {
   return now >= springForward && now < fallBack
 }
 
+function distanceMiles(lat1, lng1, lat2, lng2) {
+  const R = 3958.8
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+}
+
 function MosqueIcon() {
   return (
     <div style={{
@@ -29,7 +110,7 @@ function MosqueIcon() {
   )
 }
 
-function MosqueCard({ mosque, season }) {
+function MosqueCard({ mosque, season, userLocation }) {
   const times = mosque.jummah_times || {}
   const isFriday = new Date().getDay() === 5
   const entries = []
@@ -38,6 +119,10 @@ function MosqueCard({ mosque, season }) {
     const iq = season === 'winter' ? times[`w${i}iq`] : times[`s${i}iq`]
     if (j) entries.push({ label: `${['1st','2nd','3rd'][i-1]} Jummah`, j, iq })
   }
+
+  const dist = userLocation && mosque.display_lat && mosque.display_lng
+    ? distanceMiles(userLocation.lat, userLocation.lng, mosque.display_lat, mosque.display_lng)
+    : null
 
   return (
     <div style={{
@@ -56,9 +141,14 @@ function MosqueCard({ mosque, season }) {
               <span style={{ background: '#c8f0dc', color: '#0a5c2a', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6, whiteSpace: 'nowrap' }}>Today</span>
             )}
           </div>
-          {mosque.location_area && (
-            <div style={{ fontSize: 13, color: 'rgba(26,42,58,0.5)', marginTop: 2 }}>📍 {mosque.location_area}</div>
-          )}
+          <div style={{ display: 'flex', gap: 8, marginTop: 2, alignItems: 'center' }}>
+            {mosque.location_area && (
+              <div style={{ fontSize: 13, color: 'rgba(26,42,58,0.5)' }}>📍 {mosque.location_area}</div>
+            )}
+            {dist !== null && (
+              <div style={{ fontSize: 12, color: '#e8a040', fontWeight: 600 }}>{dist.toFixed(1)} mi</div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -68,14 +158,10 @@ function MosqueCard({ mosque, season }) {
             <div key={i} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '9px 12px', marginBottom: 6,
-              background: '#fff8f0',
-              borderRadius: 10,
+              background: '#fff8f0', borderRadius: 10,
               borderLeft: '3px solid #e8a040',
             }}>
-              <span style={{
-                fontSize: 11, fontWeight: 700, color: '#888',
-                textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: 70,
-              }}>{e.label}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: 70 }}>{e.label}</span>
               <span style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a' }}>
                 {e.j}{e.iq ? <span style={{ color: '#555', fontWeight: 500 }}> / Iqama {e.iq}</span> : ''}
               </span>
@@ -117,6 +203,16 @@ export default function Jummah() {
   const [area, setArea] = useState('All')
   const [search, setSearch] = useState('')
   const [season, setSeason] = useState(isSummer() ? 'summer' : 'winter')
+  const [sortBy, setSortBy] = useState('nearest')
+  const [userLocation, setUserLocation] = useState(null)
+  const [locationDenied, setLocationDenied] = useState(false)
+
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition(
+      pos => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => { setLocationDenied(true); setSortBy('popular') }
+    )
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -130,13 +226,29 @@ export default function Jummah() {
           .eq('status', 'published')
         if (area !== 'All') q = q.eq('location_area', area)
         if (search) q = q.ilike('name', `%${search}%`)
-        const { data } = await q.order('location_area').order('name')
+        const { data } = await q
         setMosques(data || [])
       }
       setLoading(false)
     }
     load()
   }, [area, search])
+
+  const sorted = [...mosques].sort((a, b) => {
+    if (sortBy === 'nearest' && userLocation && a.display_lat && b.display_lat) {
+      return distanceMiles(userLocation.lat, userLocation.lng, a.display_lat, a.display_lng)
+           - distanceMiles(userLocation.lat, userLocation.lng, b.display_lat, b.display_lng)
+    }
+    if (sortBy === 'popular' || (sortBy === 'nearest' && !userLocation)) {
+      const ai = POPULARITY_ORDER.indexOf(a.name)
+      const bi = POPULARITY_ORDER.indexOf(b.name)
+      if (ai === -1 && bi === -1) return a.name.localeCompare(b.name)
+      if (ai === -1) return 1
+      if (bi === -1) return -1
+      return ai - bi
+    }
+    return a.name.localeCompare(b.name)
+  })
 
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#f5f5f5', minHeight: '100vh', paddingBottom: 80 }}>
@@ -149,15 +261,14 @@ export default function Jummah() {
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
-        <div style={{
-          position: 'sticky', top: 0, zIndex: 10,
-          background: '#f5f5f5', paddingBottom: 12,
-        }}>
+        <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f5f5f5', paddingBottom: 12 }}>
+
           <div style={{ background: 'white', borderRadius: 12, border: '1px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', marginBottom: 10 }}>
             <span style={{ fontSize: 16 }}>🔍</span>
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search mosques..."
               style={{ flex: 1, border: 'none', outline: 'none', fontSize: 15 }} />
           </div>
+
           <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 10, paddingBottom: 2, scrollbarWidth: 'none' }}>
             {AREAS.map(a => (
               <button key={a} onClick={() => setArea(a)} style={{
@@ -166,25 +277,42 @@ export default function Jummah() {
               }}>{a}</button>
             ))}
           </div>
+
+          <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, marginBottom: 10, border: '1px solid rgba(0,0,0,0.08)' }}>
+            {[
+              { key: 'nearest', label: '📍 Nearest' },
+              { key: 'popular', label: '⭐ Popular' },
+              { key: 'az', label: 'A–Z' },
+            ].map(s => (
+              <button key={s.key} onClick={() => setSortBy(s.key)} disabled={s.key === 'nearest' && locationDenied} style={{
+                flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: s.key === 'nearest' && locationDenied ? 'not-allowed' : 'pointer',
+                fontSize: 12, fontWeight: 600,
+                background: sortBy === s.key ? '#1a2a3a' : 'transparent',
+                color: sortBy === s.key ? 'white' : s.key === 'nearest' && locationDenied ? 'rgba(26,42,58,0.25)' : 'rgba(26,42,58,0.5)',
+              }}>{s.label}</button>
+            ))}
+          </div>
+
           <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
-            {['winter', 'summer'].map(s => (
+            {['summer', 'winter'].map(s => (
               <button key={s} onClick={() => setSeason(s)} style={{
                 flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
                 fontSize: 13, fontWeight: 600,
                 background: season === s ? '#1a2a3a' : 'transparent',
                 color: season === s ? 'white' : 'rgba(26,42,58,0.5)',
               }}>
-                {s === 'winter' ? '❄️ Winter' : '☀️ Summer'}
+                {s === 'summer' ? '☀️ Summer' : '❄️ Winter'}
               </button>
             ))}
           </div>
         </div>
+
         {loading ? (
           <div style={{ textAlign: 'center', padding: '48px 0', color: 'rgba(26,42,58,0.4)', fontSize: 15 }}>Loading mosques...</div>
-        ) : mosques.length === 0 ? (
+        ) : sorted.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px 0', color: 'rgba(26,42,58,0.4)', fontSize: 15 }}>No mosques found</div>
         ) : (
-          mosques.map(m => <MosqueCard key={m.id} mosque={m} season={season} />)
+          sorted.map(m => <MosqueCard key={m.id} mosque={m} season={season} userLocation={userLocation} />)
         )}
       </div>
       <BottomNav />

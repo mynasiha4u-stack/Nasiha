@@ -174,7 +174,7 @@ function MosqueCard({ mosque, season, userLocation }) {
 
       <div style={{ display: 'flex', gap: 8 }}>
         {mosque.display_lat && mosque.display_lng && (
-          <a href={`https://maps.apple.com/?daddr=${mosque.display_lat},${mosque.display_lng}`}
+          <a href={`https://www.google.com/maps/dir/?api=1&destination=${mosque.display_lat},${mosque.display_lng}`}
             style={{ flex: 1, background: '#e8a040', borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 700, color: 'white', textAlign: 'center', textDecoration: 'none' }}>
             Get Directions
           </a>

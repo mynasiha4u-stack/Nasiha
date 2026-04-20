@@ -313,6 +313,19 @@ export default function Jummah() {
           </div>
         </div>
 
+        {locationDenied && (
+          <div style={{
+            background: '#fff8f0', border: '1px solid #e8a040',
+            borderRadius: 12, padding: '12px 14px', marginBottom: 12,
+            display: 'flex', alignItems: 'center', gap: 10,
+          }}>
+            <span style={{ fontSize: 20 }}>📍</span>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2a3a' }}>Enable location for better results</div>
+              <div style={{ fontSize: 12, color: 'rgba(26,42,58,0.6)', marginTop: 2 }}>Nasiha works best when it can sort mosques by closest to you</div>
+            </div>
+          </div>
+        )}
         {loading ? (
           <div style={{ textAlign: 'center', padding: '48px 0', color: 'rgba(26,42,58,0.4)', fontSize: 15 }}>Loading mosques...</div>
         ) : sorted.length === 0 ? (

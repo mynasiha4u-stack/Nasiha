@@ -115,8 +115,8 @@ export default function MosqueDetail() {
             <div key={i} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '10px 12px', marginBottom: 6,
-              background: '#fff8f0', borderRadius: 10,
-              borderLeft: '3px solid #e8a040',
+              background: '#f0edf8', borderRadius: 10,
+              borderLeft: '3px solid #9b87c4',
             }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{e.label}</span>
               <span style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a' }}>

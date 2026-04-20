@@ -17,31 +17,17 @@ function isSummer() {
   return now >= springForward && now < fallBack
 }
 
-
 function cleanDescription(raw) {
   if (!raw) return ''
-  // Remove leading Jummah time lines like "1st Jummah: 1:00 PM, Iqama..."
-  let text = raw
-  const lines = text.split('    ')
-  const cleaned = lines.filter(line => {
+  const lines = raw.split('    ')
+  const filtered = lines.filter(line => {
     const l = line.trim()
-    return l && !l.match(/^\d+(st|nd|rd|th)?\s*Jummah/i) && !l.match(/^Iqama/i)
-  }).join('\n\n')
-  return cleaned.replace(/&nbsp;/g, ' ').trim()
-}
-
-function MosqueDescription({ description, name }) {
-  if (!description) return null
-  const cleaned = cleanDescription(description)
-  if (!cleaned) return null
-  return (
-    <div style={{ background: 'white', borderRadius: 16, padding: 16, marginBottom: 12, border: '1px solid rgba(0,0,0,0.08)' }}>
-      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a', marginBottom: 12 }}>About {name}</div>
-      <div style={{ fontSize: 14, color: 'rgba(26,42,58,0.75)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>
-        {cleaned}
-      </div>
-    </div>
-  )
+    if (!l) return false
+    if (l.match(/^\d+(st|nd|rd|th)?\s*Jummah/i)) return false
+    if (l.match(/^Iqama/i)) return false
+    return true
+  })
+  return filtered.join('\n\n').replace(/&nbsp;/g, ' ').trim()
 }
 
 export default function MosqueDetail() {
@@ -91,15 +77,17 @@ export default function MosqueDetail() {
     ? `https://www.google.com/maps/dir/?api=1&destination=${mosque.display_lat},${mosque.display_lng}`
     : `https://www.google.com/maps/search/${encodeURIComponent(mosque.location_address || mosque.name)}`
 
+  const description = cleanDescription(mosque.description)
+
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#f5f5f5', minHeight: '100vh', paddingBottom: 80 }}>
 
       {/* Hero header */}
-      <div style={{ background: 'linear-gradient(160deg, #a8c8e8 0%, #c4b0d8 40%, #f4c4a0 80%, #f8d4b0 100%)', padding: '52px 20px 20px', position: 'relative' }}>
-        <button onClick={() => navigate(-1)} style={{ fontSize: 14, color: 'rgba(26,42,58,0.6)', marginBottom: 16, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
-        <div style={{ fontSize: 36, marginBottom: 8 }}>🕌</div>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1a2a3a', lineHeight: 1.3, marginBottom: 6 }}>{mosque.name}</h1>
-        <div style={{ fontSize: 13, color: 'rgba(26,42,58,0.55)' }}>📍 {mosque.location_area}{mosque.location_address ? ` · ${mosque.location_address}` : ''}</div>
+      <div style={{ background: 'linear-gradient(180deg, #7db8e8 0%, #c8e4f8 60%, #f0c090 100%)', padding: '52px 20px 20px' }}>
+        <button onClick={() => navigate(-1)} style={{ fontSize: 14, color: 'rgba(26,42,58,0.65)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
+        <div style={{ fontSize: 32, marginBottom: 8 }}>🕌</div>
+        <h1 style={{ fontSize: 20, fontWeight: 800, color: '#1a2a3a', lineHeight: 1.3, marginBottom: 4 }}>{mosque.name}</h1>
+        <div style={{ fontSize: 13, color: 'rgba(26,42,58,0.6)' }}>📍 {mosque.location_area}{mosque.location_address ? ` · ${mosque.location_address}` : ''}</div>
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
@@ -114,8 +102,8 @@ export default function MosqueDetail() {
             <div key={i} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '10px 12px', marginBottom: 6,
-              background: '#f0edf8', borderRadius: 10,
-              borderLeft: '3px solid #9b87c4',
+              background: '#fff8f0', borderRadius: 10,
+              borderLeft: '3px solid #e8a040',
             }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{e.label}</span>
               <span style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a' }}>
@@ -130,15 +118,14 @@ export default function MosqueDetail() {
         {/* Action buttons */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
           <a href={directionsUrl} target="_blank" rel="noreferrer" style={{
-            flex: 1, background: '#f4a261', borderRadius: 12, padding: '13px 0',
+            flex: 1, background: '#e8a040', borderRadius: 12, padding: '13px 0',
             fontSize: 13, fontWeight: 700, color: 'white', textAlign: 'center', textDecoration: 'none',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
           }}>🗺️ Directions</a>
           {mosque.website && (
             <a href={mosque.website} target="_blank" rel="noreferrer" style={{
               flex: 1, background: 'white', borderRadius: 12, padding: '13px 0',
               fontSize: 13, fontWeight: 700, color: '#1a2a3a', textAlign: 'center', textDecoration: 'none',
-              border: '1px solid rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              border: '1px solid rgba(0,0,0,0.1)',
             }}>🌐 Website</a>
           )}
         </div>
@@ -159,7 +146,7 @@ export default function MosqueDetail() {
           )}
           {mosque.instagram && (
             <a href={mosque.instagram} target="_blank" rel="noreferrer" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12px 8px', textDecoration: 'none', gap: 4 }}>
-              <div style={{ width: 28, height: 28, background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 14, fontWeight: 700 }}>IG</div>
+              <div style={{ width: 28, height: 28, background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 13, fontWeight: 700 }}>IG</div>
               <span style={{ fontSize: 10, color: '#888', fontWeight: 600 }}>Instagram</span>
             </a>
           )}
@@ -178,24 +165,14 @@ export default function MosqueDetail() {
         </div>
 
         {/* Description */}
-        {mosque.description && (() => {
-          // Strip Jummah time lines from start of description
-          const cleaned = mosque.description
-            .replace(/^(\s*\d+(st|nd|rd|th)?\s*Jummah[^
-]*(\n|$))+/i, '')
-            .replace(/&nbsp;/g, ' ')
-            .replace(/^\s+/, '')
-            .trim()
-          if (!cleaned) return null
-          return (
-            <div style={{ background: 'white', borderRadius: 16, padding: 16, marginBottom: 12, border: '1px solid rgba(0,0,0,0.08)' }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a', marginBottom: 12 }}>About {mosque.name}</div>
-              <div style={{ fontSize: 14, color: 'rgba(26,42,58,0.75)', lineHeight: 1.75, whiteSpace: 'pre-wrap', overflowY: 'auto' }}>
-                {cleaned}
-              </div>
+        {description ? (
+          <div style={{ background: 'white', borderRadius: 16, padding: 16, marginBottom: 12, border: '1px solid rgba(0,0,0,0.08)' }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a', marginBottom: 12 }}>About</div>
+            <div style={{ fontSize: 14, color: 'rgba(26,42,58,0.75)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>
+              {description}
             </div>
-          )
-        })()}
+          </div>
+        ) : null}
 
       </div>
       <BottomNav />

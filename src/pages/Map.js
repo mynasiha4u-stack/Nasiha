@@ -174,6 +174,21 @@ export default function Map() {
         </p>
       </div>
 
+      <div style={{ padding: '12px 16px 0', background: '#f5f5f5' }}>
+        <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
+          <button onClick={() => navigate('/jummah')} style={{
+            flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
+            fontSize: 12, fontWeight: 600,
+            background: 'transparent', color: 'rgba(26,42,58,0.5)',
+          }}>☰ List View</button>
+          <button style={{
+            flex: 1, padding: '8px 0', borderRadius: 10, border: 'none',
+            fontSize: 12, fontWeight: 600,
+            background: '#1a2a3a', color: 'white',
+          }}>🗺️ Map View</button>
+        </div>
+      </div>
+
       <div style={{ flex: 1, position: 'relative' }}>
         {(loading || !mapReady) && (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5', zIndex: 10 }}>

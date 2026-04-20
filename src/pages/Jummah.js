@@ -284,19 +284,34 @@ export default function Jummah() {
             ))}
           </div>
 
+          <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+            <div style={{ flex: 1, display: 'flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
+              {[
+                { key: 'nearest', label: '📍 Nearest' },
+                { key: 'popular', label: '⭐ Popular' },
+                { key: 'az', label: 'A–Z' },
+              ].map(s => (
+                <button key={s.key} onClick={() => setSortBy(s.key)} disabled={s.key === 'nearest' && locationDenied} style={{
+                  flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: s.key === 'nearest' && locationDenied ? 'not-allowed' : 'pointer',
+                  fontSize: 12, fontWeight: 600,
+                  background: sortBy === s.key ? '#1a2a3a' : 'transparent',
+                  color: sortBy === s.key ? 'white' : s.key === 'nearest' && locationDenied ? 'rgba(26,42,58,0.25)' : 'rgba(26,42,58,0.5)',
+                }}>{s.label}</button>
+              ))}
+            </div>
+          </div>
+
           <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, marginBottom: 10, border: '1px solid rgba(0,0,0,0.08)' }}>
-            {[
-              { key: 'nearest', label: '📍 Nearest' },
-              { key: 'popular', label: '⭐ Popular' },
-              { key: 'az', label: 'A–Z' },
-            ].map(s => (
-              <button key={s.key} onClick={() => setSortBy(s.key)} disabled={s.key === 'nearest' && locationDenied} style={{
-                flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: s.key === 'nearest' && locationDenied ? 'not-allowed' : 'pointer',
-                fontSize: 12, fontWeight: 600,
-                background: sortBy === s.key ? '#1a2a3a' : 'transparent',
-                color: sortBy === s.key ? 'white' : s.key === 'nearest' && locationDenied ? 'rgba(26,42,58,0.25)' : 'rgba(26,42,58,0.5)',
-              }}>{s.label}</button>
-            ))}
+            <button onClick={() => {}} style={{
+              flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
+              fontSize: 12, fontWeight: 600,
+              background: '#1a2a3a', color: 'white',
+            }}>☰ List View</button>
+            <button onClick={() => navigate('/map')} style={{
+              flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
+              fontSize: 12, fontWeight: 600,
+              background: 'transparent', color: 'rgba(26,42,58,0.5)',
+            }}>🗺️ Map View</button>
           </div>
 
           <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, marginBottom: 10, border: '1px solid rgba(0,0,0,0.08)' }}>
@@ -311,14 +326,7 @@ export default function Jummah() {
               </button>
             ))}
           </div>
-          <button onClick={() => navigate('/map')} style={{
-            width: '100%', padding: '10px 0', borderRadius: 12,
-            background: '#1a2a3a', border: 'none', cursor: 'pointer',
-            fontSize: 13, fontWeight: 700, color: 'white',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-          }}>
-            🗺️ View Mosque Map
-          </button>
+
         </div>
 
         {locationDenied && (

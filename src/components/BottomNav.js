@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 
 const tabs = [
   { path: '/',        icon: '🏠', label: 'Home'   },
-  { path: '/map',     icon: '📍', label: 'Map'    },
+  { path: '/map',     icon: '🗺️', label: 'Map'    },
   { path: '/jummah',  icon: '🕌', label: 'Jummah Timings' },
   { path: '/events',  icon: '📅', label: 'Events' },
 ]
@@ -34,7 +34,7 @@ export default function BottomNav() {
               background: 'none', border: 'none', cursor: 'pointer',
             }}
           >
-            <span style={{ fontSize: 22 }}>{t.icon}</span>
+            <span style={{ fontSize: 26 }}>{t.icon}</span>
             <span style={{
               fontSize: 10, fontWeight: 600,
               color: active ? '#1a2a3a' : 'rgba(26,42,58,0.35)'

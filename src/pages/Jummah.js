@@ -316,17 +316,18 @@ export default function Jummah() {
             }}>🗺️ Map View</button>
           </div>
 
-          <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, marginBottom: 10, border: '1px solid rgba(0,0,0,0.08)' }}>
-            {['summer', 'winter'].map(s => (
-              <button key={s} onClick={() => setSeason(s)} style={{
-                flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
-                fontSize: 13, fontWeight: 600,
-                background: season === s ? '#1a2a3a' : 'transparent',
-                color: season === s ? 'white' : 'rgba(26,42,58,0.5)',
-              }}>
-                {s === 'summer' ? '☀️ Summer' : '❄️ Winter'}
-              </button>
-            ))}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <span style={{ fontSize: 12, color: 'rgba(26,42,58,0.5)', fontWeight: 600 }}>Season</span>
+            <div style={{ display: 'inline-flex', background: 'white', borderRadius: 20, padding: 2, border: '1px solid rgba(0,0,0,0.08)' }}>
+              {['summer', 'winter'].map(s => (
+                <button key={s} onClick={() => setSeason(s)} style={{
+                  padding: '4px 12px', borderRadius: 18, border: 'none', cursor: 'pointer',
+                  fontSize: 12, fontWeight: 600,
+                  background: season === s ? '#1a2a3a' : 'transparent',
+                  color: season === s ? 'white' : 'rgba(26,42,58,0.5)',
+                }}>{s === 'summer' ? '☀️ Summer' : '❄️ Winter'}</button>
+              ))}
+            </div>
           </div>
 
         </div>

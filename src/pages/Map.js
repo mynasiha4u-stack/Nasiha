@@ -104,10 +104,10 @@ export default function Map() {
         title: mosque.name,
         icon: {
           url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">
-              <path d="M16 0C9.4 0 4 5.4 4 12c0 9 12 28 12 28s12-19 12-28C28 5.4 22.6 0 16 0z" fill="#e8a040"/>
-              <circle cx="16" cy="12" r="6" fill="white"/>
-              <text x="16" y="16" font-size="8" text-anchor="middle" fill="#e8a040">🕌</text>
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44">
+              <path d="M18 0C10.8 0 5 5.8 5 13c0 10 13 31 13 31s13-21 13-31C31 5.8 25.2 0 18 0z" fill="#2d6a4f"/>
+              <circle cx="18" cy="13" r="7" fill="white"/>
+              <text x="18" y="17" font-size="9" text-anchor="middle" fill="#2d6a4f">🕌</text>
             </svg>
           `),
           scaledSize: new window.google.maps.Size(32, 40),
@@ -174,7 +174,7 @@ export default function Map() {
         </p>
       </div>
 
-      <div style={{ flex: 1, position: 'relative', minHeight: 500 }}>
+      <div style={{ flex: 1, position: 'relative' }}>
         {(loading || !mapReady) && (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5', zIndex: 10 }}>
             <div style={{ textAlign: 'center', color: 'rgba(26,42,58,0.4)' }}>
@@ -183,7 +183,7 @@ export default function Map() {
             </div>
           </div>
         )}
-        <div ref={mapRef} style={{ width: '100%', height: '100%', minHeight: 500 }} />
+        <div ref={mapRef} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
       </div>
 
       <BottomNav />

@@ -299,7 +299,7 @@ export default function Jummah() {
             ))}
           </div>
 
-          <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
+          <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, marginBottom: 10, border: '1px solid rgba(0,0,0,0.08)' }}>
             {['summer', 'winter'].map(s => (
               <button key={s} onClick={() => setSeason(s)} style={{
                 flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
@@ -311,6 +311,14 @@ export default function Jummah() {
               </button>
             ))}
           </div>
+          <button onClick={() => navigate('/map')} style={{
+            width: '100%', padding: '10px 0', borderRadius: 12,
+            background: '#1a2a3a', border: 'none', cursor: 'pointer',
+            fontSize: 13, fontWeight: 700, color: 'white',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          }}>
+            🗺️ View Mosque Map
+          </button>
         </div>
 
         {locationDenied && (

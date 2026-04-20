@@ -151,14 +151,24 @@ export default function MosqueDetail() {
         </div>
 
         {/* Description */}
-        {mosque.description && (
-          <div style={{ background: 'white', borderRadius: 16, padding: 16, marginBottom: 12, border: '1px solid rgba(0,0,0,0.08)' }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#1a2a3a', marginBottom: 10 }}>About</div>
-            <div style={{ fontSize: 14, color: 'rgba(26,42,58,0.7)', lineHeight: 1.7 }}>
-              {mosque.description}
+        {mosque.description && (() => {
+          // Strip Jummah time lines from start of description
+          const cleaned = mosque.description
+            .replace(/^(\s*\d+(st|nd|rd|th)?\s*Jummah[^
+]*(\n|$))+/i, '')
+            .replace(/&nbsp;/g, ' ')
+            .replace(/^\s+/, '')
+            .trim()
+          if (!cleaned) return null
+          return (
+            <div style={{ background: 'white', borderRadius: 16, padding: 16, marginBottom: 12, border: '1px solid rgba(0,0,0,0.08)' }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a', marginBottom: 12 }}>About {mosque.name}</div>
+              <div style={{ fontSize: 14, color: 'rgba(26,42,58,0.75)', lineHeight: 1.75, whiteSpace: 'pre-wrap', overflowY: 'auto' }}>
+                {cleaned}
+              </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
 
       </div>
       <BottomNav />

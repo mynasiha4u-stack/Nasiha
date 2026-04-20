@@ -38,7 +38,8 @@ export default function MosqueDetail() {
   const navigate = useNavigate()
   const [mosque, setMosque] = useState(null)
   const [loading, setLoading] = useState(true)
-  const season = isSummer() ? 'summer' : 'winter'
+  const [localSeason, setLocalSeason] = React.useState(isSummer() ? 'summer' : 'winter')
+  const season = localSeason
 
   useEffect(() => {
     async function load() {
@@ -99,14 +100,23 @@ export default function MosqueDetail() {
         <div style={{ background: 'white', borderRadius: 16, padding: 16, marginBottom: 12, border: '1px solid rgba(0,0,0,0.08)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: '#1a2a3a' }}>Jummah Times</div>
-            <div style={{ fontSize: 11, color: '#888', fontWeight: 600 }}>{season === 'summer' ? '☀️ Summer' : '❄️ Winter'}</div>
+            <div style={{ display: 'inline-flex', background: '#f0f0f0', borderRadius: 20, padding: 2 }}>
+              {['summer', 'winter'].map(s => (
+                <button key={s} onClick={e => { e.stopPropagation(); setLocalSeason(s) }} style={{
+                  padding: '3px 10px', borderRadius: 18, border: 'none', cursor: 'pointer',
+                  fontSize: 11, fontWeight: 600,
+                  background: localSeason === s ? '#1a2a3a' : 'transparent',
+                  color: localSeason === s ? 'white' : 'rgba(26,42,58,0.5)',
+                }}>{s === 'summer' ? '☀️' : '❄️'}</button>
+              ))}
+            </div>
           </div>
           {entries.length > 0 ? entries.map((e, i) => (
             <div key={i} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '10px 12px', marginBottom: 6,
-              background: '#fff8f0', borderRadius: 10,
-              borderLeft: '3px solid #e8a040',
+              background: '#f0f4ff', borderRadius: 10,
+              borderLeft: '3px solid #8b9cf4',
             }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{e.label}</span>
               <span style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a' }}>
@@ -159,12 +169,7 @@ export default function MosqueDetail() {
               <span style={{ fontSize: 10, color: '#888', fontWeight: 600 }}>Facebook</span>
             </a>
           )}
-          {mosque.website && (
-            <a href={mosque.website} target="_blank" rel="noreferrer" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12px 8px', textDecoration: 'none', gap: 4 }}>
-              <span style={{ fontSize: 22 }}>🌐</span>
-              <span style={{ fontSize: 10, color: '#888', fontWeight: 600 }}>Website</span>
-            </a>
-          )}
+
         </div>
 
         {/* Description */}

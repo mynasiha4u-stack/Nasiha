@@ -19,15 +19,18 @@ function isSummer() {
 
 function cleanDescription(raw) {
   if (!raw) return ''
-  const lines = raw.split('    ')
-  const filtered = lines.filter(line => {
-    const l = line.trim()
-    if (!l) return false
-    if (l.match(/^\d+(st|nd|rd|th)?\s*Jummah/i)) return false
-    if (l.match(/^Iqama/i)) return false
-    return true
-  })
-  return filtered.join('\n\n').replace(/&nbsp;/g, ' ').trim()
+  // Description format: "1st Jummah: X    2nd Jummah: Y    Real description starts here"
+  // Split on 4 spaces, find where Jummah lines end, take the rest
+  const parts = raw.split('    ')
+  let startIdx = 0
+  for (let i = 0; i < parts.length; i++) {
+    const p = parts[i].trim()
+    if (p.match(/^\d+(st|nd|rd|th)?\s*Jummah/i) || p.match(/^Iqama/i)) {
+      startIdx = i + 1
+    }
+  }
+  const descParts = parts.slice(startIdx)
+  return descParts.join(' ').replace(/&nbsp;/g, ' ').trim()
 }
 
 export default function MosqueDetail() {

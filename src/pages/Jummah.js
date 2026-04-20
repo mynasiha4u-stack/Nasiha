@@ -160,8 +160,8 @@ function MosqueCard({ mosque, season, userLocation }) {
             <div key={i} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '9px 12px', marginBottom: 6,
-              background: '#f0edf8', borderRadius: 10,
-              borderLeft: '3px solid #9b87c4',
+              background: '#fff8f0', borderRadius: 10,
+              borderLeft: '3px solid #e8a040',
             }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: 70 }}>{e.label}</span>
               <span style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a' }}>
@@ -271,12 +271,22 @@ export default function Jummah() {
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f5f5f5', paddingBottom: 12 }}>
 
+          {/* Search bar with season toggle embedded on the right */}
           <div style={{ background: 'white', borderRadius: 12, border: '1px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', marginBottom: 10 }}>
             <span style={{ fontSize: 16 }}>🔍</span>
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search mosques..."
               style={{ flex: 1, border: 'none', outline: 'none', fontSize: 15 }} />
+            <div style={{ display: 'inline-flex', background: '#f0f0f0', borderRadius: 20, padding: 2, flexShrink: 0 }}>
+              {['summer', 'winter'].map(s => (
+                <button key={s} onClick={() => setSeason(s)} style={{
+                  padding: '4px 8px', borderRadius: 18, border: 'none', cursor: 'pointer', fontSize: 14,
+                  background: season === s ? '#1a2a3a' : 'transparent',
+                }}>{s === 'summer' ? '☀️' : '❄️'}</button>
+              ))}
+            </div>
           </div>
 
+          {/* Area filter pills */}
           <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 10, paddingBottom: 2, scrollbarWidth: 'none' }}>
             {AREAS.map(a => (
               <button key={a} onClick={() => setArea(a)} style={{
@@ -286,6 +296,7 @@ export default function Jummah() {
             ))}
           </div>
 
+          {/* Sort + List/Map in one row */}
           <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
             <div style={{ flex: 1, display: 'flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
               {[
@@ -301,32 +312,9 @@ export default function Jummah() {
                 }}>{s.label}</button>
               ))}
             </div>
-          </div>
-
-          <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, marginBottom: 10, border: '1px solid rgba(0,0,0,0.08)' }}>
-            <button onClick={() => {}} style={{
-              flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
-              fontSize: 12, fontWeight: 600,
-              background: '#1a2a3a', color: 'white',
-            }}>☰ List View</button>
-            <button onClick={() => navigate('/map')} style={{
-              flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
-              fontSize: 12, fontWeight: 600,
-              background: 'transparent', color: 'rgba(26,42,58,0.5)',
-            }}>🗺️ Map View</button>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <span style={{ fontSize: 12, color: 'rgba(26,42,58,0.5)', fontWeight: 600 }}>Season</span>
-            <div style={{ display: 'inline-flex', background: 'white', borderRadius: 20, padding: 2, border: '1px solid rgba(0,0,0,0.08)' }}>
-              {['summer', 'winter'].map(s => (
-                <button key={s} onClick={() => setSeason(s)} style={{
-                  padding: '4px 12px', borderRadius: 18, border: 'none', cursor: 'pointer',
-                  fontSize: 12, fontWeight: 600,
-                  background: season === s ? '#1a2a3a' : 'transparent',
-                  color: season === s ? 'white' : 'rgba(26,42,58,0.5)',
-                }}>{s === 'summer' ? '☀️ Summer' : '❄️ Winter'}</button>
-              ))}
+            <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
+              <button onClick={() => {}} style={{ padding: '8px 10px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: '#1a2a3a', color: 'white' }}>☰</button>
+              <button onClick={() => navigate('/map')} style={{ padding: '8px 10px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: 'rgba(26,42,58,0.5)' }}>🗺️</button>
             </div>
           </div>
 

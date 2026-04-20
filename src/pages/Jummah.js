@@ -111,6 +111,7 @@ function MosqueIcon() {
 }
 
 function MosqueCard({ mosque, season, userLocation }) {
+  const navigate = useNavigate()
   const times = mosque.jummah_times || {}
   const isFriday = new Date().getDay() === 5
   const entries = []
@@ -125,10 +126,11 @@ function MosqueCard({ mosque, season, userLocation }) {
     : null
 
   return (
-    <div style={{
+    <div onClick={() => mosque.url_slug && navigate(`/jummah/${mosque.url_slug}`)} style={{
       background: 'white', borderRadius: 16,
       border: '1px solid rgba(0,0,0,0.08)',
       padding: '16px', marginBottom: 12,
+      cursor: mosque.url_slug ? 'pointer' : 'default',
     }}>
       <div style={{ display: 'flex', gap: 12, marginBottom: entries.length ? 12 : 0 }}>
         <MosqueIcon />
@@ -221,7 +223,7 @@ export default function Jummah() {
       if (catData) {
         let q = supabase
           .from('content')
-          .select('id, name, jummah_times, location_area, display_lat, display_lng, website, phone')
+          .select('id, name, jummah_times, location_area, display_lat, display_lng, website, phone, url_slug')
           .eq('category_id', catData.id)
           .eq('status', 'published')
         if (area !== 'All') q = q.eq('location_area', area)

@@ -289,7 +289,7 @@ export default function Jummah() {
           {/* Area filter pills */}
           <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 10, paddingBottom: 2, scrollbarWidth: 'none' }}>
             {AREAS.map(a => (
-              <button key={a} onClick={() => setArea(a)} style={{
+              <button key={a} onClick={() => { setArea(a); if (a !== 'All') setSortBy('popular') }} style={{
                 padding: '7px 15px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 13, fontWeight: 600, cursor: 'pointer',
                 background: area === a ? '#1a2a3a' : 'white', color: area === a ? 'white' : 'rgba(26,42,58,0.6)', border: '1px solid rgba(0,0,0,0.1)',
               }}>{a}</button>
@@ -313,8 +313,8 @@ export default function Jummah() {
               ))}
             </div>
             <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
-              <button onClick={() => {}} style={{ padding: '8px 10px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: '#1a2a3a', color: 'white' }}>☰</button>
-              <button onClick={() => navigate('/map')} style={{ padding: '8px 10px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: 'rgba(26,42,58,0.5)' }}>🗺️</button>
+              <button onClick={() => {}} style={{ padding: '8px 10px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: '#1a2a3a', color: 'white', whiteSpace: 'nowrap' }}>☰ List</button>
+              <button onClick={() => navigate('/map')} style={{ padding: '8px 10px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: 'rgba(26,42,58,0.5)', whiteSpace: 'nowrap' }}>🗺️ Map</button>
             </div>
           </div>
 

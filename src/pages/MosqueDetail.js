@@ -68,7 +68,7 @@ export default function MosqueDetail() {
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#f5f5f5', minHeight: '100vh', paddingBottom: 80 }}>
 
       {/* Hero header */}
-      <div style={{ background: 'linear-gradient(160deg, #a8c8e8 0%, #c4b0d8 40%, #f4c4a0 80%, #f8d4b0 100%)', padding: '52px 20px 28px', position: 'relative' }}>
+      <div style={{ background: 'linear-gradient(160deg, #a8c8e8 0%, #c4b0d8 40%, #f4c4a0 80%, #f8d4b0 100%)', padding: '52px 20px 20px', position: 'relative' }}>
         <button onClick={() => navigate(-1)} style={{ fontSize: 14, color: 'rgba(26,42,58,0.6)', marginBottom: 16, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
         <div style={{ fontSize: 36, marginBottom: 8 }}>🕌</div>
         <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1a2a3a', lineHeight: 1.3, marginBottom: 6 }}>{mosque.name}</h1>
@@ -132,13 +132,13 @@ export default function MosqueDetail() {
           )}
           {mosque.instagram && (
             <a href={mosque.instagram} target="_blank" rel="noreferrer" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12px 8px', textDecoration: 'none', gap: 4 }}>
-              <span style={{ fontSize: 22 }}>📸</span>
+              <div style={{ width: 28, height: 28, background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 14, fontWeight: 700 }}>IG</div>
               <span style={{ fontSize: 10, color: '#888', fontWeight: 600 }}>Instagram</span>
             </a>
           )}
           {mosque.facebook && (
             <a href={mosque.facebook} target="_blank" rel="noreferrer" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12px 8px', textDecoration: 'none', gap: 4 }}>
-              <span style={{ fontSize: 22 }}>👥</span>
+              <div style={{ width: 28, height: 28, background: '#1877F2', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 16, fontWeight: 900 }}>f</div>
               <span style={{ fontSize: 10, color: '#888', fontWeight: 600 }}>Facebook</span>
             </a>
           )}
@@ -155,7 +155,7 @@ export default function MosqueDetail() {
           <div style={{ background: 'white', borderRadius: 16, padding: 16, marginBottom: 12, border: '1px solid rgba(0,0,0,0.08)' }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: '#1a2a3a', marginBottom: 10 }}>About</div>
             <div style={{ fontSize: 14, color: 'rgba(26,42,58,0.7)', lineHeight: 1.7 }}>
-              {mosque.description.replace(/\d+(st|nd|rd) Jummah:.*?(\n|$)/g, '').trim()}
+              {mosque.description}
             </div>
           </div>
         )}

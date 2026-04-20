@@ -124,7 +124,7 @@ export default function Map() {
             <div style="font-size: 11px; color: #888; margin-bottom: 6px;">${season} Jummah Times</div>
             <div style="font-size: 12px; color: #1a2a3a; line-height: 1.8; margin-bottom: 10px;">${times}</div>
             <div style="display: flex; gap: 6px;">
-              <a href="https://maps.google.com/?q=${encodeURIComponent(mosque.name)}" target="_blank"
+              <a href="https://maps.google.com/?daddr=${mosque.display_lat},${mosque.display_lng}" target="_blank"
                 style="flex: 1; background: #e8a040; color: white; text-align: center; padding: 7px 0; border-radius: 8px; font-size: 12px; font-weight: 700; text-decoration: none;">
                 Directions
               </a>

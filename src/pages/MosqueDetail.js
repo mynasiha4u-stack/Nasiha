@@ -17,6 +17,33 @@ function isSummer() {
   return now >= springForward && now < fallBack
 }
 
+
+function cleanDescription(raw) {
+  if (!raw) return ''
+  // Remove leading Jummah time lines like "1st Jummah: 1:00 PM, Iqama..."
+  let text = raw
+  const lines = text.split('    ')
+  const cleaned = lines.filter(line => {
+    const l = line.trim()
+    return l && !l.match(/^\d+(st|nd|rd|th)?\s*Jummah/i) && !l.match(/^Iqama/i)
+  }).join('\n\n')
+  return cleaned.replace(/&nbsp;/g, ' ').trim()
+}
+
+function MosqueDescription({ description, name }) {
+  if (!description) return null
+  const cleaned = cleanDescription(description)
+  if (!cleaned) return null
+  return (
+    <div style={{ background: 'white', borderRadius: 16, padding: 16, marginBottom: 12, border: '1px solid rgba(0,0,0,0.08)' }}>
+      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a', marginBottom: 12 }}>About {name}</div>
+      <div style={{ fontSize: 14, color: 'rgba(26,42,58,0.75)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>
+        {cleaned}
+      </div>
+    </div>
+  )
+}
+
 export default function MosqueDetail() {
   const { slug } = useParams()
   const navigate = useNavigate()

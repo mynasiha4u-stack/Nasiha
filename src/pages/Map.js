@@ -105,9 +105,9 @@ export default function Map() {
         icon: {
           url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
             <svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44">
-              <path d="M18 0C10.8 0 5 5.8 5 13c0 10 13 31 13 31s13-21 13-31C31 5.8 25.2 0 18 0z" fill="#2d6a4f"/>
+              <path d="M18 0C10.8 0 5 5.8 5 13c0 10 13 31 13 31s13-21 13-31C31 5.8 25.2 0 18 0z" fill="#f4a261"/>
               <circle cx="18" cy="13" r="7" fill="white"/>
-              <text x="18" y="17" font-size="9" text-anchor="middle" fill="#2d6a4f">🕌</text>
+              <text x="18" y="17" font-size="9" text-anchor="middle" fill="#c4744a">🕌</text>
             </svg>
           `),
           scaledSize: new window.google.maps.Size(32, 40),

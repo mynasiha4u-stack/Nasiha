@@ -68,11 +68,11 @@ export default function MosqueDetail() {
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#f5f5f5', minHeight: '100vh', paddingBottom: 80 }}>
 
       {/* Hero header */}
-      <div style={{ background: 'linear-gradient(135deg, #2d6a4f 0%, #1a3d2e 100%)', padding: '52px 20px 28px', position: 'relative' }}>
-        <button onClick={() => navigate(-1)} style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', marginBottom: 16, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
+      <div style={{ background: 'linear-gradient(160deg, #a8c8e8 0%, #c4b0d8 40%, #f4c4a0 80%, #f8d4b0 100%)', padding: '52px 20px 28px', position: 'relative' }}>
+        <button onClick={() => navigate(-1)} style={{ fontSize: 14, color: 'rgba(26,42,58,0.6)', marginBottom: 16, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
         <div style={{ fontSize: 36, marginBottom: 8 }}>🕌</div>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: 'white', lineHeight: 1.3, marginBottom: 6 }}>{mosque.name}</h1>
-        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>📍 {mosque.location_area}{mosque.location_address ? ` · ${mosque.location_address}` : ''}</div>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1a2a3a', lineHeight: 1.3, marginBottom: 6 }}>{mosque.name}</h1>
+        <div style={{ fontSize: 13, color: 'rgba(26,42,58,0.55)' }}>📍 {mosque.location_area}{mosque.location_address ? ` · ${mosque.location_address}` : ''}</div>
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
@@ -87,8 +87,8 @@ export default function MosqueDetail() {
             <div key={i} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '10px 12px', marginBottom: 6,
-              background: '#fff8f0', borderRadius: 10,
-              borderLeft: '3px solid #e8a040',
+              background: '#f0edf8', borderRadius: 10,
+              borderLeft: '3px solid #9b87c4',
             }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{e.label}</span>
               <span style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a' }}>
@@ -103,7 +103,7 @@ export default function MosqueDetail() {
         {/* Action buttons */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
           <a href={directionsUrl} target="_blank" rel="noreferrer" style={{
-            flex: 1, background: '#e8a040', borderRadius: 12, padding: '13px 0',
+            flex: 1, background: '#f4a261', borderRadius: 12, padding: '13px 0',
             fontSize: 13, fontWeight: 700, color: 'white', textAlign: 'center', textDecoration: 'none',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
           }}>🗺️ Directions</a>

@@ -6,7 +6,7 @@ import BottomNav from '../components/BottomNav'
 
 const CATEGORIES = [
   { icon: '🍛', label: 'Home Cooks',  bg: '#c8f0dc', path: '/directory?cat=home-cooked-food' },
-  { icon: '🕌', label: 'Jummah',      bg: '#b8d8f8', path: '/jummah' },
+  { icon: '🕌', label: 'Jummah Timings',      bg: '#b8d8f8', path: '/jummah' },
   { icon: '🎂', label: 'Desserts',    bg: '#fde8c0', path: '/directory?cat=dessert-catering' },
   { icon: '👶', label: 'Childcare',   bg: '#dddaf8', path: '/directory?cat=childcare' },
   { icon: '📅', label: 'Events',      bg: '#fcd8cc', path: '/events' },

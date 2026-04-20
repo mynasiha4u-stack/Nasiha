@@ -152,7 +152,7 @@ export default function Map() {
             url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
                 <circle cx="8" cy="8" r="8" fill="#4a90d9" opacity="0.3"/>
-                <circle cx="8" cy="8" r="4" fill="#4a90d9"/>
+                <circle cx="8" cy="8" r="5" fill="#4a90d9"/>
               </svg>
             `),
             scaledSize: new window.google.maps.Size(16, 16),

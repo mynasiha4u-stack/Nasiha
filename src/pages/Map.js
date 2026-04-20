@@ -3,224 +3,188 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import BottomNav from '../components/BottomNav'
 
-const GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_KEY'
+const GOOGLE_MAPS_API_KEY = 'AIzaSyAPVYAun2axXdzTwwQJvcqUmygZYUYZxnw'
 
-function parseJummahTimes(description) {
-  if (!description) return []
-  const times = []
-  const lines = description.split('\n')
-  for (const line of lines) {
-    const jummahMatch = line.match(/(\d+(?:st|nd|rd|th))\s+Jummah[:\s]+(\d+:\d+\s*(?:AM|PM))/i)
-    if (jummahMatch) {
-      const iqamaMatch = line.match(/[Ii]qama.*?(\d+:\d+\s*(?:AM|PM))/i)
-      times.push({
-        label: jummahMatch[1],
-        time: jummahMatch[2].trim(),
-        iqama: iqamaMatch ? iqamaMatch[1].trim() : null,
-      })
-    }
-  }
-  return times
+function isSummer() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const march = new Date(year, 2, 1)
+  const marchDay = march.getDay()
+  const firstSunMarch = marchDay === 0 ? 1 : 8 - marchDay
+  const springForward = new Date(year, 2, firstSunMarch + 7)
+  const nov = new Date(year, 10, 1)
+  const novDay = nov.getDay()
+  const firstSunNov = novDay === 0 ? 1 : 8 - novDay
+  const fallBack = new Date(year, 10, firstSunNov)
+  return now >= springForward && now < fallBack
 }
 
-export default function MapPage() {
+function formatTimes(mosque) {
+  const times = mosque.jummah_times || {}
+  const season = isSummer() ? 's' : 'w'
+  const lines = []
+  for (let i = 1; i <= 3; i++) {
+    const j = times[`${season}${i}j`]
+    const iq = times[`${season}${i}iq`]
+    if (j) lines.push(`${['1st','2nd','3rd'][i-1]}: ${j}${iq ? ` / Iqama ${iq}` : ''}`)
+  }
+  return lines.length > 0 ? lines.join('<br>') : 'Check website for times'
+}
+
+export default function Map() {
   const navigate = useNavigate()
   const mapRef = useRef(null)
+  const mapInstanceRef = useRef(null)
   const [mosques, setMosques] = useState([])
-  const [selected, setSelected] = useState(null)
-  const [mapLoaded, setMapLoaded] = useState(false)
-  const mapInstance = useRef(null)
-  const markers = useRef([])
+  const [loading, setLoading] = useState(true)
+  const [mapReady, setMapReady] = useState(false)
 
+  // Load mosques from DB
   useEffect(() => {
-    async function loadMosques() {
+    async function load() {
       const { data: catData } = await supabase
         .from('categories').select('id').eq('slug', 'mosques').single()
       if (catData) {
         const { data } = await supabase
           .from('content')
-          .select('id, name, description, location_area, display_lat, display_lng, website, phone')
+          .select('id, name, jummah_times, location_area, display_lat, display_lng, website, phone')
           .eq('category_id', catData.id)
           .eq('status', 'published')
           .not('display_lat', 'is', null)
         setMosques(data || [])
       }
+      setLoading(false)
     }
-    loadMosques()
+    load()
   }, [])
 
+  // Load Google Maps script
   useEffect(() => {
-    if (!mosques.length) return
-    if (GOOGLE_MAPS_KEY === 'YOUR_GOOGLE_MAPS_KEY') {
-      setMapLoaded(false)
+    if (window.google && window.google.maps) {
+      setMapReady(true)
       return
     }
-
     const script = document.createElement('script')
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=initMap`
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}`
     script.async = true
-    window.initMap = () => {
-      const map = new window.google.maps.Map(mapRef.current, {
-        center: { lat: 37.55, lng: -121.98 },
-        zoom: 10,
-        styles: [
-          { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-          { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-        ],
-        disableDefaultUI: true,
-        zoomControl: true,
-      })
-      mapInstance.current = map
-
-      mosques.forEach(mosque => {
-        if (!mosque.display_lat || !mosque.display_lng) return
-        const marker = new window.google.maps.Marker({
-          position: { lat: mosque.display_lat, lng: mosque.display_lng },
-          map,
-          title: mosque.name,
-          icon: {
-            path: window.google.maps.SymbolPath.CIRCLE,
-            scale: 10,
-            fillColor: '#7db8e8',
-            fillOpacity: 1,
-            strokeColor: 'white',
-            strokeWeight: 2,
-          },
-        })
-        marker.addListener('click', () => setSelected(mosque))
-        markers.current.push(marker)
-      })
-      setMapLoaded(true)
-    }
+    script.defer = true
+    script.onload = () => setMapReady(true)
     document.head.appendChild(script)
-    return () => { delete window.initMap }
-  }, [mosques])
+  }, [])
 
-  const times = selected ? parseJummahTimes(selected.description) : []
+  // Init map once both ready
+  useEffect(() => {
+    if (!mapReady || !mosques.length || !mapRef.current) return
+    if (mapInstanceRef.current) return
+
+    const map = new window.google.maps.Map(mapRef.current, {
+      center: { lat: 37.6, lng: -122.0 },
+      zoom: 10,
+      gestureHandling: 'greedy', // one finger scroll
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: false,
+      zoomControlOptions: {
+        position: window.google.maps.ControlPosition.RIGHT_CENTER,
+      },
+      styles: [
+        { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+      ],
+    })
+
+    mapInstanceRef.current = map
+    const infoWindow = new window.google.maps.InfoWindow()
+
+    mosques.forEach(mosque => {
+      if (!mosque.display_lat || !mosque.display_lng) return
+
+      const marker = new window.google.maps.Marker({
+        position: { lat: mosque.display_lat, lng: mosque.display_lng },
+        map,
+        title: mosque.name,
+        icon: {
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">
+              <path d="M16 0C9.4 0 4 5.4 4 12c0 9 12 28 12 28s12-19 12-28C28 5.4 22.6 0 16 0z" fill="#e8a040"/>
+              <circle cx="16" cy="12" r="6" fill="white"/>
+              <text x="16" y="16" font-size="8" text-anchor="middle" fill="#e8a040">🕌</text>
+            </svg>
+          `),
+          scaledSize: new window.google.maps.Size(32, 40),
+          anchor: new window.google.maps.Point(16, 40),
+        },
+      })
+
+      marker.addListener('click', () => {
+        const times = formatTimes(mosque)
+        const season = isSummer() ? '☀️ Summer' : '❄️ Winter'
+        const content = `
+          <div style="font-family: -apple-system, sans-serif; max-width: 220px; padding: 4px;">
+            <div style="font-size: 14px; font-weight: 700; color: #1a2a3a; margin-bottom: 6px; line-height: 1.3;">${mosque.name}</div>
+            <div style="font-size: 11px; color: #888; margin-bottom: 6px;">${season} Jummah Times</div>
+            <div style="font-size: 12px; color: #1a2a3a; line-height: 1.8; margin-bottom: 10px;">${times}</div>
+            <div style="display: flex; gap: 6px;">
+              <a href="https://maps.google.com/?q=${mosque.display_lat},${mosque.display_lng}" target="_blank"
+                style="flex: 1; background: #e8a040; color: white; text-align: center; padding: 7px 0; border-radius: 8px; font-size: 12px; font-weight: 700; text-decoration: none;">
+                Directions
+              </a>
+              ${mosque.website ? `<a href="${mosque.website}" target="_blank"
+                style="flex: 1; background: #f0f0f0; color: #1a2a3a; text-align: center; padding: 7px 0; border-radius: 8px; font-size: 12px; font-weight: 600; text-decoration: none;">
+                Website
+              </a>` : ''}
+            </div>
+          </div>
+        `
+        infoWindow.setContent(content)
+        infoWindow.open(map, marker)
+      })
+    })
+
+    // Try to center on user location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        map.setCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+        map.setZoom(11)
+        new window.google.maps.Marker({
+          position: { lat: pos.coords.latitude, lng: pos.coords.longitude },
+          map,
+          icon: {
+            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+                <circle cx="8" cy="8" r="8" fill="#4a90d9" opacity="0.3"/>
+                <circle cx="8" cy="8" r="4" fill="#4a90d9"/>
+              </svg>
+            `),
+            scaledSize: new window.google.maps.Size(16, 16),
+            anchor: new window.google.maps.Point(8, 8),
+          },
+          zIndex: 1000,
+        })
+      })
+    }
+  }, [mapReady, mosques])
 
   return (
-    <div style={{ maxWidth: 430, margin: '0 auto', background: '#f5f5f5', height: '100vh', display: 'flex', flexDirection: 'column', paddingBottom: 60 }}>
-
-      {/* Header */}
-      <div style={{
-        background: 'linear-gradient(90deg, #7db8e8, #c8e4f8)',
-        padding: '52px 20px 16px',
-        flexShrink: 0,
-      }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a2a3a' }}>
-          🗺️ Mosques near you
-        </h1>
-        <p style={{ fontSize: 13, color: 'rgba(26,42,58,0.6)', marginTop: 2 }}>
-          {mosques.length} mosques in the Bay Area
+    <div style={{ maxWidth: 430, margin: '0 auto', background: '#f5f5f5', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ background: 'linear-gradient(180deg, #7db8e8 0%, #c8e4f8 60%, #f0c090 100%)', padding: '52px 20px 20px' }}>
+        <button onClick={() => navigate('/')} style={{ fontSize: 14, color: 'rgba(26,42,58,0.65)', marginBottom: 10, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
+        <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a2a3a', marginBottom: 2 }}>🗺️ Mosque Map</h1>
+        <p style={{ fontSize: 14, color: 'rgba(26,42,58,0.6)' }}>
+          {mosques.length} mosques · Tap a pin for Jummah times
         </p>
       </div>
 
-      {/* Map or placeholder */}
-      <div ref={mapRef} style={{ flex: 1, background: '#e8f0e8', position: 'relative' }}>
-        {!mapLoaded && (
-          <div style={{
-            position: 'absolute', inset: 0,
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            background: '#e8f4f8', gap: 12,
-          }}>
-            <div style={{ fontSize: 48 }}>🕌</div>
-            <div style={{ fontSize: 15, fontWeight: 600, color: '#1a2a3a' }}>
-              Map coming soon
+      <div style={{ flex: 1, position: 'relative', minHeight: 500 }}>
+        {(loading || !mapReady) && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5', zIndex: 10 }}>
+            <div style={{ textAlign: 'center', color: 'rgba(26,42,58,0.4)' }}>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>🕌</div>
+              <div style={{ fontSize: 15 }}>Loading map...</div>
             </div>
-            <div style={{ fontSize: 13, color: 'rgba(26,42,58,0.5)', textAlign: 'center', padding: '0 32px', lineHeight: 1.5 }}>
-              Google Maps API key needed to show {mosques.length} mosque pins
-            </div>
-            <button
-              onClick={() => navigate('/jummah')}
-              style={{
-                background: '#e8a040', color: 'white', border: 'none',
-                borderRadius: 12, padding: '12px 24px',
-                fontSize: 14, fontWeight: 700, marginTop: 8,
-              }}
-            >
-              View list instead →
-            </button>
           </div>
         )}
+        <div ref={mapRef} style={{ width: '100%', height: '100%', minHeight: 500 }} />
       </div>
-
-      {/* Selected mosque card - slides up */}
-      {selected && (
-        <div style={{
-          position: 'fixed', bottom: 60, left: '50%', transform: 'translateX(-50%)',
-          width: '100%', maxWidth: 430,
-          background: 'white', borderRadius: '20px 20px 0 0',
-          padding: '20px 20px 16px',
-          boxShadow: '0 -4px 24px rgba(0,0,0,0.12)',
-          zIndex: 50,
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-            <div style={{ flex: 1, paddingRight: 8 }}>
-              <div style={{ fontSize: 17, fontWeight: 700, color: '#1a2a3a', marginBottom: 3 }}>
-                {selected.name}
-              </div>
-              {selected.location_area && (
-                <div style={{ fontSize: 13, color: 'rgba(26,42,58,0.5)' }}>
-                  📍 {selected.location_area}
-                </div>
-              )}
-            </div>
-            <button onClick={() => setSelected(null)} style={{
-              background: '#f0f0f0', border: 'none', borderRadius: 20,
-              width: 30, height: 30, fontSize: 16, cursor: 'pointer',
-            }}>✕</button>
-          </div>
-
-          {times.length > 0 && (
-            <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
-              {times.map((t, i) => (
-                <div key={i} style={{
-                  background: '#f0f7ff', borderRadius: 10,
-                  padding: '8px 14px', flex: 1, minWidth: 90,
-                }}>
-                  <div style={{ fontSize: 11, color: 'rgba(26,42,58,0.5)', marginBottom: 2 }}>
-                    {t.label} Jummah
-                  </div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: '#1a2a3a' }}>
-                    {t.time}
-                  </div>
-                  {t.iqama && (
-                    <div style={{ fontSize: 12, color: '#c87820', fontWeight: 600 }}>
-                      Iqama {t.iqama}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div style={{ display: 'flex', gap: 8 }}>
-            {selected.display_lat && (
-              <a
-                href={`https://maps.apple.com/?daddr=${selected.display_lat},${selected.display_lng}`}
-                style={{
-                  flex: 1, background: '#e8a040', borderRadius: 10,
-                  padding: '11px 0', fontSize: 14, fontWeight: 700,
-                  color: 'white', textAlign: 'center', textDecoration: 'none',
-                }}
-              >Get Directions</a>
-            )}
-            {selected.website && (
-              <a
-                href={selected.website}
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  flex: 1, background: '#f0f0f0', borderRadius: 10,
-                  padding: '11px 0', fontSize: 14, fontWeight: 600,
-                  color: '#1a2a3a', textAlign: 'center', textDecoration: 'none',
-                }}
-              >Website</a>
-            )}
-          </div>
-        </div>
-      )}
 
       <BottomNav />
     </div>

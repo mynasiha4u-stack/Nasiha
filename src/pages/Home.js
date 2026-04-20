@@ -44,12 +44,10 @@ export default function Home() {
     <div style={{ maxWidth: 430, margin: '0 auto', background: 'white', minHeight: '100vh', paddingBottom: 80 }}>
 
       <AsrHero city={city} onCityTap={() => alert('City picker coming soon')}>
-        <div style={{ fontSize: 20, fontWeight: 800, color: '#1a2a3a', marginBottom: 2, letterSpacing: -0.5 }}>
-          nasiha
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 20, fontWeight: 800, color: '#1a2a3a', letterSpacing: -0.5 }}>nasiha</span>
+          <span style={{ fontSize: 15, fontWeight: 500, color: 'rgba(26,42,58,0.6)' }}>Your community, all in one place</span>
         </div>
-        <h1 style={{ fontSize: 24, fontWeight: 600, color: '#1a2a3a', lineHeight: 1.25, marginBottom: 20 }}>
-          Your community,<br/>all in one place
-        </h1>
 
         <div style={{
           background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.9)',

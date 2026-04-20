@@ -5,9 +5,9 @@ export default function AsrHero({ city, onCityTap, children }) {
     <div style={{
       position: 'relative',
       background: 'linear-gradient(180deg, #7db8e8 0%, #a8d1f0 22%, #c8e4f8 40%, #e8d4b8 60%, #f0c090 76%, #f8e4b8 100%)',
-      padding: '52px 20px 44px',
+      padding: '48px 20px 20px',
       overflow: 'hidden',
-      minHeight: 260,
+      minHeight: 0,
     }}>
       {/* Soft clouds */}
       <svg style={{ position:'absolute', top:'18%', left:'4%', opacity:0.15, width:130 }} viewBox="0 0 130 40">
@@ -28,7 +28,7 @@ export default function AsrHero({ city, onCityTap, children }) {
           background: 'rgba(255,255,255,0.5)',
           border: '1px solid rgba(255,255,255,0.8)',
           borderRadius: 20, padding: '5px 12px 5px 8px',
-          marginBottom: 14, marginTop: 6,
+          marginBottom: 10, marginTop: 0,
         }}
       >
         <span style={{

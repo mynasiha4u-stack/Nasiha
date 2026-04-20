@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import BottomNav from '../components/BottomNav'
 
-const GOOGLE_MAPS_API_KEY = 'AIzaSyAPVYAun2axXdzTwwQJvcqUmygZYUYZxnw'
+const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY
 
 function isSummer() {
   const now = new Date()

@@ -6,19 +6,11 @@ import BottomNav from '../components/BottomNav'
 const EVENT_TYPES = ['Halaqa', 'Islamic Learning', 'Wellness', 'Family & Kids', 'Community', 'Fundraiser', 'Matrimonial', 'Civic', 'Arts & Culture', 'Food & Drink']
 const AUDIENCES = ['General Public', 'Sisters Only', 'Brothers Only', 'Youth', 'Families']
 
-const TYPE_COLORS = {
-  'Halaqa':          { bg: '#7c6bb0', color: 'white' },
-  'Islamic Learning':{ bg: '#c87c0a', color: 'white' },
-  'Wellness':        { bg: '#2a8a4a', color: 'white' },
-  'Family & Kids':   { bg: '#c43a6a', color: 'white' },
-  'Community':       { bg: '#1a5a9a', color: 'white' },
-  'Fundraiser':      { bg: '#b85a0a', color: 'white' },
-  'Matrimonial':     { bg: '#8a2aa0', color: 'white' },
-  'Civic':           { bg: '#1a6a8a', color: 'white' },
-  'Arts & Culture':  { bg: '#8a6a00', color: 'white' },
-  'Food & Drink':    { bg: '#1a7a5a', color: 'white' },
-  'Default':         { bg: '#555', color: 'white' },
-}
+// Single color per dimension — sunset palette
+const TYPE_COLOR = { bg: '#e8943a', color: 'white' }   // amber
+const AUDIENCE_COLOR = { bg: '#9b87c4', color: 'white' } // lavender
+// Keep for backwards compat
+const TYPE_COLORS = { Default: TYPE_COLOR }
 
 function detectTypes(name, description) {
   const text = (name + ' ' + (description || '')).toLowerCase()
@@ -82,18 +74,17 @@ function formatTime(timeStr) {
 }
 
 function TypeBadge({ type }) {
-  const tc = TYPE_COLORS[type] || TYPE_COLORS.Default
-  return <span style={{ background: tc.bg, color: tc.color, fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5 }}>{type}</span>
+  return <span style={{ background: TYPE_COLOR.bg, color: TYPE_COLOR.color, fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5 }}>{type}</span>
 }
 
 function AudienceBadge({ audience }) {
-  return <span style={{ background: 'rgba(0,0,0,0.55)', color: 'white', fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5 }}>{audience}</span>
+  return <span style={{ background: AUDIENCE_COLOR.bg, color: AUDIENCE_COLOR.color, fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5 }}>{audience}</span>
 }
 
 function EventCard({ event, onTap }) {
   const types = event.event_type ? [event.event_type] : detectTypes(event.name, event.description)
   const audiences = (event.event_audience && event.event_audience.length > 0) ? event.event_audience : detectAudiences(event.name, event.description)
-  const tc = TYPE_COLORS[types[0]] || TYPE_COLORS.Default
+  const tc = TYPE_COLOR
   const imageUrl = event.image_url || event.instagram
 
   return (

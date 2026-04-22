@@ -355,7 +355,7 @@ export default function Events() {
       .order('event_date', { ascending: true })
       .then(({ data }) => {
         // Filter out Jummah events on display too
-        const filtered = (data || []).filter(e => !/jumu.?ah|jummah/i.test(e.name))
+        const filtered = (data || []).filter(e => !/jumu.{0,3}ah|jummah|jumu|friday prayer/i.test(e.name))
         setEvents(filtered)
         setLoading(false)
       })

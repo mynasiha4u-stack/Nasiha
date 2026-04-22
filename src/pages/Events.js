@@ -6,55 +6,44 @@ import BottomNav from '../components/BottomNav'
 const EVENT_TYPES = ['Halaqa', 'Islamic Learning', 'Wellness', 'Family & Kids', 'Community', 'Fundraiser', 'Matrimonial', 'Civic', 'Arts & Culture', 'Food & Drink']
 const AUDIENCES = ['General Public', 'Sisters Only', 'Brothers Only', 'Youth', 'Families']
 
-// Single color per dimension — sunset palette
-const TYPE_COLOR = { bg: '#e8943a', color: 'white' }   // amber
-const AUDIENCE_COLOR = { bg: '#9b87c4', color: 'white' } // lavender
-// Keep for backwards compat
-const TYPE_COLORS = { Default: TYPE_COLOR }
+const TYPE_COLOR = { bg: '#e8943a', color: 'white' }
+const AUDIENCE_COLOR = { bg: '#9b87c4', color: 'white' }
 
 function detectTypes(name, description) {
-  const text = (name + ' ' + (description || '')).toLowerCase()
-  const types = []
-
-  if (text.includes('halaqa')) { types.push('Halaqa'); }
-  else if (text.includes('quran') || text.includes('tafseer') || text.includes('tafsir') || text.includes('fiqh') || text.includes('hadith') || text.includes('islamic studies') || text.includes('lecture series') || text.includes('weekly class')) types.push('Islamic Learning')
-  else if (text.includes('zumba') || text.includes('hike') || text.includes('hiking') || text.includes('bike') || text.includes('fitness') || text.includes('sport') || text.includes('outdoor') || text.includes('walk') || text.includes('run')) types.push('Wellness')
-  else if (text.includes('mommy') || text.includes('toddler') || text.includes('preschool') || text.includes('parenting') || text.includes('children') || text.includes('kids program') || text.includes('playgroup')) types.push('Family & Kids')
-  else if (text.includes('fundrais') || text.includes('gala') || text.includes('donation') || text.includes('tables @')) types.push('Fundraiser')
-  else if (text.includes('matrimon') || text.includes('singles') || text.includes('marriage')) types.push('Matrimonial')
-  else if (text.includes('palestine') || text.includes('gaza') || text.includes('political') || text.includes('civic') || text.includes('advocacy') || text.includes('social justice')) types.push('Civic')
-  else if (text.includes('book club') || text.includes('reading group') || text.includes('film') || text.includes('art') || text.includes('poetry') || text.includes('culture')) types.push('Arts & Culture')
-  else if (text.includes('food') || text.includes('dinner') || text.includes('iftar') || text.includes('suhoor') || text.includes('potluck') || text.includes('meal') || text.includes('burger') || text.includes('restaurant')) types.push('Food & Drink')
+  const title = name.toLowerCase()
+  const desc = (description || '').toLowerCase()
+  const both = title + ' ' + desc
+  let types = []
+  if (title.includes('halaqa')) types.push('Halaqa')
+  else if (/quran|tafseer|tafsir|fiqh|hadith|islamic studies|lecture series|weekly class|seerah|aqeedah/.test(both)) types.push('Islamic Learning')
+  else if (/zumba|hike|hiking|bike|fitness|sport|outdoor|walk|run|yoga|swim/.test(both)) types.push('Wellness')
+  else if (/mommy|toddler|preschool|parenting|children'?s program|playgroup|kids program/.test(both)) types.push('Family & Kids')
+  else if (/fundrais|gala|donation|annual dinner|banquet|tables @/.test(both)) types.push('Fundraiser')
+  else if (/matrimon|singles|marriage event|speed meet/.test(both)) types.push('Matrimonial')
+  else if (/palestine|gaza|political|civic|advocacy|social justice|human rights/.test(both)) types.push('Civic')
+  else if (/book club|reading group|film|poetry|art show|culture night/.test(both)) types.push('Arts & Culture')
+  else if (/food festival|suhoor fest|iftar dinner|halal food|restaurant night|pop.?up/.test(both)) types.push('Food & Drink')
   else types.push('Community')
-
-  // Add a second type if applicable
-  if (types[0] !== 'Wellness' && (text.includes('zumba') || text.includes('hike') || text.includes('bike') || text.includes('fitness'))) types.push('Wellness')
-  if (types[0] !== 'Food & Drink' && (text.includes('dinner') || text.includes('iftar') || text.includes('potluck'))) types.push('Food & Drink')
-
+  if (!types.includes('Wellness') && /zumba|hike|bike|fitness|sport/.test(both)) types.push('Wellness')
+  if (!types.includes('Food & Drink') && /iftar dinner|suhoor|potluck|community dinner/.test(title)) types.push('Food & Drink')
+  if (!types.includes('Civic') && /palestine|gaza/.test(both)) types.push('Civic')
   return types.slice(0, 2)
 }
 
 function detectAudiences(name, description) {
-  // Use title as primary signal — much more reliable than description
   const title = name.toLowerCase()
   const desc = (description || '').toLowerCase()
+  const isFamilyContext = /famil|mommy|toddler|preschool|parent|playgroup|ages [1-5]|ages one to/.test(title)
   const audiences = []
-
-  // Sisters — title mentions women/sisters/girls explicitly
   if (/sister|women'?s|girls|female|mommy|mothers?/.test(title)) audiences.push('Sisters Only')
-
-  // Brothers — title mentions men/brothers/boys explicitly, not as part of a family program
-  // Exclude "boys AND girls" or family programs
-  const hasBoysMen = /men'?s|brothers?|boys? halaqa|boys? program|adhan program for boys/.test(title)
-  const isFamilyContext = /famil|mommy|toddler|preschool|parent/.test(title)
-  if (hasBoysMen && !isFamilyContext) audiences.push('Brothers Only')
-
-  // Youth — title mentions teens/youth/school age
-  if (/youth|teen|high school|middle school|elementary|junior/.test(title)) audiences.push('Youth')
-
-  // Families — title mentions family/kids/toddler/parenting
+  else if (/sisters only|women only|for women|for sisters/.test(desc)) audiences.push('Sisters Only')
+  const brothersTitle = /\bmen'?s\b|brothers?|boys? halaqa|boys? program|adhan.*boys|for men\b/.test(title)
+  if (brothersTitle && !isFamilyContext) audiences.push('Brothers Only')
+  else if (/brothers only|men only|for brothers\b/.test(desc)) audiences.push('Brothers Only')
+  if (/youth|teen|high school|middle school|elementary|junior|ages 1[2-9]/.test(title)) audiences.push('Youth')
+  else if (/for teens|for youth|ages 12|ages 13|ages 14|ages 15|grades [6-9]/.test(desc)) audiences.push('Youth')
   if (/famil|toddler|preschool|parenting|mommy|children'?s/.test(title)) audiences.push('Families')
-
+  else if (/for families|bring your kids|children welcome|family friendly/.test(desc)) audiences.push('Families')
   if (audiences.length === 0) audiences.push('General Public')
   return audiences
 }
@@ -84,7 +73,6 @@ function AudienceBadge({ audience }) {
 function EventCard({ event, onTap }) {
   const types = event.event_type ? [event.event_type] : detectTypes(event.name, event.description)
   const audiences = (event.event_audience && event.event_audience.length > 0) ? event.event_audience : detectAudiences(event.name, event.description)
-  const tc = TYPE_COLOR
   const imageUrl = event.image_url || event.instagram
 
   return (
@@ -93,25 +81,20 @@ function EventCard({ event, onTap }) {
       border: '1px solid rgba(0,0,0,0.08)',
       overflow: 'hidden', marginBottom: 12, cursor: 'pointer',
     }}>
-      {/* Image / placeholder */}
-      <div style={{ position: 'relative', height: 130, background: tc.bg, overflow: 'hidden' }}>
+      <div style={{ position: 'relative', height: 130, background: '#f0edf8', overflow: 'hidden' }}>
         {imageUrl
           ? <img src={imageUrl} alt={event.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, fontWeight: 800, color: 'rgba(26,42,58,0.1)', letterSpacing: 3 }}>
               {event.location_area?.split(' ').map(w => w[0]).join('').substring(0, 3)}
             </div>
         }
-        {/* Type + audience badges — bottom left on image */}
         <div style={{ position: 'absolute', bottom: 8, left: 8, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
           {types.map(t => <TypeBadge key={t} type={t} />)}
           {audiences.filter(a => a !== 'General Public').map(a => <AudienceBadge key={a} audience={a} />)}
         </div>
       </div>
-
-      {/* Card content */}
       <div style={{ padding: '12px 14px' }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a', marginBottom: 6, lineHeight: 1.3 }}>{event.name}</div>
-        {/* Date + time together on one line */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
           <span style={{ fontSize: 12, fontWeight: 700, color: '#1a2a3a' }}>{formatDate(event.event_date)}</span>
           {event.event_time && <>
@@ -119,144 +102,108 @@ function EventCard({ event, onTap }) {
             <span style={{ fontSize: 12, color: 'rgba(26,42,58,0.6)' }}>{formatTime(event.event_time)}</span>
           </>}
         </div>
-        {/* Area on its own line */}
         <div style={{ fontSize: 11, color: 'rgba(26,42,58,0.4)' }}>{event.location_area}</div>
       </div>
     </div>
   )
 }
 
-function MiniCalendar({ selectedDate, onChange }) {
+// Compact inline calendar for date filtering on main page
+function InlineCalendar({ selectedDate, onChange, onClose }) {
   const today = new Date()
   const [viewMonth, setViewMonth] = React.useState(today.getMonth())
   const [viewYear, setViewYear] = React.useState(today.getFullYear())
-
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
   const firstDay = new Date(viewYear, viewMonth, 1).getDay()
-  const monthName = new Date(viewYear, viewMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  const monthName = new Date(viewYear, viewMonth).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
 
-  const prevMonth = () => {
-    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1) }
-    else setViewMonth(m => m - 1)
-  }
-  const nextMonth = () => {
-    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1) }
-    else setViewMonth(m => m + 1)
-  }
+  const prevMonth = () => { if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y-1) } else setViewMonth(m => m-1) }
+  const nextMonth = () => { if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y+1) } else setViewMonth(m => m+1) }
 
-  const toDateStr = (d) => {
-    const mo = String(viewMonth + 1).padStart(2, '0')
-    const dd = String(d).padStart(2, '0')
-    return `${viewYear}-${mo}-${dd}`
-  }
-
-  const isToday = (d) => {
-    const t = new Date()
-    return d === t.getDate() && viewMonth === t.getMonth() && viewYear === t.getFullYear()
-  }
-
-  const isSelected = (d) => selectedDate === toDateStr(d)
+  const toDateStr = (d) => `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
   const isPast = (d) => new Date(viewYear, viewMonth, d) < new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  const isSelected = (d) => selectedDate === toDateStr(d)
+  const isToday = (d) => d === today.getDate() && viewMonth === today.getMonth() && viewYear === today.getFullYear()
 
-  const days = []
-  for (let i = 0; i < firstDay; i++) days.push(null)
-  for (let i = 1; i <= daysInMonth; i++) days.push(i)
+  const cells = []
+  for (let i = 0; i < firstDay; i++) cells.push(null)
+  for (let i = 1; i <= daysInMonth; i++) cells.push(i)
 
   return (
-    <div style={{ userSelect: 'none' }}>
-      {/* Month nav */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <button onClick={prevMonth} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#1a2a3a', padding: '4px 8px' }}>‹</button>
+    <div style={{ background: 'white', borderRadius: 14, padding: '12px 14px', marginBottom: 12, border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 4px 16px rgba(0,0,0,0.1)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <button onClick={prevMonth} style={{ background: 'none', border: 'none', fontSize: 16, cursor: 'pointer', color: '#1a2a3a', padding: '2px 6px' }}>‹</button>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2a3a' }}>{monthName}</div>
-        <button onClick={nextMonth} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#1a2a3a', padding: '4px 8px' }}>›</button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {selectedDate && <button onClick={() => { onChange(null); onClose() }} style={{ fontSize: 11, color: '#9b87c4', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Clear</button>}
+          <button onClick={nextMonth} style={{ background: 'none', border: 'none', fontSize: 16, cursor: 'pointer', color: '#1a2a3a', padding: '2px 6px' }}>›</button>
+        </div>
       </div>
-      {/* Day headers */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 4 }}>
-        {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => (
-          <div key={d} style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: 'rgba(26,42,58,0.35)', padding: '2px 0' }}>{d}</div>
+        {['S','M','T','W','T','F','S'].map((d,i) => (
+          <div key={i} style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: 'rgba(26,42,58,0.35)', padding: '2px 0' }}>{d}</div>
         ))}
       </div>
-      {/* Days grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
-        {days.map((d, i) => (
-          <div key={i} onClick={() => d && !isPast(d) && onChange(isSelected(d) ? null : toDateStr(d))}
+        {cells.map((d, i) => (
+          <div key={i} onClick={() => { if (d && !isPast(d)) { onChange(isSelected(d) ? null : toDateStr(d)); if (!isSelected(d)) onClose() } }}
             style={{
-              textAlign: 'center', padding: '6px 0', borderRadius: 8, fontSize: 13,
-              fontWeight: isSelected(d) ? 700 : isToday(d) ? 600 : 400,
+              textAlign: 'center', padding: '5px 0', borderRadius: 7, fontSize: 12,
+              fontWeight: isSelected(d) ? 700 : 400,
               background: isSelected(d) ? '#e8943a' : 'transparent',
               color: isSelected(d) ? 'white' : isPast(d) || !d ? 'rgba(26,42,58,0.2)' : isToday(d) ? '#e8943a' : '#1a2a3a',
               cursor: d && !isPast(d) ? 'pointer' : 'default',
             }}>{d || ''}</div>
         ))}
       </div>
-      {selectedDate && (
-        <button onClick={() => onChange(null)} style={{ width: '100%', marginTop: 10, background: 'none', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 8, padding: '6px 0', fontSize: 12, color: 'rgba(26,42,58,0.5)', cursor: 'pointer' }}>
-          Clear date
-        </button>
-      )}
     </div>
   )
 }
 
-function FiltersPanel({ activeTypes, activeAudiences, activeDate, onTypesChange, onAudiencesChange, onDateChange, onClose }) {
+// Compact filters panel — slide up from bottom, just type + audience
+function FiltersPanel({ activeTypes, activeAudiences, onTypesChange, onAudiencesChange, onClose }) {
   const [localTypes, setLocalTypes] = useState(activeTypes)
   const [localAudiences, setLocalAudiences] = useState(activeAudiences)
-  const [localDate, setLocalDate] = useState(activeDate)
-
-  const toggleType = (t) => setLocalTypes(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])
-  const toggleAudience = (a) => setLocalAudiences(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a])
+  const toggleType = (t) => setLocalTypes(prev => prev.includes(t) ? prev.filter(x => x!==t) : [...prev,t])
+  const toggleAudience = (a) => setLocalAudiences(prev => prev.includes(a) ? prev.filter(x => x!==a) : [...prev,a])
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-      <div onClick={onClose} style={{ flex: 1, background: 'rgba(0,0,0,0.4)' }} />
-      <div style={{ background: 'white', borderRadius: '20px 20px 0 0', padding: '20px 20px 40px', maxHeight: '75vh', overflowY: 'auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <div style={{ fontSize: 17, fontWeight: 700, color: '#1a2a3a' }}>Filters</div>
-          <button onClick={() => { setLocalTypes([]); setLocalAudiences([]); setLocalDate(null) }} style={{ fontSize: 13, color: '#9b87c4', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Clear all</button>
+      <div onClick={onClose} style={{ flex: 1, background: 'rgba(0,0,0,0.35)' }} />
+      <div style={{ background: 'white', borderRadius: '18px 18px 0 0', padding: '16px 16px 32px', maxHeight: '40vh', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a' }}>Filters</div>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <button onClick={() => { setLocalTypes([]); setLocalAudiences([]) }} style={{ fontSize: 12, color: '#9b87c4', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Clear</button>
+            <button onClick={() => { onTypesChange(localTypes); onAudiencesChange(localAudiences); onClose() }} style={{ background: '#1a2a3a', color: 'white', border: 'none', borderRadius: 20, padding: '6px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+              Apply {(localTypes.length + localAudiences.length) > 0 ? `(${localTypes.length + localAudiences.length})` : ''}
+            </button>
+          </div>
         </div>
 
-        <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(26,42,58,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Event Type</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
-          {EVENT_TYPES.map(t => {
-            const active = localTypes.includes(t)
-            const tc = TYPE_COLORS[t] || TYPE_COLORS.Default
-            return (
-              <button key={t} onClick={() => toggleType(t)} style={{
-                padding: '7px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                background: active ? tc.bg : '#f5f5f5',
-                color: active ? tc.color : 'rgba(26,42,58,0.6)',
-                border: active ? `1.5px solid ${tc.color}` : '1.5px solid transparent',
-              }}>{t}</button>
-            )
-          })}
+        <div style={{ fontSize: 10, fontWeight: 800, color: '#1a2a3a', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Event Type</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
+          {EVENT_TYPES.map(t => (
+            <button key={t} onClick={() => toggleType(t)} style={{
+              padding: '5px 11px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+              background: localTypes.includes(t) ? TYPE_COLOR.bg : '#f0f0f0',
+              color: localTypes.includes(t) ? 'white' : '#1a2a3a',
+              border: 'none',
+            }}>{t}</button>
+          ))}
         </div>
 
-        <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(26,42,58,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Date</div>
-        <div style={{ marginBottom: 20 }}>
-          <MiniCalendar selectedDate={localDate} onChange={setLocalDate} />
+        <div style={{ fontSize: 10, fontWeight: 800, color: '#1a2a3a', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Audience</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {AUDIENCES.map(a => (
+            <button key={a} onClick={() => toggleAudience(a)} style={{
+              padding: '5px 11px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+              background: localAudiences.includes(a) ? AUDIENCE_COLOR.bg : '#f0f0f0',
+              color: localAudiences.includes(a) ? 'white' : '#1a2a3a',
+              border: 'none',
+            }}>{a}</button>
+          ))}
         </div>
-
-        <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(26,42,58,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Audience</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
-          {AUDIENCES.map(a => {
-            const active = localAudiences.includes(a)
-            return (
-              <button key={a} onClick={() => toggleAudience(a)} style={{
-                padding: '7px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                background: active ? '#1a2a3a' : '#f5f5f5',
-                color: active ? 'white' : 'rgba(26,42,58,0.6)',
-                border: '1.5px solid transparent',
-              }}>{a}</button>
-            )
-          })}
-        </div>
-
-        <button onClick={() => { onTypesChange(localTypes); onAudiencesChange(localAudiences); onDateChange(localDate); onClose() }} style={{
-          width: '100%', background: '#1a2a3a', color: 'white', border: 'none',
-          borderRadius: 14, padding: '14px 0', fontSize: 15, fontWeight: 700, cursor: 'pointer',
-        }}>
-          Apply Filters {(localTypes.length + localAudiences.length) > 0 ? `(${localTypes.length + localAudiences.length})` : ''}
-        </button>
       </div>
     </div>
   )
@@ -319,18 +266,14 @@ export function EventDetailPage() {
         <button onClick={() => navigate(-1)} style={{ fontSize: 14, color: 'rgba(26,42,58,0.65)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
         <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
           {types.map(t => <TypeBadge key={t} type={t} />)}
-          {audiences.filter(a => a !== 'General Public').map(a => (
-            <span key={a} style={{ background: 'rgba(26,42,58,0.12)', color: 'rgba(26,42,58,0.7)', fontSize: 10, fontWeight: 600, padding: '3px 7px', borderRadius: 5 }}>{a}</span>
-          ))}
+          {audiences.filter(a => a !== 'General Public').map(a => <AudienceBadge key={a} audience={a} />)}
         </div>
         <h1 style={{ fontSize: 20, fontWeight: 800, color: '#1a2a3a', lineHeight: 1.3, marginBottom: 4 }}>{event.name}</h1>
         <div style={{ fontSize: 13, color: 'rgba(26,42,58,0.6)' }}>{event.location_area}</div>
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
-        {imageUrl && (
-          <img src={imageUrl} alt={event.name} style={{ width: '100%', borderRadius: 16, marginBottom: 12, objectFit: 'cover', maxHeight: 220 }} />
-        )}
+        {imageUrl && <img src={imageUrl} alt={event.name} style={{ width: '100%', borderRadius: 16, marginBottom: 12, objectFit: 'cover', maxHeight: 220 }} />}
 
         <div style={{ background: 'white', borderRadius: 16, padding: 16, marginBottom: 12, border: '1px solid rgba(0,0,0,0.08)' }}>
           {[
@@ -381,6 +324,7 @@ export default function Events() {
   const [loading, setLoading] = useState(true)
   const [showPast, setShowPast] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
+  const [showCalendar, setShowCalendar] = useState(false)
   const [activeTypes, setActiveTypes] = useState([])
   const [activeAudiences, setActiveAudiences] = useState([])
   const [activeDate, setActiveDate] = useState(null)
@@ -393,13 +337,8 @@ export default function Events() {
       .eq('category_id', 'd916a550-c316-40a9-9582-35836417b6cb')
       .eq('status', 'published')
       .order('event_date', { ascending: !showPast })
-
-    if (showPast) {
-      query.lt('event_date', today).limit(30)
-    } else {
-      query.gte('event_date', today)
-    }
-
+    if (showPast) query.lt('event_date', today).limit(30)
+    else query.gte('event_date', today)
     query.then(({ data }) => { setEvents(data || []); setLoading(false) })
   }, [showPast])
 
@@ -439,35 +378,41 @@ export default function Events() {
       <div style={{ padding: '16px 16px 0' }}>
         <NewsletterStrip />
 
-        {/* Top controls row */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
-          {/* Upcoming / Past toggle */}
+        {/* Controls row */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
+          {/* Upcoming / Past */}
           <div style={{ display: 'inline-flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)', flex: 1 }}>
-            <button onClick={() => setShowPast(false)} style={{
-              flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
-              fontSize: 12, fontWeight: 600,
-              background: !showPast ? '#1a2a3a' : 'transparent',
-              color: !showPast ? 'white' : 'rgba(26,42,58,0.5)',
-            }}>Upcoming</button>
-            <button onClick={() => setShowPast(true)} style={{
-              flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
-              fontSize: 12, fontWeight: 600,
-              background: showPast ? '#1a2a3a' : 'transparent',
-              color: showPast ? 'white' : 'rgba(26,42,58,0.5)',
-            }}>Past</button>
+            <button onClick={() => setShowPast(false)} style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: !showPast ? '#1a2a3a' : 'transparent', color: !showPast ? 'white' : '#1a2a3a' }}>Upcoming</button>
+            <button onClick={() => setShowPast(true)} style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: showPast ? '#1a2a3a' : 'transparent', color: showPast ? 'white' : '#1a2a3a' }}>Past</button>
           </div>
 
+          {/* Date button */}
+          <button onClick={() => { setShowCalendar(c => !c); setShowFilters(false) }} style={{
+            display: 'flex', alignItems: 'center', gap: 5,
+            background: activeDate ? '#e8943a' : 'white',
+            color: activeDate ? 'white' : '#1a2a3a',
+            border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12,
+            padding: '9px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+          }}>📅 {activeDate ? formatDate(activeDate).replace(/\w+, /, '') : 'Date'}</button>
+
           {/* Filters button */}
-          <button onClick={() => setShowFilters(true)} style={{
-            display: 'flex', alignItems: 'center', gap: 6,
+          <button onClick={() => { setShowFilters(f => !f); setShowCalendar(false) }} style={{
+            display: 'flex', alignItems: 'center', gap: 5,
             background: filterCount > 0 ? '#1a2a3a' : 'white',
-            color: filterCount > 0 ? 'white' : 'rgba(26,42,58,0.7)',
-            border: '1px solid rgba(0,0,0,0.08)',
-            borderRadius: 12, padding: '9px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-          }}>
-            ⚙️ Filters {filterCount > 0 ? `(${filterCount})` : ''}
-          </button>
+            color: filterCount > 0 ? 'white' : '#1a2a3a',
+            border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12,
+            padding: '9px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+          }}>⚙️ {filterCount > 0 ? `Filters (${filterCount})` : 'Filters'}</button>
         </div>
+
+        {/* Inline calendar */}
+        {showCalendar && (
+          <InlineCalendar
+            selectedDate={activeDate}
+            onChange={setActiveDate}
+            onClose={() => setShowCalendar(false)}
+          />
+        )}
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(26,42,58,0.4)' }}>
@@ -479,14 +424,7 @@ export default function Events() {
           </div>
         ) : groups.map(group => (
           <div key={group.label}>
-            <div style={{
-              fontSize: 12, fontWeight: 700, color: 'rgba(26,42,58,0.5)',
-              textTransform: 'uppercase', letterSpacing: '0.08em',
-              marginBottom: 10, marginLeft: -16, marginRight: -16,
-              padding: '8px 16px',
-              position: 'sticky', top: 0, zIndex: 5,
-              background: '#f5f5f5',
-            }}>{group.label}</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(26,42,58,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, marginLeft: -16, marginRight: -16, padding: '8px 16px', position: 'sticky', top: 0, zIndex: 5, background: '#f5f5f5' }}>{group.label}</div>
             {group.events.map(e => <EventCard key={e.id} event={e} onTap={() => navigate(`/events/${e.url_slug}`)} />)}
           </div>
         ))}
@@ -496,14 +434,11 @@ export default function Events() {
         <FiltersPanel
           activeTypes={activeTypes}
           activeAudiences={activeAudiences}
-          activeDate={activeDate}
           onTypesChange={setActiveTypes}
           onAudiencesChange={setActiveAudiences}
-          onDateChange={setActiveDate}
           onClose={() => setShowFilters(false)}
         />
       )}
-
       <BottomNav />
     </div>
   )

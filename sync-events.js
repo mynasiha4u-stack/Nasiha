@@ -62,6 +62,11 @@ function parseICal(text) {
 
     if (!summary || !dtstart) continue
 
+    // Skip cancelled and private events
+    if (summary.toLowerCase().includes('*canceled*')) continue
+    if (summary.toLowerCase().includes('*cancelled*')) continue
+    if (summary.toLowerCase().trim() === 'private event') continue
+
     // Parse date
     const parseDate = (dt) => {
       if (!dt) return null

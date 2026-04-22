@@ -6,6 +6,7 @@ import Jummah from './pages/Jummah'
 import MapPage from './pages/Map'
 import MosqueDetail from './pages/MosqueDetail'
 import Events, { EventDetailPage } from './pages/Events'
+import Admin from './pages/Admin'
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
         <Route path="/jummah" element={<Jummah />} />
         <Route path="/events" element={<Events />} />
         <Route path="/events/:slug" element={<EventDetailPage />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="/map" element={<MapPage />} />
         <Route path="/jummah/:slug" element={<MosqueDetail />} />
       </Routes>

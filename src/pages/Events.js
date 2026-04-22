@@ -91,10 +91,10 @@ function AudienceBadge({ audience }) {
 }
 
 function EventCard({ event, onTap }) {
-  const types = detectTypes(event.name, event.description)
-  const audiences = detectAudiences(event.name, event.description)
+  const types = event.event_type ? [event.event_type] : detectTypes(event.name, event.description)
+  const audiences = (event.event_audience && event.event_audience.length > 0) ? event.event_audience : detectAudiences(event.name, event.description)
   const tc = TYPE_COLORS[types[0]] || TYPE_COLORS.Default
-  const imageUrl = event.instagram
+  const imageUrl = event.image_url || event.instagram
 
   return (
     <div onClick={() => onTap(event)} style={{
@@ -240,9 +240,9 @@ export function EventDetailPage() {
     </div>
   )
 
-  const types = detectTypes(event.name, event.description)
-  const audiences = detectAudiences(event.name, event.description)
-  const imageUrl = event.instagram
+  const types = event.event_type ? [event.event_type] : detectTypes(event.name, event.description)
+  const audiences = (event.event_audience && event.event_audience.length > 0) ? event.event_audience : detectAudiences(event.name, event.description)
+  const imageUrl = event.image_url || event.instagram
 
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#f5f5f5', minHeight: '100vh', paddingBottom: 80 }}>

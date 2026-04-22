@@ -126,9 +126,82 @@ function EventCard({ event, onTap }) {
   )
 }
 
-function FiltersPanel({ activeTypes, activeAudiences, onTypesChange, onAudiencesChange, onClose }) {
+function MiniCalendar({ selectedDate, onChange }) {
+  const today = new Date()
+  const [viewMonth, setViewMonth] = React.useState(today.getMonth())
+  const [viewYear, setViewYear] = React.useState(today.getFullYear())
+
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay()
+  const monthName = new Date(viewYear, viewMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+
+  const prevMonth = () => {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1) }
+    else setViewMonth(m => m - 1)
+  }
+  const nextMonth = () => {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1) }
+    else setViewMonth(m => m + 1)
+  }
+
+  const toDateStr = (d) => {
+    const mo = String(viewMonth + 1).padStart(2, '0')
+    const dd = String(d).padStart(2, '0')
+    return `${viewYear}-${mo}-${dd}`
+  }
+
+  const isToday = (d) => {
+    const t = new Date()
+    return d === t.getDate() && viewMonth === t.getMonth() && viewYear === t.getFullYear()
+  }
+
+  const isSelected = (d) => selectedDate === toDateStr(d)
+  const isPast = (d) => new Date(viewYear, viewMonth, d) < new Date(today.getFullYear(), today.getMonth(), today.getDate())
+
+  const days = []
+  for (let i = 0; i < firstDay; i++) days.push(null)
+  for (let i = 1; i <= daysInMonth; i++) days.push(i)
+
+  return (
+    <div style={{ userSelect: 'none' }}>
+      {/* Month nav */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <button onClick={prevMonth} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#1a2a3a', padding: '4px 8px' }}>‹</button>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2a3a' }}>{monthName}</div>
+        <button onClick={nextMonth} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#1a2a3a', padding: '4px 8px' }}>›</button>
+      </div>
+      {/* Day headers */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 4 }}>
+        {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => (
+          <div key={d} style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: 'rgba(26,42,58,0.35)', padding: '2px 0' }}>{d}</div>
+        ))}
+      </div>
+      {/* Days grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
+        {days.map((d, i) => (
+          <div key={i} onClick={() => d && !isPast(d) && onChange(isSelected(d) ? null : toDateStr(d))}
+            style={{
+              textAlign: 'center', padding: '6px 0', borderRadius: 8, fontSize: 13,
+              fontWeight: isSelected(d) ? 700 : isToday(d) ? 600 : 400,
+              background: isSelected(d) ? '#e8943a' : 'transparent',
+              color: isSelected(d) ? 'white' : isPast(d) || !d ? 'rgba(26,42,58,0.2)' : isToday(d) ? '#e8943a' : '#1a2a3a',
+              cursor: d && !isPast(d) ? 'pointer' : 'default',
+            }}>{d || ''}</div>
+        ))}
+      </div>
+      {selectedDate && (
+        <button onClick={() => onChange(null)} style={{ width: '100%', marginTop: 10, background: 'none', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 8, padding: '6px 0', fontSize: 12, color: 'rgba(26,42,58,0.5)', cursor: 'pointer' }}>
+          Clear date
+        </button>
+      )}
+    </div>
+  )
+}
+
+function FiltersPanel({ activeTypes, activeAudiences, activeDate, onTypesChange, onAudiencesChange, onDateChange, onClose }) {
   const [localTypes, setLocalTypes] = useState(activeTypes)
   const [localAudiences, setLocalAudiences] = useState(activeAudiences)
+  const [localDate, setLocalDate] = useState(activeDate)
 
   const toggleType = (t) => setLocalTypes(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])
   const toggleAudience = (a) => setLocalAudiences(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a])
@@ -139,7 +212,7 @@ function FiltersPanel({ activeTypes, activeAudiences, onTypesChange, onAudiences
       <div style={{ background: 'white', borderRadius: '20px 20px 0 0', padding: '20px 20px 40px', maxHeight: '75vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <div style={{ fontSize: 17, fontWeight: 700, color: '#1a2a3a' }}>Filters</div>
-          <button onClick={() => { setLocalTypes([]); setLocalAudiences([]) }} style={{ fontSize: 13, color: '#9b87c4', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Clear all</button>
+          <button onClick={() => { setLocalTypes([]); setLocalAudiences([]); setLocalDate(null) }} style={{ fontSize: 13, color: '#9b87c4', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Clear all</button>
         </div>
 
         <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(26,42,58,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Event Type</div>
@@ -158,6 +231,11 @@ function FiltersPanel({ activeTypes, activeAudiences, onTypesChange, onAudiences
           })}
         </div>
 
+        <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(26,42,58,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Date</div>
+        <div style={{ marginBottom: 20 }}>
+          <MiniCalendar selectedDate={localDate} onChange={setLocalDate} />
+        </div>
+
         <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(26,42,58,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Audience</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
           {AUDIENCES.map(a => {
@@ -173,7 +251,7 @@ function FiltersPanel({ activeTypes, activeAudiences, onTypesChange, onAudiences
           })}
         </div>
 
-        <button onClick={() => { onTypesChange(localTypes); onAudiencesChange(localAudiences); onClose() }} style={{
+        <button onClick={() => { onTypesChange(localTypes); onAudiencesChange(localAudiences); onDateChange(localDate); onClose() }} style={{
           width: '100%', background: '#1a2a3a', color: 'white', border: 'none',
           borderRadius: 14, padding: '14px 0', fontSize: 15, fontWeight: 700, cursor: 'pointer',
         }}>
@@ -305,6 +383,7 @@ export default function Events() {
   const [showFilters, setShowFilters] = useState(false)
   const [activeTypes, setActiveTypes] = useState([])
   const [activeAudiences, setActiveAudiences] = useState([])
+  const [activeDate, setActiveDate] = useState(null)
 
   useEffect(() => {
     const today = new Date().toISOString().substring(0, 10)
@@ -325,12 +404,13 @@ export default function Events() {
   }, [showPast])
 
   const filtered = events.filter(e => {
+    if (activeDate && e.event_date !== activeDate) return false
     if (activeTypes.length > 0) {
-      const types = detectTypes(e.name, e.description)
+      const types = e.event_type ? [e.event_type] : detectTypes(e.name, e.description)
       if (!types.some(t => activeTypes.includes(t))) return false
     }
     if (activeAudiences.length > 0) {
-      const audiences = detectAudiences(e.name, e.description)
+      const audiences = (e.event_audience && e.event_audience.length > 0) ? e.event_audience : detectAudiences(e.name, e.description)
       if (!audiences.some(a => activeAudiences.includes(a))) return false
     }
     return true
@@ -346,7 +426,7 @@ export default function Events() {
     { label: 'Upcoming', events: filtered.filter(e => new Date(e.event_date) > endOfNextWeek) },
   ].filter(g => g.events.length > 0)
 
-  const filterCount = activeTypes.length + activeAudiences.length
+  const filterCount = activeTypes.length + activeAudiences.length + (activeDate ? 1 : 0)
 
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#f5f5f5', minHeight: '100vh', paddingBottom: 80 }}>
@@ -416,8 +496,10 @@ export default function Events() {
         <FiltersPanel
           activeTypes={activeTypes}
           activeAudiences={activeAudiences}
+          activeDate={activeDate}
           onTypesChange={setActiveTypes}
           onAudiencesChange={setActiveAudiences}
+          onDateChange={setActiveDate}
           onClose={() => setShowFilters(false)}
         />
       )}

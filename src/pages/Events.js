@@ -104,8 +104,8 @@ function EventCard({ event, onTap }) {
           </>}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          {event.internal_notes && (
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#1a2a3a', background: '#f0f0f0', padding: '2px 7px', borderRadius: 5 }}>{event.internal_notes}</span>
+          {(event.event_host || event.internal_notes) && (
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#1a2a3a', background: '#f0f0f0', padding: '2px 7px', borderRadius: 5 }}>{event.event_host || event.internal_notes}</span>
           )}
           <span style={{ fontSize: 11, color: 'rgba(26,42,58,0.4)' }}>{event.location_area}</span>
         </div>
@@ -361,7 +361,7 @@ export default function Events() {
       const audiences = (e.event_audience && e.event_audience.length > 0) ? e.event_audience : detectAudiences(e.name, e.description)
       if (!audiences.some(a => activeAudiences.includes(a))) return false
     }
-    if (activeMosques.length > 0 && !activeMosques.includes(e.internal_notes)) return false
+    if (activeMosques.length > 0 && !activeMosques.includes(e.event_host || e.internal_notes)) return false
     return true
   })
 

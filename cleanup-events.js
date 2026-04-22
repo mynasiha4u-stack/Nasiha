@@ -8,6 +8,14 @@ const supabase = createClient(
 const EVENTS_CAT = 'd916a550-c316-40a9-9582-35836417b6cb'
 
 async function main() {
+  // Delete the duplicate bike event with the extra dash in slug
+  const { data: dupDel } = await supabase
+    .from('content')
+    .delete()
+    .eq('url_slug', 'ride-your-bike-to-mcc-jumuah-get-a-free-iniburger--2026-04-24')
+    .select('name')
+  console.log(`Deleted ${dupDel?.length || 0} duplicate events`)
+
   // Delete cancelled
   const { data: cancelled, error: e1 } = await supabase
     .from('content')

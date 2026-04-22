@@ -95,11 +95,14 @@ function parseICal(text) {
 }
 
 function makeSlug(title, date) {
-  return title.toLowerCase()
-    .replace(/[^a-z0-9 ]/g, '')
-    .replace(/\s+/g, '-')
-    .substring(0, 50)
-    .replace(/-+$/, '') + '-' + (date ? date.substring(0, 10) : '')
+  const slug = title.toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')  // remove special chars
+    .trim()
+    .replace(/\s+/g, '-')          // spaces to dashes
+    .replace(/-+/g, '-')            // collapse multiple dashes
+    .substring(0, 45)
+    .replace(/-+$/, '')             // trim trailing dashes
+  return slug + '-' + (date ? date.substring(0, 10) : '')
 }
 
 async function syncFeed(feed) {

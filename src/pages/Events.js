@@ -43,12 +43,26 @@ function detectTypes(name, description) {
 }
 
 function detectAudiences(name, description) {
-  const text = (name + ' ' + (description || '')).toLowerCase()
+  // Use title as primary signal — much more reliable than description
+  const title = name.toLowerCase()
+  const desc = (description || '').toLowerCase()
   const audiences = []
-  if (text.includes('sister') || text.includes("women's") || text.includes('women ') || text.includes('mommy') || text.includes('mother') || text.includes('girls')) audiences.push('Sisters Only')
-  if (text.includes("men's") || text.includes('brother') || text.includes('boys') || text.includes('fathers') || text.includes('adhan program for boys')) audiences.push('Brothers Only')
-  if (text.includes('teen') || text.includes('youth') || text.includes('high school') || text.includes('middle school') || text.includes('elementary') || text.includes('ages 12') || text.includes('ages 13') || text.includes('ages 14') || text.includes('ages 15') || text.includes('ages 16')) audiences.push('Youth')
-  if (text.includes('famil') || text.includes('children') || text.includes('toddler') || text.includes('preschool') || text.includes('kids')) audiences.push('Families')
+
+  // Sisters — title mentions women/sisters/girls explicitly
+  if (/sister|women'?s|girls|female|mommy|mothers?/.test(title)) audiences.push('Sisters Only')
+
+  // Brothers — title mentions men/brothers/boys explicitly, not as part of a family program
+  // Exclude "boys AND girls" or family programs
+  const hasBoysMen = /men'?s|brothers?|boys? halaqa|boys? program|adhan program for boys/.test(title)
+  const isFamilyContext = /famil|mommy|toddler|preschool|parent/.test(title)
+  if (hasBoysMen && !isFamilyContext) audiences.push('Brothers Only')
+
+  // Youth — title mentions teens/youth/school age
+  if (/youth|teen|high school|middle school|elementary|junior/.test(title)) audiences.push('Youth')
+
+  // Families — title mentions family/kids/toddler/parenting
+  if (/famil|toddler|preschool|parenting|mommy|children'?s/.test(title)) audiences.push('Families')
+
   if (audiences.length === 0) audiences.push('General Public')
   return audiences
 }
@@ -69,11 +83,11 @@ function formatTime(timeStr) {
 
 function TypeBadge({ type }) {
   const tc = TYPE_COLORS[type] || TYPE_COLORS.Default
-  return <span style={{ background: tc.bg, color: tc.color, fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5 }}>{type}</span>
+  return <span style={{ background: tc.bg, color: tc.color, fontSize: 10, fontWeight: 800, padding: '4px 8px', borderRadius: 5, boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>{type}</span>
 }
 
 function AudienceBadge({ audience }) {
-  return <span style={{ background: 'rgba(0,0,0,0.12)', color: 'rgba(255,255,255,0.9)', fontSize: 10, fontWeight: 600, padding: '3px 7px', borderRadius: 5 }}>{audience}</span>
+  return <span style={{ background: 'rgba(0,0,0,0.55)', color: 'white', fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5 }}>{audience}</span>
 }
 
 function EventCard({ event, onTap }) {

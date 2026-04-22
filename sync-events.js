@@ -159,9 +159,34 @@ async function syncFeed(feed) {
   console.log(`  Done — ${inserted} inserted, ${skipped} already existed`)
 }
 
+async function backfillImages() {
+  console.log('\n📸 Backfilling images for existing events...')
+  const { data: events } = await supabase
+    .from('content')
+    .select('id, name, website, instagram')
+    .eq('category_id', EVENTS_CATEGORY_ID)
+    .is('instagram', null)
+    .not('website', 'is', null)
+
+  if (!events || events.length === 0) { console.log('  No events need images'); return }
+  console.log(`  Found ${events.length} events without images`)
+
+  for (const event of events) {
+    process.stdout.write(`  Fetching image for "${event.name.substring(0, 40)}"... `)
+    const imageUrl = await fetchEventImage(event.website)
+    if (imageUrl) {
+      await supabase.from('content').update({ instagram: imageUrl }).eq('id', event.id)
+      console.log('✅')
+    } else {
+      console.log('—')
+    }
+  }
+}
+
 async function main() {
   console.log('🕌 Nasiha Event Sync'); console.log('====================')
   for (const feed of FEEDS) await syncFeed(feed)
+  await backfillImages()
   console.log('\n✅ Sync complete')
 }
 main().catch(console.error)

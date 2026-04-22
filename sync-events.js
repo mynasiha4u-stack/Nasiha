@@ -133,6 +133,7 @@ function parseICal(text) {
     if (summary.toLowerCase().includes('*canceled*')) continue
     if (summary.toLowerCase().includes('*cancelled*')) continue
     if (/^private\s*event\s*$/i.test(summary.trim())) continue
+    if (/jumu.?ah|jummah|jumu'/i.test(summary)) continue
 
     const parseDate = (dt) => {
       if (!dt) return null

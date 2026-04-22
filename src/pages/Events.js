@@ -89,6 +89,13 @@ function EventCard({ event, onTap }) {
               {event.location_area?.split(' ').map(w => w[0]).join('').substring(0, 3)}
             </div>
         }
+        {/* Mosque name top-left */}
+        {(event.event_host || event.internal_notes) && (
+          <div style={{ position: 'absolute', top: 8, left: 8, background: 'rgba(0,0,0,0.55)', borderRadius: 6, padding: '3px 8px', fontSize: 10, fontWeight: 700, color: 'white' }}>
+            {event.event_host || event.internal_notes}
+          </div>
+        )}
+        {/* Type + audience badges bottom-left */}
         <div style={{ position: 'absolute', bottom: 8, left: 8, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
           {types.map(t => <TypeBadge key={t} type={t} />)}
           {audiences.filter(a => a !== 'General Public').map(a => <AudienceBadge key={a} audience={a} />)}
@@ -227,7 +234,7 @@ function NewsletterStrip() {
       ) : (
         <>
           <div style={{ fontSize: 14, fontWeight: 700, color: 'white', marginBottom: 4 }}>📬 Top events every week</div>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginBottom: 12 }}>Bay Area Muslim events in your inbox every Thursday</div>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginBottom: 12 }}>The best Bay Area Muslim events, every week</div>
           <div style={{ display: 'flex', gap: 8 }}>
             <input value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com"
               style={{ flex: 1, borderRadius: 10, border: 'none', padding: '10px 12px', fontSize: 14, outline: 'none' }} />
@@ -330,7 +337,6 @@ export default function Events() {
   const navigate = useNavigate()
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
-  const [showPast, setShowPast] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
   const [activeTypes, setActiveTypes] = useState([])
@@ -340,16 +346,20 @@ export default function Events() {
 
   useEffect(() => {
     const today = new Date().toISOString().substring(0, 10)
-    const query = supabase
+    supabase
       .from('content')
       .select('*')
       .eq('category_id', 'd916a550-c316-40a9-9582-35836417b6cb')
       .eq('status', 'published')
-      .order('event_date', { ascending: !showPast })
-    if (showPast) query.lt('event_date', today).limit(30)
-    else query.gte('event_date', today)
-    query.then(({ data }) => { setEvents(data || []); setLoading(false) })
-  }, [showPast])
+      .gte('event_date', today)
+      .order('event_date', { ascending: true })
+      .then(({ data }) => {
+        // Filter out Jummah events on display too
+        const filtered = (data || []).filter(e => !/jumu.?ah|jummah/i.test(e.name))
+        setEvents(filtered)
+        setLoading(false)
+      })
+  }, [])
 
   const filtered = events.filter(e => {
     if (activeDate && e.event_date !== activeDate) return false
@@ -369,7 +379,7 @@ export default function Events() {
   const endOfWeek = new Date(today); endOfWeek.setDate(today.getDate() + (7 - today.getDay()))
   const endOfNextWeek = new Date(endOfWeek); endOfNextWeek.setDate(endOfWeek.getDate() + 7)
 
-  const groups = showPast ? [{ label: 'Past Events', events: filtered }] : [
+  const groups = [
     { label: 'This Week', events: filtered.filter(e => new Date(e.event_date) <= endOfWeek) },
     { label: 'Next Week', events: filtered.filter(e => new Date(e.event_date) > endOfWeek && new Date(e.event_date) <= endOfNextWeek) },
     { label: 'Upcoming', events: filtered.filter(e => new Date(e.event_date) > endOfNextWeek) },
@@ -388,15 +398,16 @@ export default function Events() {
       <div style={{ padding: '16px 16px 0' }}>
         <NewsletterStrip />
 
-        {/* Controls row */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
-          {/* Upcoming / Past */}
-          <div style={{ display: 'inline-flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)', flex: 1 }}>
-            <button onClick={() => setShowPast(false)} style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: !showPast ? '#1a2a3a' : 'transparent', color: !showPast ? 'white' : '#1a2a3a' }}>Upcoming</button>
-            <button onClick={() => setShowPast(true)} style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: showPast ? '#1a2a3a' : 'transparent', color: showPast ? 'white' : '#1a2a3a' }}>Past</button>
-          </div>
+        {/* Mosque scrolling filter */}
+        <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 8, paddingBottom: 2, scrollbarWidth: 'none' }}>
+          <button onClick={() => setActiveMosques([])} style={{ padding: '6px 14px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: activeMosques.length === 0 ? '#1a2a3a' : 'white', color: activeMosques.length === 0 ? 'white' : '#1a2a3a', border: '1px solid rgba(0,0,0,0.1)', flexShrink: 0 }}>All</button>
+          {MOSQUES.map(m => (
+            <button key={m} onClick={() => setActiveMosques(activeMosques.includes(m) ? activeMosques.filter(x => x !== m) : [...activeMosques, m])} style={{ padding: '6px 14px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: activeMosques.includes(m) ? '#1a2a3a' : 'white', color: activeMosques.includes(m) ? 'white' : '#1a2a3a', border: '1px solid rgba(0,0,0,0.1)', flexShrink: 0 }}>{m}</button>
+          ))}
+        </div>
 
-          {/* Date button */}
+        {/* Date + Filters row */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
           <button onClick={() => { setShowCalendar(c => !c); setShowFilters(false) }} style={{
             display: 'flex', alignItems: 'center', gap: 5,
             background: activeDate ? '#e8943a' : 'white',
@@ -404,15 +415,13 @@ export default function Events() {
             border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12,
             padding: '9px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
           }}>📅 {activeDate ? formatDate(activeDate).replace(/\w+, /, '') : 'Date'}</button>
-
-          {/* Filters button */}
           <button onClick={() => { setShowFilters(f => !f); setShowCalendar(false) }} style={{
             display: 'flex', alignItems: 'center', gap: 5,
-            background: filterCount > 0 ? '#1a2a3a' : 'white',
-            color: filterCount > 0 ? 'white' : '#1a2a3a',
+            background: (activeTypes.length + activeAudiences.length) > 0 ? '#1a2a3a' : 'white',
+            color: (activeTypes.length + activeAudiences.length) > 0 ? 'white' : '#1a2a3a',
             border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12,
             padding: '9px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-          }}>⚙️ {filterCount > 0 ? `Filters (${filterCount})` : 'Filters'}</button>
+          }}>⚙️ {(activeTypes.length + activeAudiences.length) > 0 ? `Filters (${activeTypes.length + activeAudiences.length})` : 'Filters'}</button>
         </div>
 
         {/* Inline calendar */}

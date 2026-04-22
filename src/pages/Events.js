@@ -7,17 +7,17 @@ const EVENT_TYPES = ['Halaqa', 'Islamic Learning', 'Wellness', 'Family & Kids', 
 const AUDIENCES = ['General Public', 'Sisters Only', 'Brothers Only', 'Youth', 'Families']
 
 const TYPE_COLORS = {
-  'Halaqa':          { bg: '#dddaf8', color: '#3c2a8a' },
-  'Islamic Learning':{ bg: '#fde8c0', color: '#7a4a00' },
-  'Wellness':        { bg: '#c8f0dc', color: '#0a5c2a' },
-  'Family & Kids':   { bg: '#ffd6e8', color: '#8a1a4a' },
-  'Community':       { bg: '#b8d8f8', color: '#0a3a6a' },
-  'Fundraiser':      { bg: '#f8d4b0', color: '#7a3a00' },
-  'Matrimonial':     { bg: '#f0d4f8', color: '#5a1a7a' },
-  'Civic':           { bg: '#d4e8f0', color: '#0a3a5a' },
-  'Arts & Culture':  { bg: '#f8e4b0', color: '#6a4a00' },
-  'Food & Drink':    { bg: '#d4f0e8', color: '#0a4a2a' },
-  'Default':         { bg: '#f0f0f0', color: '#444' },
+  'Halaqa':          { bg: '#7c6bb0', color: 'white' },
+  'Islamic Learning':{ bg: '#c87c0a', color: 'white' },
+  'Wellness':        { bg: '#2a8a4a', color: 'white' },
+  'Family & Kids':   { bg: '#c43a6a', color: 'white' },
+  'Community':       { bg: '#1a5a9a', color: 'white' },
+  'Fundraiser':      { bg: '#b85a0a', color: 'white' },
+  'Matrimonial':     { bg: '#8a2aa0', color: 'white' },
+  'Civic':           { bg: '#1a6a8a', color: 'white' },
+  'Arts & Culture':  { bg: '#8a6a00', color: 'white' },
+  'Food & Drink':    { bg: '#1a7a5a', color: 'white' },
+  'Default':         { bg: '#555', color: 'white' },
 }
 
 function detectTypes(name, description) {
@@ -83,7 +83,7 @@ function formatTime(timeStr) {
 
 function TypeBadge({ type }) {
   const tc = TYPE_COLORS[type] || TYPE_COLORS.Default
-  return <span style={{ background: tc.bg, color: tc.color, fontSize: 10, fontWeight: 800, padding: '4px 8px', borderRadius: 5, boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>{type}</span>
+  return <span style={{ background: tc.bg, color: tc.color, fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5 }}>{type}</span>
 }
 
 function AudienceBadge({ audience }) {
@@ -94,7 +94,7 @@ function EventCard({ event, onTap }) {
   const types = detectTypes(event.name, event.description)
   const audiences = detectAudiences(event.name, event.description)
   const tc = TYPE_COLORS[types[0]] || TYPE_COLORS.Default
-  const imageUrl = event.instagram // we store image in instagram field temporarily
+  const imageUrl = event.instagram
 
   return (
     <div onClick={() => onTap(event)} style={{
@@ -102,6 +102,7 @@ function EventCard({ event, onTap }) {
       border: '1px solid rgba(0,0,0,0.08)',
       overflow: 'hidden', marginBottom: 12, cursor: 'pointer',
     }}>
+      {/* Image / placeholder */}
       <div style={{ position: 'relative', height: 130, background: tc.bg, overflow: 'hidden' }}>
         {imageUrl
           ? <img src={imageUrl} alt={event.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -109,22 +110,26 @@ function EventCard({ event, onTap }) {
               {event.location_area?.split(' ').map(w => w[0]).join('').substring(0, 3)}
             </div>
         }
-        {/* Date badge top right */}
-        <div style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,0.5)', borderRadius: 7, padding: '4px 9px', fontSize: 11, color: 'white', fontWeight: 700 }}>
-          {formatDate(event.event_date)}
-        </div>
-        {/* Type + audience badges bottom left */}
+        {/* Type + audience badges — bottom left on image */}
         <div style={{ position: 'absolute', bottom: 8, left: 8, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
           {types.map(t => <TypeBadge key={t} type={t} />)}
           {audiences.filter(a => a !== 'General Public').map(a => <AudienceBadge key={a} audience={a} />)}
         </div>
       </div>
 
+      {/* Card content */}
       <div style={{ padding: '12px 14px' }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a', marginBottom: 3, lineHeight: 1.3 }}>{event.name}</div>
-        <div style={{ fontSize: 12, color: 'rgba(26,42,58,0.5)' }}>
-          {event.location_area} · {formatTime(event.event_time)}
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a', marginBottom: 6, lineHeight: 1.3 }}>{event.name}</div>
+        {/* Date + time together on one line */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#1a2a3a' }}>{formatDate(event.event_date)}</span>
+          {event.event_time && <>
+            <span style={{ fontSize: 10, color: 'rgba(26,42,58,0.3)' }}>·</span>
+            <span style={{ fontSize: 12, color: 'rgba(26,42,58,0.6)' }}>{formatTime(event.event_time)}</span>
+          </>}
         </div>
+        {/* Area on its own line */}
+        <div style={{ fontSize: 11, color: 'rgba(26,42,58,0.4)' }}>{event.location_area}</div>
       </div>
     </div>
   )
@@ -403,7 +408,14 @@ export default function Events() {
           </div>
         ) : groups.map(group => (
           <div key={group.label}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(26,42,58,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>{group.label}</div>
+            <div style={{
+              fontSize: 12, fontWeight: 700, color: 'rgba(26,42,58,0.5)',
+              textTransform: 'uppercase', letterSpacing: '0.08em',
+              marginBottom: 10, marginLeft: -16, marginRight: -16,
+              padding: '8px 16px',
+              position: 'sticky', top: 0, zIndex: 5,
+              background: '#f5f5f5',
+            }}>{group.label}</div>
             {group.events.map(e => <EventCard key={e.id} event={e} onTap={() => navigate(`/events/${e.url_slug}`)} />)}
           </div>
         ))}

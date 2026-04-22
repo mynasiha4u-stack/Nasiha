@@ -216,6 +216,7 @@ async function syncFeed(feed) {
       event_audience: audiences,
       status: 'published',
       submitted_by: 'sync',
+      internal_notes: feed.mosque,
     })
 
     if (error) {

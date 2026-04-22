@@ -5,6 +5,7 @@ import BottomNav from '../components/BottomNav'
 
 const EVENT_TYPES = ['Halaqa', 'Islamic Learning', 'Wellness', 'Family & Kids', 'Community', 'Fundraiser', 'Matrimonial', 'Civic', 'Arts & Culture', 'Food & Drink']
 const AUDIENCES = ['General Public', 'Sisters Only', 'Brothers Only', 'Youth', 'Families']
+const MOSQUES = ['MCC East Bay', 'MCA Santa Clara', 'ICF Fremont', 'ICL Livermore', 'SRVIC San Ramon', 'WVMA Los Gatos', 'Lamorinda', 'Yaseen Foundation']
 
 const TYPE_COLOR = { bg: '#e8943a', color: 'white' }
 const AUDIENCE_COLOR = { bg: '#9b87c4', color: 'white' }
@@ -161,11 +162,13 @@ function InlineCalendar({ selectedDate, onChange, onClose }) {
 }
 
 // Compact filters panel — slide up from bottom, just type + audience
-function FiltersPanel({ activeTypes, activeAudiences, onTypesChange, onAudiencesChange, onClose }) {
+function FiltersPanel({ activeTypes, activeAudiences, activeMosques, onTypesChange, onAudiencesChange, onMosquesChange, onClose }) {
   const [localTypes, setLocalTypes] = useState(activeTypes)
   const [localAudiences, setLocalAudiences] = useState(activeAudiences)
+  const [localMosques, setLocalMosques] = useState(activeMosques)
   const toggleType = (t) => setLocalTypes(prev => prev.includes(t) ? prev.filter(x => x!==t) : [...prev,t])
   const toggleAudience = (a) => setLocalAudiences(prev => prev.includes(a) ? prev.filter(x => x!==a) : [...prev,a])
+  const toggleMosque = (m) => setLocalMosques(prev => prev.includes(m) ? prev.filter(x => x!==m) : [...prev,m])
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
@@ -327,6 +330,7 @@ export default function Events() {
   const [showCalendar, setShowCalendar] = useState(false)
   const [activeTypes, setActiveTypes] = useState([])
   const [activeAudiences, setActiveAudiences] = useState([])
+  const [activeMosques, setActiveMosques] = useState([])
   const [activeDate, setActiveDate] = useState(null)
 
   useEffect(() => {
@@ -352,6 +356,7 @@ export default function Events() {
       const audiences = (e.event_audience && e.event_audience.length > 0) ? e.event_audience : detectAudiences(e.name, e.description)
       if (!audiences.some(a => activeAudiences.includes(a))) return false
     }
+    if (activeMosques.length > 0 && !activeMosques.includes(e.location_area)) return false
     return true
   })
 
@@ -365,7 +370,7 @@ export default function Events() {
     { label: 'Upcoming', events: filtered.filter(e => new Date(e.event_date) > endOfNextWeek) },
   ].filter(g => g.events.length > 0)
 
-  const filterCount = activeTypes.length + activeAudiences.length + (activeDate ? 1 : 0)
+  const filterCount = activeTypes.length + activeAudiences.length + activeMosques.length + (activeDate ? 1 : 0)
 
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#f5f5f5', minHeight: '100vh', paddingBottom: 80 }}>
@@ -434,8 +439,10 @@ export default function Events() {
         <FiltersPanel
           activeTypes={activeTypes}
           activeAudiences={activeAudiences}
+          activeMosques={activeMosques}
           onTypesChange={setActiveTypes}
           onAudiencesChange={setActiveAudiences}
+          onMosquesChange={setActiveMosques}
           onClose={() => setShowFilters(false)}
         />
       )}

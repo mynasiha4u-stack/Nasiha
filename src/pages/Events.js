@@ -91,7 +91,7 @@ function EventCard({ event, onTap }) {
         }
         {/* Mosque name top-left */}
         {(event.event_host || event.internal_notes) && (
-          <div style={{ position: 'absolute', top: 8, left: 8, background: 'rgba(0,0,0,0.55)', borderRadius: 6, padding: '3px 8px', fontSize: 10, fontWeight: 700, color: 'white' }}>
+          <div style={{ position: 'absolute', top: 8, left: 8, background: '#e8943a', borderRadius: 6, padding: '3px 8px', fontSize: 10, fontWeight: 700, color: 'white' }}>
             {event.event_host || event.internal_notes}
           </div>
         )}
@@ -337,7 +337,7 @@ export default function Events() {
   const navigate = useNavigate()
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
-  const [showFilters, setShowFilters] = useState(false)
+  const [showFilters, setShowFilters] = useState(null)
   const [showCalendar, setShowCalendar] = useState(false)
   const [activeTypes, setActiveTypes] = useState([])
   const [activeAudiences, setActiveAudiences] = useState([])
@@ -406,23 +406,62 @@ export default function Events() {
           ))}
         </div>
 
-        {/* Date + Filters row */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
+        {/* Date + filter row */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
           <button onClick={() => { setShowCalendar(c => !c); setShowFilters(false) }} style={{
-            display: 'flex', alignItems: 'center', gap: 5,
+            display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0,
             background: activeDate ? '#e8943a' : 'white',
             color: activeDate ? 'white' : '#1a2a3a',
-            border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12,
-            padding: '9px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+            border: '1px solid rgba(0,0,0,0.1)', borderRadius: 20,
+            padding: '7px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
           }}>📅 {activeDate ? formatDate(activeDate).replace(/\w+, /, '') : 'Date'}</button>
-          <button onClick={() => { setShowFilters(f => !f); setShowCalendar(false) }} style={{
-            display: 'flex', alignItems: 'center', gap: 5,
-            background: (activeTypes.length + activeAudiences.length) > 0 ? '#1a2a3a' : 'white',
-            color: (activeTypes.length + activeAudiences.length) > 0 ? 'white' : '#1a2a3a',
-            border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12,
-            padding: '9px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-          }}>⚙️ {(activeTypes.length + activeAudiences.length) > 0 ? `Filters (${activeTypes.length + activeAudiences.length})` : 'Filters'}</button>
+
+          <button onClick={() => { setShowFilters(v => v === 'type' ? null : 'type'); setShowCalendar(false) }} style={{
+            display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
+            background: activeTypes.length > 0 ? TYPE_COLOR.bg : 'white',
+            color: activeTypes.length > 0 ? 'white' : '#1a2a3a',
+            border: '1px solid rgba(0,0,0,0.1)', borderRadius: 20,
+            padding: '7px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+          }}>Event Type {activeTypes.length > 0 ? `(${activeTypes.length})` : '▾'}</button>
+
+          <button onClick={() => { setShowFilters(v => v === 'audience' ? null : 'audience'); setShowCalendar(false) }} style={{
+            display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
+            background: activeAudiences.length > 0 ? AUDIENCE_COLOR.bg : 'white',
+            color: activeAudiences.length > 0 ? 'white' : '#1a2a3a',
+            border: '1px solid rgba(0,0,0,0.1)', borderRadius: 20,
+            padding: '7px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+          }}>Audience {activeAudiences.length > 0 ? `(${activeAudiences.length})` : '▾'}</button>
         </div>
+
+        {/* Event Type dropdown */}
+        {showFilters === 'type' && (
+          <div style={{ background: 'white', borderRadius: 14, padding: 12, marginBottom: 8, border: '1px solid rgba(0,0,0,0.08)' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {EVENT_TYPES.map(t => (
+                <button key={t} onClick={() => setActiveTypes(prev => prev.includes(t) ? prev.filter(x => x!==t) : [...prev,t])} style={{
+                  padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  background: activeTypes.includes(t) ? TYPE_COLOR.bg : '#f0f0f0',
+                  color: activeTypes.includes(t) ? 'white' : '#1a2a3a', border: 'none',
+                }}>{t}</button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Audience dropdown */}
+        {showFilters === 'audience' && (
+          <div style={{ background: 'white', borderRadius: 14, padding: 12, marginBottom: 8, border: '1px solid rgba(0,0,0,0.08)' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {AUDIENCES.map(a => (
+                <button key={a} onClick={() => setActiveAudiences(prev => prev.includes(a) ? prev.filter(x => x!==a) : [...prev,a])} style={{
+                  padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  background: activeAudiences.includes(a) ? AUDIENCE_COLOR.bg : '#f0f0f0',
+                  color: activeAudiences.includes(a) ? 'white' : '#1a2a3a', border: 'none',
+                }}>{a}</button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Inline calendar */}
         {showCalendar && (
@@ -449,17 +488,7 @@ export default function Events() {
         ))}
       </div>
 
-      {showFilters && (
-        <FiltersPanel
-          activeTypes={activeTypes}
-          activeAudiences={activeAudiences}
-          activeMosques={activeMosques}
-          onTypesChange={setActiveTypes}
-          onAudiencesChange={setActiveAudiences}
-          onMosquesChange={setActiveMosques}
-          onClose={() => setShowFilters(false)}
-        />
-      )}
+
       <BottomNav />
     </div>
   )

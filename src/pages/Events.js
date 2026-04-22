@@ -3,41 +3,54 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import BottomNav from '../components/BottomNav'
 
-const TYPE_FILTERS = ['All', 'Community', 'Halaqa', 'Lecture', 'Dinner', 'Fundraiser', 'Youth', 'Class']
-const AUDIENCE_FILTERS = ['Everyone', 'Sisters', 'Brothers', 'Youth', 'Families']
+const EVENT_TYPES = ['Halaqa', 'Islamic Learning', 'Wellness', 'Family & Kids', 'Community', 'Fundraiser', 'Matrimonial', 'Civic', 'Arts & Culture', 'Food & Drink']
+const AUDIENCES = ['General Public', 'Sisters Only', 'Brothers Only', 'Youth', 'Families']
 
 const TYPE_COLORS = {
-  Community: { bg: '#c8f0dc', color: '#0a5c2a' },
-  Halaqa: { bg: '#b8d8f8', color: '#0a3a6a' },
-  Lecture: { bg: '#fde8c0', color: '#7a4a00' },
-  Dinner: { bg: '#fde8c0', color: '#7a4a00' },
-  Fundraiser: { bg: '#dddaf8', color: '#3c2a8a' },
-  Youth: { bg: '#ffd6d6', color: '#8a1a1a' },
-  Class: { bg: '#d4f0e8', color: '#0a4a2a' },
-  Default: { bg: '#f0f0f0', color: '#444' },
+  'Halaqa':          { bg: '#dddaf8', color: '#3c2a8a' },
+  'Islamic Learning':{ bg: '#fde8c0', color: '#7a4a00' },
+  'Wellness':        { bg: '#c8f0dc', color: '#0a5c2a' },
+  'Family & Kids':   { bg: '#ffd6e8', color: '#8a1a4a' },
+  'Community':       { bg: '#b8d8f8', color: '#0a3a6a' },
+  'Fundraiser':      { bg: '#f8d4b0', color: '#7a3a00' },
+  'Matrimonial':     { bg: '#f0d4f8', color: '#5a1a7a' },
+  'Civic':           { bg: '#d4e8f0', color: '#0a3a5a' },
+  'Arts & Culture':  { bg: '#f8e4b0', color: '#6a4a00' },
+  'Food & Drink':    { bg: '#d4f0e8', color: '#0a4a2a' },
+  'Default':         { bg: '#f0f0f0', color: '#444' },
 }
 
-// Auto-detect event type from title/description
-function detectType(name, description) {
+function detectTypes(name, description) {
   const text = (name + ' ' + (description || '')).toLowerCase()
-  if (text.includes('halaqa')) return 'Halaqa'
-  if (text.includes('class') || text.includes('school') || text.includes('program') || text.includes('session')) return 'Class'
-  if (text.includes('lecture') || text.includes('speaker') || text.includes('talk') || text.includes('imam') || text.includes('sheikh') || text.includes('ustadh')) return 'Lecture'
-  if (text.includes('dinner') || text.includes('iftar') || text.includes('potluck') || text.includes('meal')) return 'Dinner'
-  if (text.includes('fundrais') || text.includes('gala') || text.includes('donate')) return 'Fundraiser'
-  if (text.includes('youth') || text.includes('teen') || text.includes('boy') || text.includes('girl') || text.includes('junior')) return 'Youth'
-  if (text.includes('sister') || text.includes('women') || text.includes('mother') || text.includes('mommy')) return 'Community'
-  return 'Community'
+  const types = []
+
+  if (text.includes('halaqa')) { types.push('Halaqa'); }
+  else if (text.includes('quran') || text.includes('tafseer') || text.includes('tafsir') || text.includes('fiqh') || text.includes('hadith') || text.includes('islamic studies') || text.includes('lecture series') || text.includes('weekly class')) types.push('Islamic Learning')
+  else if (text.includes('zumba') || text.includes('hike') || text.includes('hiking') || text.includes('bike') || text.includes('fitness') || text.includes('sport') || text.includes('outdoor') || text.includes('walk') || text.includes('run')) types.push('Wellness')
+  else if (text.includes('mommy') || text.includes('toddler') || text.includes('preschool') || text.includes('parenting') || text.includes('children') || text.includes('kids program') || text.includes('playgroup')) types.push('Family & Kids')
+  else if (text.includes('fundrais') || text.includes('gala') || text.includes('donation') || text.includes('tables @')) types.push('Fundraiser')
+  else if (text.includes('matrimon') || text.includes('singles') || text.includes('marriage')) types.push('Matrimonial')
+  else if (text.includes('palestine') || text.includes('gaza') || text.includes('political') || text.includes('civic') || text.includes('advocacy') || text.includes('social justice')) types.push('Civic')
+  else if (text.includes('book club') || text.includes('reading group') || text.includes('film') || text.includes('art') || text.includes('poetry') || text.includes('culture')) types.push('Arts & Culture')
+  else if (text.includes('food') || text.includes('dinner') || text.includes('iftar') || text.includes('suhoor') || text.includes('potluck') || text.includes('meal') || text.includes('burger') || text.includes('restaurant')) types.push('Food & Drink')
+  else types.push('Community')
+
+  // Add a second type if applicable
+  if (types[0] !== 'Wellness' && (text.includes('zumba') || text.includes('hike') || text.includes('bike') || text.includes('fitness'))) types.push('Wellness')
+  if (types[0] !== 'Food & Drink' && (text.includes('dinner') || text.includes('iftar') || text.includes('potluck'))) types.push('Food & Drink')
+
+  return types.slice(0, 2)
 }
 
-// Auto-detect audience
-function detectAudience(name, description) {
+function detectAudiences(name, description) {
   const text = (name + ' ' + (description || '')).toLowerCase()
-  if (text.includes('sister') || text.includes("women's") || text.includes('women ') || text.includes('mommy') || text.includes("mother")) return 'Sisters'
-  if (text.includes("men's") || text.includes('brother') || text.includes('boys') || text.includes('fathers')) return 'Brothers'
-  if (text.includes('teen') || text.includes('youth') || text.includes('high school') || text.includes('middle school')) return 'Youth'
-  if (text.includes('family') || text.includes('families') || text.includes('children') || text.includes('kids')) return 'Families'
-  return 'All'
+  const audiences = []
+  if (text.includes('sister') || text.includes("women's") || text.includes('women ') || text.includes('mommy') || text.includes('mother') || text.includes('girls')) audiences.push('Sisters Only')
+  if (text.includes("men's") || text.includes('brother') || text.includes('boys') || text.includes('fathers') || text.includes('adhan program for boys')) audiences.push('Brothers Only')
+  if (text.includes('teen') || text.includes('youth') || text.includes('high school') || text.includes('middle school') || text.includes('elementary') || text.includes('ages 12') || text.includes('ages 13') || text.includes('ages 14') || text.includes('ages 15') || text.includes('ages 16')) audiences.push('Youth')
+  if (text.includes('famil') || text.includes('children') || text.includes('toddler') || text.includes('preschool') || text.includes('kids')) audiences.push('Families')
+  if (audiences.length === 0) audiences.push('General Public')
+  return audiences
 }
 
 function formatDate(dateStr) {
@@ -51,14 +64,23 @@ function formatTime(timeStr) {
   const [h, m] = timeStr.split(':')
   const hour = parseInt(h)
   const ampm = hour >= 12 ? 'PM' : 'AM'
-  const hour12 = hour % 12 || 12
-  return `${hour12}:${m} ${ampm}`
+  return `${hour % 12 || 12}:${m} ${ampm}`
+}
+
+function TypeBadge({ type }) {
+  const tc = TYPE_COLORS[type] || TYPE_COLORS.Default
+  return <span style={{ background: tc.bg, color: tc.color, fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5 }}>{type}</span>
+}
+
+function AudienceBadge({ audience }) {
+  return <span style={{ background: 'rgba(0,0,0,0.12)', color: 'rgba(255,255,255,0.9)', fontSize: 10, fontWeight: 600, padding: '3px 7px', borderRadius: 5 }}>{audience}</span>
 }
 
 function EventCard({ event, onTap }) {
-  const type = detectType(event.name, event.description)
-  const audience = detectAudience(event.name, event.description)
-  const tc = TYPE_COLORS[type] || TYPE_COLORS.Default
+  const types = detectTypes(event.name, event.description)
+  const audiences = detectAudiences(event.name, event.description)
+  const tc = TYPE_COLORS[types[0]] || TYPE_COLORS.Default
+  const imageUrl = event.instagram // we store image in instagram field temporarily
 
   return (
     <div onClick={() => onTap(event)} style={{
@@ -66,27 +88,87 @@ function EventCard({ event, onTap }) {
       border: '1px solid rgba(0,0,0,0.08)',
       overflow: 'hidden', marginBottom: 12, cursor: 'pointer',
     }}>
-      <div style={{ position: 'relative', height: 120, background: tc.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {event.image_url
-          ? <img src={event.image_url} alt={event.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          : <div style={{ fontSize: 32, fontWeight: 800, color: 'rgba(26,42,58,0.12)', letterSpacing: 3 }}>
-              {(event.location_area || 'MCC').split(' ').map(w => w[0]).join('').substring(0, 3)}
+      <div style={{ position: 'relative', height: 130, background: tc.bg, overflow: 'hidden' }}>
+        {imageUrl
+          ? <img src={imageUrl} alt={event.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, fontWeight: 800, color: 'rgba(26,42,58,0.1)', letterSpacing: 3 }}>
+              {event.location_area?.split(' ').map(w => w[0]).join('').substring(0, 3)}
             </div>
         }
-        <div style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,0.45)', borderRadius: 7, padding: '4px 9px', fontSize: 11, color: 'white', fontWeight: 700 }}>
+        {/* Date badge top right */}
+        <div style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,0.5)', borderRadius: 7, padding: '4px 9px', fontSize: 11, color: 'white', fontWeight: 700 }}>
           {formatDate(event.event_date)}
+        </div>
+        {/* Type + audience badges bottom left */}
+        <div style={{ position: 'absolute', bottom: 8, left: 8, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+          {types.map(t => <TypeBadge key={t} type={t} />)}
+          {audiences.filter(a => a !== 'General Public').map(a => <AudienceBadge key={a} audience={a} />)}
         </div>
       </div>
 
       <div style={{ padding: '12px 14px' }}>
-        <div style={{ display: 'flex', gap: 6, marginBottom: 7, flexWrap: 'wrap' }}>
-          <span style={{ background: tc.bg, color: tc.color, fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6 }}>{type}</span>
-          {audience !== 'All' && <span style={{ background: '#f0f0f0', color: '#555', fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6 }}>{audience}</span>}
-        </div>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a', marginBottom: 3, lineHeight: 1.3 }}>{event.name}</div>
         <div style={{ fontSize: 12, color: 'rgba(26,42,58,0.5)' }}>
           {event.location_area} · {formatTime(event.event_time)}
         </div>
+      </div>
+    </div>
+  )
+}
+
+function FiltersPanel({ activeTypes, activeAudiences, onTypesChange, onAudiencesChange, onClose }) {
+  const [localTypes, setLocalTypes] = useState(activeTypes)
+  const [localAudiences, setLocalAudiences] = useState(activeAudiences)
+
+  const toggleType = (t) => setLocalTypes(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])
+  const toggleAudience = (a) => setLocalAudiences(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a])
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+      <div onClick={onClose} style={{ flex: 1, background: 'rgba(0,0,0,0.4)' }} />
+      <div style={{ background: 'white', borderRadius: '20px 20px 0 0', padding: '20px 20px 40px', maxHeight: '75vh', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <div style={{ fontSize: 17, fontWeight: 700, color: '#1a2a3a' }}>Filters</div>
+          <button onClick={() => { setLocalTypes([]); setLocalAudiences([]) }} style={{ fontSize: 13, color: '#9b87c4', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Clear all</button>
+        </div>
+
+        <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(26,42,58,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Event Type</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+          {EVENT_TYPES.map(t => {
+            const active = localTypes.includes(t)
+            const tc = TYPE_COLORS[t] || TYPE_COLORS.Default
+            return (
+              <button key={t} onClick={() => toggleType(t)} style={{
+                padding: '7px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                background: active ? tc.bg : '#f5f5f5',
+                color: active ? tc.color : 'rgba(26,42,58,0.6)',
+                border: active ? `1.5px solid ${tc.color}` : '1.5px solid transparent',
+              }}>{t}</button>
+            )
+          })}
+        </div>
+
+        <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(26,42,58,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Audience</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
+          {AUDIENCES.map(a => {
+            const active = localAudiences.includes(a)
+            return (
+              <button key={a} onClick={() => toggleAudience(a)} style={{
+                padding: '7px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                background: active ? '#1a2a3a' : '#f5f5f5',
+                color: active ? 'white' : 'rgba(26,42,58,0.6)',
+                border: '1.5px solid transparent',
+              }}>{a}</button>
+            )
+          })}
+        </div>
+
+        <button onClick={() => { onTypesChange(localTypes); onAudiencesChange(localAudiences); onClose() }} style={{
+          width: '100%', background: '#1a2a3a', color: 'white', border: 'none',
+          borderRadius: 14, padding: '14px 0', fontSize: 15, fontWeight: 700, cursor: 'pointer',
+        }}>
+          Apply Filters {(localTypes.length + localAudiences.length) > 0 ? `(${localTypes.length + localAudiences.length})` : ''}
+        </button>
       </div>
     </div>
   )
@@ -133,30 +215,35 @@ export function EventDetailPage() {
       <div style={{ textAlign: 'center', color: 'rgba(26,42,58,0.4)' }}><div style={{ fontSize: 32, marginBottom: 8 }}>📅</div>Loading...</div>
     </div>
   )
-
   if (!event) return (
     <div style={{ maxWidth: 430, margin: '0 auto', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ color: 'rgba(26,42,58,0.4)' }}>Event not found</div>
     </div>
   )
 
-  const type = detectType(event.name, event.description)
-  const audience = detectAudience(event.name, event.description)
-  const tc = TYPE_COLORS[type] || TYPE_COLORS.Default
+  const types = detectTypes(event.name, event.description)
+  const audiences = detectAudiences(event.name, event.description)
+  const imageUrl = event.instagram
 
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#f5f5f5', minHeight: '100vh', paddingBottom: 80 }}>
       <div style={{ background: 'linear-gradient(180deg, #7db8e8 0%, #c8e4f8 60%, #f0c090 100%)', padding: '52px 20px 20px' }}>
         <button onClick={() => navigate(-1)} style={{ fontSize: 14, color: 'rgba(26,42,58,0.65)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
         <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
-          <span style={{ background: tc.bg, color: tc.color, fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6 }}>{type}</span>
-          {audience !== 'All' && <span style={{ background: 'rgba(255,255,255,0.7)', color: '#555', fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6 }}>{audience}</span>}
+          {types.map(t => <TypeBadge key={t} type={t} />)}
+          {audiences.filter(a => a !== 'General Public').map(a => (
+            <span key={a} style={{ background: 'rgba(26,42,58,0.12)', color: 'rgba(26,42,58,0.7)', fontSize: 10, fontWeight: 600, padding: '3px 7px', borderRadius: 5 }}>{a}</span>
+          ))}
         </div>
         <h1 style={{ fontSize: 20, fontWeight: 800, color: '#1a2a3a', lineHeight: 1.3, marginBottom: 4 }}>{event.name}</h1>
         <div style={{ fontSize: 13, color: 'rgba(26,42,58,0.6)' }}>{event.location_area}</div>
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
+        {imageUrl && (
+          <img src={imageUrl} alt={event.name} style={{ width: '100%', borderRadius: 16, marginBottom: 12, objectFit: 'cover', maxHeight: 220 }} />
+        )}
+
         <div style={{ background: 'white', borderRadius: 16, padding: 16, marginBottom: 12, border: '1px solid rgba(0,0,0,0.08)' }}>
           {[
             { icon: '📅', label: 'Date', value: formatDate(event.event_date) },
@@ -176,13 +263,13 @@ export function EventDetailPage() {
         <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
           {event.location_address && (
             <a href={`https://www.google.com/maps/search/${encodeURIComponent(event.location_address)}`} target="_blank" rel="noreferrer"
-              style={{ flex: 1, background: '#e8a040', border: 'none', borderRadius: 12, padding: '13px 0', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer', textDecoration: 'none', textAlign: 'center' }}>
+              style={{ flex: 1, background: '#e8a040', border: 'none', borderRadius: 12, padding: '13px 0', color: 'white', fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
               🗺️ Directions
             </a>
           )}
           {event.website && (
             <a href={event.website} target="_blank" rel="noreferrer"
-              style={{ flex: 1, background: 'white', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: '13px 0', color: '#1a2a3a', fontWeight: 700, fontSize: 13, cursor: 'pointer', textDecoration: 'none', textAlign: 'center' }}>
+              style={{ flex: 1, background: 'white', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: '13px 0', color: '#1a2a3a', fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
               🔗 Event page
             </a>
           )}
@@ -204,38 +291,52 @@ export default function Events() {
   const navigate = useNavigate()
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
-  const [typeFilter, setTypeFilter] = useState('All')
-  const [audienceFilter, setAudienceFilter] = useState('Everyone')
+  const [showPast, setShowPast] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
+  const [activeTypes, setActiveTypes] = useState([])
+  const [activeAudiences, setActiveAudiences] = useState([])
 
   useEffect(() => {
     const today = new Date().toISOString().substring(0, 10)
-    supabase
+    const query = supabase
       .from('content')
       .select('*')
       .eq('category_id', 'd916a550-c316-40a9-9582-35836417b6cb')
       .eq('status', 'published')
-      .gte('event_date', today)
-      .order('event_date')
-      .then(({ data }) => { setEvents(data || []); setLoading(false) })
-  }, [])
+      .order('event_date', { ascending: !showPast })
+
+    if (showPast) {
+      query.lt('event_date', today).limit(30)
+    } else {
+      query.gte('event_date', today)
+    }
+
+    query.then(({ data }) => { setEvents(data || []); setLoading(false) })
+  }, [showPast])
 
   const filtered = events.filter(e => {
-    const type = detectType(e.name, e.description)
-    const audience = detectAudience(e.name, e.description)
-    if (typeFilter !== 'All' && type !== typeFilter) return false
-    if (audienceFilter !== 'Everyone' && audience !== audienceFilter && audience !== 'All') return false
+    if (activeTypes.length > 0) {
+      const types = detectTypes(e.name, e.description)
+      if (!types.some(t => activeTypes.includes(t))) return false
+    }
+    if (activeAudiences.length > 0) {
+      const audiences = detectAudiences(e.name, e.description)
+      if (!audiences.some(a => activeAudiences.includes(a))) return false
+    }
     return true
   })
 
-  const now = new Date()
-  const endOfWeek = new Date(now); endOfWeek.setDate(now.getDate() + (7 - now.getDay()))
+  const today = new Date()
+  const endOfWeek = new Date(today); endOfWeek.setDate(today.getDate() + (7 - today.getDay()))
   const endOfNextWeek = new Date(endOfWeek); endOfNextWeek.setDate(endOfWeek.getDate() + 7)
 
-  const groups = [
+  const groups = showPast ? [{ label: 'Past Events', events: filtered }] : [
     { label: 'This Week', events: filtered.filter(e => new Date(e.event_date) <= endOfWeek) },
     { label: 'Next Week', events: filtered.filter(e => new Date(e.event_date) > endOfWeek && new Date(e.event_date) <= endOfNextWeek) },
     { label: 'Upcoming', events: filtered.filter(e => new Date(e.event_date) > endOfNextWeek) },
   ].filter(g => g.events.length > 0)
+
+  const filterCount = activeTypes.length + activeAudiences.length
 
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#f5f5f5', minHeight: '100vh', paddingBottom: 80 }}>
@@ -248,26 +349,34 @@ export default function Events() {
       <div style={{ padding: '16px 16px 0' }}>
         <NewsletterStrip />
 
-        <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 8, paddingBottom: 2, scrollbarWidth: 'none' }}>
-          {TYPE_FILTERS.map(f => (
-            <button key={f} onClick={() => setTypeFilter(f)} style={{
-              padding: '6px 14px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-              background: typeFilter === f ? '#1a2a3a' : 'white',
-              color: typeFilter === f ? 'white' : 'rgba(26,42,58,0.6)',
-              border: '1px solid rgba(0,0,0,0.1)',
-            }}>{f}</button>
-          ))}
-        </div>
+        {/* Top controls row */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
+          {/* Upcoming / Past toggle */}
+          <div style={{ display: 'inline-flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)', flex: 1 }}>
+            <button onClick={() => setShowPast(false)} style={{
+              flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
+              fontSize: 12, fontWeight: 600,
+              background: !showPast ? '#1a2a3a' : 'transparent',
+              color: !showPast ? 'white' : 'rgba(26,42,58,0.5)',
+            }}>Upcoming</button>
+            <button onClick={() => setShowPast(true)} style={{
+              flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
+              fontSize: 12, fontWeight: 600,
+              background: showPast ? '#1a2a3a' : 'transparent',
+              color: showPast ? 'white' : 'rgba(26,42,58,0.5)',
+            }}>Past</button>
+          </div>
 
-        <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 16, paddingBottom: 2, scrollbarWidth: 'none' }}>
-          {AUDIENCE_FILTERS.map(f => (
-            <button key={f} onClick={() => setAudienceFilter(f)} style={{
-              padding: '6px 14px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-              background: audienceFilter === f ? '#9b87c4' : 'white',
-              color: audienceFilter === f ? 'white' : 'rgba(26,42,58,0.6)',
-              border: '1px solid rgba(0,0,0,0.1)',
-            }}>{f}</button>
-          ))}
+          {/* Filters button */}
+          <button onClick={() => setShowFilters(true)} style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: filterCount > 0 ? '#1a2a3a' : 'white',
+            color: filterCount > 0 ? 'white' : 'rgba(26,42,58,0.7)',
+            border: '1px solid rgba(0,0,0,0.08)',
+            borderRadius: 12, padding: '9px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+          }}>
+            ⚙️ Filters {filterCount > 0 ? `(${filterCount})` : ''}
+          </button>
         </div>
 
         {loading ? (
@@ -285,6 +394,17 @@ export default function Events() {
           </div>
         ))}
       </div>
+
+      {showFilters && (
+        <FiltersPanel
+          activeTypes={activeTypes}
+          activeAudiences={activeAudiences}
+          onTypesChange={setActiveTypes}
+          onAudiencesChange={setActiveAudiences}
+          onClose={() => setShowFilters(false)}
+        />
+      )}
+
       <BottomNav />
     </div>
   )

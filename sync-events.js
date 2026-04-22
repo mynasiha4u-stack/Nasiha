@@ -93,8 +93,15 @@ async function fetchEventImage(url) {
   if (!url) return null
   try {
     const html = await fetchUrl(url)
-    const match = html.match(/property="og:image"\s+content="([^"]+)"/) ||
-                  html.match(/content="([^"]+)"\s+property="og:image"/)
+    // Try multiple image patterns
+    const match =
+      html.match(/property="og:image"\s+content="([^"]+)"/) ||
+      html.match(/content="([^"]+)"\s+property="og:image"/) ||
+      html.match(/name="twitter:image"\s+content="([^"]+)"/) ||
+      html.match(/content="([^"]+)"\s+name="twitter:image"/) ||
+      html.match(/class="tribe-events-event-image"[^>]*>\s*<img[^>]+src="([^"]+)"/) ||
+      html.match(/<img[^>]+class="[^"]*wp-post-image[^"]*"[^>]+src="([^"]+)"/) ||
+      html.match(/<img[^>]+src="(https:\/\/mcceastbay\.org\/wp-content\/uploads\/[^"]+\.(?:jpg|jpeg|png|webp))"/)
     return match ? match[1] : null
   } catch { return null }
 }

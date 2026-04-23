@@ -19,8 +19,8 @@ const FEEDS = [
   { mosque: 'SRVIC San Ramon',   area: 'East Bay',  url: 'https://srvic.org/?post_type=tribe_events&ical=1&eventDisplay=list' },
   { mosque: 'WVMA Los Gatos',    area: 'South Bay', url: 'https://wvmuslim.org/?post_type=tribe_events&ical=1&eventDisplay=list' },
   { mosque: 'MCA Santa Clara',   area: 'South Bay', url: 'https://calendar.google.com/calendar/ical/c_0f12fe7cae6832644dd87c48e910a7e82060b70a81d12cd9def13d6764be61bf%40group.calendar.google.com/public/basic.ics' },
+  { mosque: 'Lamorinda',         area: 'East Bay',  url: 'https://calendar.google.com/calendar/ical/86f056c342974eafae752c1569f0e59e68a0decf445b4c582276000a07617622%40group.calendar.google.com/public/basic.ics' },
   // ICL Livermore — need iCal URL
-  // Lamorinda — need iCal URL
   // Yaseen Foundation — need iCal URL
 ]
 

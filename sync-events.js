@@ -17,9 +17,9 @@ const FEEDS = [
   { mosque: 'MCC East Bay',      area: 'East Bay',  url: 'https://mcceastbay.org/?post_type=tribe_events&ical=1&eventDisplay=list' },
   { mosque: 'ICF Fremont',       area: 'East Bay',  url: 'https://icfbayarea.com/?post_type=tribe_events&ical=1&eventDisplay=list' },
   { mosque: 'SRVIC San Ramon',   area: 'East Bay',  url: 'https://srvic.org/?post_type=tribe_events&ical=1&eventDisplay=list' },
-  // MCA uses Google Calendar — need iCal URL from mosque directly
+  { mosque: 'WVMA Los Gatos',    area: 'South Bay', url: 'https://wvmuslim.org/?post_type=tribe_events&ical=1&eventDisplay=list' },
+  // MCA — uses Google Calendar, need iCal URL from mosque
   // ICL Livermore — need iCal URL
-  // WVMA — need iCal URL
   // Lamorinda — need iCal URL
   // Yaseen Foundation — need iCal URL
 ]

@@ -14,14 +14,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 const EVENTS_CATEGORY_ID = 'd916a550-c316-40a9-9582-35836417b6cb'
 
 const FEEDS = [
-  { mosque: 'MCC East Bay',        area: 'East Bay',  url: 'https://mcceastbay.org/?post_type=tribe_events&ical=1' },
-  { mosque: 'MCA Santa Clara',     area: 'South Bay', url: 'https://www.mcabayarea.org/?post_type=tribe_events&ical=1' },
-  { mosque: 'ICF Fremont',         area: 'East Bay',  url: 'https://icfbayarea.com/?post_type=tribe_events&ical=1' },
-  { mosque: 'ICL Livermore',       area: 'East Bay',  url: 'https://iclivermore.org/?post_type=tribe_events&ical=1' },
-  { mosque: 'SRVIC San Ramon',     area: 'East Bay',  url: 'https://srvic.org/?post_type=tribe_events&ical=1' },
-  { mosque: 'WVMA Los Gatos',      area: 'South Bay', url: 'https://wvmuslim.org/?post_type=tribe_events&ical=1' },
-  { mosque: 'Lamorinda',           area: 'East Bay',  url: 'https://lamorindamuslims.org/?post_type=tribe_events&ical=1' },
-  { mosque: 'Yaseen Foundation',   area: 'Peninsula', url: 'https://www.yaseen.org/?post_type=tribe_events&ical=1' },
+  { mosque: 'MCC East Bay',      area: 'East Bay',  url: 'https://mcceastbay.org/?post_type=tribe_events&ical=1&eventDisplay=list' },
+  { mosque: 'ICF Fremont',       area: 'East Bay',  url: 'https://icfbayarea.com/?post_type=tribe_events&ical=1&eventDisplay=list' },
+  { mosque: 'SRVIC San Ramon',   area: 'East Bay',  url: 'https://srvic.org/?post_type=tribe_events&ical=1&eventDisplay=list' },
+  // MCA uses Google Calendar — need iCal URL from mosque directly
+  // ICL Livermore — need iCal URL
+  // WVMA — need iCal URL
+  // Lamorinda — need iCal URL
+  // Yaseen Foundation — need iCal URL
 ]
 
 // --- Classification logic (uses both title and description) ---

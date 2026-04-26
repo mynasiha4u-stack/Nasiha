@@ -15,7 +15,7 @@ export default function ChildcareMap() {
     async function load() {
       const { data: cat } = await supabase.from('categories').select('id').eq('slug', 'childcare').single()
       if (!cat) return
-      const { data } = await supabase.from('content').select('id,name,phone,website,location_address,location_area,display_lat,display_lng,url_slug,description')
+      const { data } = await supabase.from('content').select('id,name,phone,website,email,whatsapp,instagram,facebook,location_address,location_area,display_lat,display_lng,url_slug,description')
         .eq('category_id', cat.id)
         .eq('status', 'published')
         .not('display_lat', 'is', null)
@@ -87,21 +87,63 @@ export default function ChildcareMap() {
         <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
 
         {selected && (
-          <div style={{ position: 'absolute', bottom: 16, left: 16, right: 16, background: 'white', borderRadius: 16, padding: 14, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#1a2a3a', marginBottom: 3 }}>{selected.name}</div>
-                <div style={{ fontSize: 12, color: 'rgba(26,42,58,0.5)' }}>{selected.location_address || selected.location_area}</div>
+          <>
+            {/* Backdrop */}
+            <div onClick={() => setSelected(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)' }} />
+            {/* Bottom sheet card */}
+            <div style={{
+              position: 'absolute', bottom: 0, left: 0, right: 0,
+              background: 'white', borderRadius: '20px 20px 0 0',
+              padding: '0 0 32px',
+              boxShadow: '0 -4px 30px rgba(0,0,0,0.15)',
+              maxHeight: '55vh', overflowY: 'auto',
+            }}>
+              {/* Drag handle */}
+              <div style={{ width: 36, height: 4, background: 'rgba(0,0,0,0.12)', borderRadius: 2, margin: '12px auto 16px' }} />
+
+              <div style={{ padding: '0 16px' }}>
+                {/* Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                  <div style={{ flex: 1, paddingRight: 8 }}>
+                    <div style={{ fontSize: 17, fontWeight: 800, color: '#1a2a3a', marginBottom: 3, lineHeight: 1.3 }}>{selected.name}</div>
+                    {selected.location_address && <div style={{ fontSize: 12, color: 'rgba(26,42,58,0.5)' }}>📍 {selected.location_address}</div>}
+                    {!selected.location_address && selected.location_area && <div style={{ fontSize: 12, color: 'rgba(26,42,58,0.5)' }}>📍 {selected.location_area}</div>}
+                  </div>
+                  <button onClick={() => setSelected(null)} style={{ background: '#f5f5f5', border: 'none', borderRadius: 20, width: 28, height: 28, fontSize: 14, color: 'rgba(26,42,58,0.4)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>×</button>
+                </div>
+
+                {/* Description */}
+                {selected.description && (
+                  <div style={{ fontSize: 13, color: 'rgba(26,42,58,0.65)', lineHeight: 1.6, marginBottom: 14, background: '#f8f8f8', borderRadius: 10, padding: '10px 12px' }}>
+                    {selected.description.replace(/&nbsp;/g, ' ').substring(0, 200)}{selected.description.length > 200 ? '...' : ''}
+                  </div>
+                )}
+
+                {/* Contact buttons */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                  <button onClick={() => navigate(`/childcare/${selected.url_slug}`)} style={{ flex: 1, background: '#1a2a3a', color: 'white', border: 'none', borderRadius: 12, padding: '12px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>View Full Details</button>
+                  {selected.phone && (
+                    <a href={`tel:${selected.phone}`} style={{ flex: 1, background: '#9b87c4', color: 'white', borderRadius: 12, padding: '12px 0', fontSize: 13, fontWeight: 700, textDecoration: 'none', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>📞 Call</a>
+                  )}
+                </div>
+
+                {/* Extra contact row */}
+                {(selected.website || selected.email || selected.whatsapp) && (
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {selected.website && (
+                      <a href={selected.website} target="_blank" rel="noreferrer" style={{ flex: 1, background: '#f5f5f5', borderRadius: 12, padding: '10px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textDecoration: 'none', textAlign: 'center' }}>🌐 Website</a>
+                    )}
+                    {selected.email && (
+                      <a href={`mailto:${selected.email}`} style={{ flex: 1, background: '#f5f5f5', borderRadius: 12, padding: '10px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textDecoration: 'none', textAlign: 'center' }}>✉️ Email</a>
+                    )}
+                    {selected.whatsapp && (
+                      <a href={`https://wa.me/${selected.whatsapp.replace(/\D/g,'')}`} target="_blank" rel="noreferrer" style={{ flex: 1, background: '#f5f5f5', borderRadius: 12, padding: '10px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textDecoration: 'none', textAlign: 'center' }}>💬 WhatsApp</a>
+                    )}
+                  </div>
+                )}
               </div>
-              <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', fontSize: 18, color: 'rgba(26,42,58,0.3)', cursor: 'pointer' }}>×</button>
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => navigate(`/childcare/${selected.url_slug}`)} style={{ flex: 1, background: '#1a2a3a', color: 'white', border: 'none', borderRadius: 10, padding: '9px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>View Details</button>
-              {selected.phone && (
-                <a href={`tel:${selected.phone}`} style={{ flex: 1, background: '#9b87c4', color: 'white', borderRadius: 10, padding: '9px 0', fontSize: 13, fontWeight: 700, textDecoration: 'none', textAlign: 'center' }}>📞 Call</a>
-              )}
-            </div>
-          </div>
+          </>
         )}
       </div>
       <BottomNav />

@@ -52,14 +52,25 @@ function ChildcareCard({ item, onTap }) {
           {item.description.replace(/&nbsp;/g, ' ').replace(/&#8217;/g, "'").replace(/&#8220;/g, '"').replace(/&#8221;/g, '"')}
         </div>
       )}
-      <div style={{ display: 'flex', gap: 8 }}>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         {item.phone && (
-          <a href={`tel:${item.phone}`} onClick={e => e.stopPropagation()} style={{ flex: 1, background: '#f5f5f5', borderRadius: 10, padding: '8px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textAlign: 'center', textDecoration: 'none' }}>📞 Call</a>
+          <a href={`tel:${item.phone}`} onClick={e => e.stopPropagation()} style={{ flex: 1, minWidth: 70, background: '#f5f5f5', borderRadius: 10, padding: '8px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textAlign: 'center', textDecoration: 'none' }}>📞 Call</a>
+        )}
+        {item.email && (
+          <a href={`mailto:${item.email}`} onClick={e => e.stopPropagation()} style={{ flex: 1, minWidth: 70, background: '#f5f5f5', borderRadius: 10, padding: '8px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textAlign: 'center', textDecoration: 'none' }}>✉️ Email</a>
         )}
         {item.website && (
-          <a href={item.website} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ flex: 1, background: '#f5f5f5', borderRadius: 10, padding: '8px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textAlign: 'center', textDecoration: 'none' }}>🌐 Website</a>
+          <a href={item.website.startsWith('http') ? item.website : 'https://' + item.website} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ flex: 1, minWidth: 70, background: '#f5f5f5', borderRadius: 10, padding: '8px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textAlign: 'center', textDecoration: 'none' }}>🌐 Website</a>
         )}
-        {!item.phone && !item.website && (
+        {item.facebook && (
+          <a href={item.facebook} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ flex: 1, minWidth: 70, background: '#f5f5f5', borderRadius: 10, padding: '8px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textAlign: 'center', textDecoration: 'none' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><div style={{ width: 14, height: 14, background: '#1877F2', borderRadius: 3, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 10, fontWeight: 900 }}>f</div> Facebook</div>
+          </a>
+        )}
+        {item.instagram && (
+          <a href={item.instagram} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ flex: 1, minWidth: 70, background: '#f5f5f5', borderRadius: 10, padding: '8px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textAlign: 'center', textDecoration: 'none' }}>📸 IG</a>
+        )}
+        {!item.phone && !item.email && !item.website && !item.facebook && (
           <div style={{ fontSize: 12, color: 'rgba(26,42,58,0.3)' }}>Tap for details</div>
         )}
       </div>

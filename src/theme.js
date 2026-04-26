@@ -34,10 +34,11 @@ export const colors = {
 }
 
 // The one gradient — used on every page header
-export const headerGradient = 'linear-gradient(160deg, #1C2B3A 0%, #7C2D12 50%, #C2410C 100%)'
+// Asr/Maghrib: warm golden sky bleeding into rose, deep indigo only at the very edges
+export const headerGradient = 'linear-gradient(160deg, #1e3a5f 0%, #b45309 40%, #ea580c 70%, #f59e0b 100%)'
 
-// Softer version for inner page headers
-export const subheaderGradient = 'linear-gradient(160deg, #1C2B3A 0%, #92400E 60%, #C2410C 100%)'
+// Softer version for inner page headers — same palette, slightly less contrast
+export const subheaderGradient = 'linear-gradient(160deg, #1e3a5f 0%, #b45309 40%, #ea580c 70%, #f59e0b 100%)'
 
 // Typography scale
 export const text = {

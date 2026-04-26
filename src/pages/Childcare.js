@@ -12,7 +12,16 @@ function cleanDesc(text) {
     .replace(/&#8217;/g, "'")
     .replace(/&#8220;/g, '"')
     .replace(/&#8221;/g, '"')
-    .replace(/\.\s+([A-Z])/g, '.
+    .replace(/Age Group:/g, '\nAge Group:')
+    .replace(/Delivery Offered:/g, '\nDelivery Offered:')
+    .replace(/On Site Prep:/g, '\nOn Site Prep:')
+    .replace(/Services:/g, '\nServices:')
+    .replace(/Location:/g, '\nLocation:')
+    .replace(/Price:/g, '\nPrice:')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
 $1')
     .replace(/;\s*/g, ';
 ')

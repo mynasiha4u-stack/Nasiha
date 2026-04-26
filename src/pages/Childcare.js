@@ -5,6 +5,26 @@ import BottomNav from '../components/BottomNav'
 
 const AREAS = ['All', 'East Bay', 'South Bay', 'Peninsula', 'San Francisco', 'North Bay']
 
+function cleanDesc(text) {
+  if (!text) return ''
+  return text
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#8217;/g, "'")
+    .replace(/&#8220;/g, '"')
+    .replace(/&#8221;/g, '"')
+    .replace(/\.\s+([A-Z])/g, '.
+$1')
+    .replace(/;\s*/g, ';
+')
+    .replace(/:\s+/g, ':
+')
+    .replace(/
+{3,}/g, '
+
+')
+    .trim()
+}
+
 const TYPE_COLORS = {
   'Daycare':     { bg: '#fde8c0', color: '#7a4a00' },
   'Preschool':   { bg: '#dddaf8', color: '#3c2a8a' },
@@ -49,7 +69,7 @@ function ChildcareCard({ item, onTap }) {
       </div>
       {item.description && (
         <div style={{ fontSize: 13, color: 'rgba(26,42,58,0.6)', lineHeight: 1.5, marginBottom: 10, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-          {item.description.replace(/&nbsp;/g, ' ').replace(/&#8217;/g, "'").replace(/&#8220;/g, '"').replace(/&#8221;/g, '"')}
+          {cleanDesc(item.description)}
         </div>
       )}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -180,7 +200,7 @@ export function ChildcareDetail() {
         {item.description && (
           <div style={{ background: 'white', borderRadius: 16, padding: 16, marginBottom: 12, border: '1px solid rgba(0,0,0,0.08)' }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a', marginBottom: 10 }}>About</div>
-            <div style={{ fontSize: 14, color: 'rgba(26,42,58,0.75)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>{item.description.replace(/&nbsp;/g, ' ').replace(/&#8217;/g, "'").replace(/&#8220;/g, '"').replace(/&#8221;/g, '"')}</div>
+            <div style={{ fontSize: 14, color: 'rgba(26,42,58,0.75)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>{cleanDesc(item.description)}</div>
           </div>
         )}
       </div>

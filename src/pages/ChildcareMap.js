@@ -89,14 +89,14 @@ export default function ChildcareMap() {
         {selected && (
           <>
             {/* Backdrop */}
-            <div onClick={() => setSelected(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)' }} />
+            <div onClick={() => setSelected(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)' }} />
             {/* Bottom sheet card */}
             <div style={{
               position: 'absolute', bottom: 0, left: 0, right: 0,
               background: 'white', borderRadius: '20px 20px 0 0',
               padding: '0 0 32px',
               boxShadow: '0 -4px 30px rgba(0,0,0,0.15)',
-              maxHeight: '55vh', overflowY: 'auto',
+              maxHeight: '65vh', overflowY: 'auto', paddingBottom: 80,
             }}>
               {/* Drag handle */}
               <div style={{ width: 36, height: 4, background: 'rgba(0,0,0,0.12)', borderRadius: 2, margin: '12px auto 16px' }} />

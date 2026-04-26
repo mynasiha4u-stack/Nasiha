@@ -96,7 +96,7 @@ export default function ChildcareMap() {
               background: 'white', borderRadius: '20px 20px 0 0',
               padding: '0 0 32px',
               boxShadow: '0 -4px 30px rgba(0,0,0,0.15)',
-              maxHeight: '65vh', overflowY: 'auto', paddingBottom: 80,
+              minHeight: '50vh', maxHeight: '75vh', overflowY: 'auto', paddingBottom: 80,
             }}>
               {/* Drag handle */}
               <div style={{ width: 36, height: 4, background: 'rgba(0,0,0,0.12)', borderRadius: 2, margin: '12px auto 16px' }} />

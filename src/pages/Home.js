@@ -5,14 +5,14 @@ import AsrHero from '../components/AsrHero'
 import BottomNav from '../components/BottomNav'
 
 const CATEGORIES = [
-  { icon: '🍛', label: 'Home Cooks',  bg: '#c8f0dc', path: '/directory?cat=home-cooked-food' },
-  { icon: '🕌', label: 'Jummah Timings',      bg: '#b8d8f8', path: '/jummah' },
-  { icon: '🎂', label: 'Desserts',    bg: '#fde8c0', path: '/directory?cat=dessert-catering' },
-  { icon: '👶', label: 'Childcare',   bg: '#dddaf8', path: '/childcare' },
-  { icon: '📅', label: 'Events',      bg: '#fcd8cc', path: '/events' },
-  { icon: '🏫', label: 'Schools',     bg: '#d4edc0', path: '/directory?cat=islamic-schools' },
-  { icon: '⚖️', label: 'Lawyers',     bg: '#b8d8f8', path: '/directory?cat=lawyers' },
-  { icon: '☕', label: 'Cafes',       bg: '#fde8c0', path: '/directory?cat=restaurants' },
+  { icon: '🍛', label: 'Home Cooks',  bg: '#8B1A4A', path: '/directory?cat=home-cooked-food' },
+  { icon: '🕌', label: 'Jummah Timings',      bg: '#1A2F5C', path: '/jummah' },
+  { icon: '🎂', label: 'Desserts',    bg: '#C4500A', path: '/directory?cat=dessert-catering' },
+  { icon: '👶', label: 'Childcare',   bg: '#5C2D7A', path: '/childcare' },
+  { icon: '📅', label: 'Events',      bg: '#0A4A5C', path: '/events' },
+  { icon: '🏫', label: 'Schools',     bg: '#1A2F5C', path: '/directory?cat=islamic-schools' },
+  { icon: '⚖️', label: 'Lawyers',     bg: '#3A4A5A', path: '/directory?cat=lawyers' },
+  { icon: '☕', label: 'Cafes',       bg: '#8B1A4A', path: '/directory?cat=restaurants' },
 ]
 
 const FEATURED_EVENTS = [
@@ -46,7 +46,7 @@ export default function Home() {
       <AsrHero city={city} onCityTap={() => alert('City picker coming soon')}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 20, fontWeight: 800, color: '#1a2a3a', letterSpacing: -0.5 }}>nasiha</span>
-          <span style={{ fontSize: 15, fontWeight: 500, color: 'rgba(26,42,58,0.6)' }}>Your community, all in one place</span>
+          <span style={{ fontSize: 15, fontWeight: 500, color: '#3A4A5A' }}>Your community, all in one place</span>
         </div>
 
         <div style={{
@@ -54,7 +54,7 @@ export default function Home() {
           borderRadius: 16, padding: '13px 14px', display: 'flex', alignItems: 'center', gap: 10,
         }}>
           <div style={{
-            width: 30, height: 30, borderRadius: 9, background: '#e8a040',
+            width: 30, height: 30, borderRadius: 9, background: '#E8860A',
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 15,
           }}>✦</div>
           <input
@@ -65,7 +65,7 @@ export default function Home() {
           />
           {query && (
             <button onClick={() => alert(`Searching: ${query}`)} style={{
-              width: 30, height: 30, borderRadius: 9, background: '#e8a040',
+              width: 30, height: 30, borderRadius: 9, background: '#E8860A',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: 'white', fontSize: 14, border: 'none',
             }}>→</button>
@@ -132,7 +132,7 @@ export default function Home() {
                 {ev.free && (
                   <div style={{
                     position: 'absolute', top: 8, left: 8,
-                    background: '#e8a040', borderRadius: 6,
+                    background: '#E8860A', borderRadius: 6,
                     padding: '3px 7px', fontSize: 10, color: 'white', fontWeight: 700,
                   }}>Free</div>
                 )}
@@ -150,7 +150,7 @@ export default function Home() {
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2a3a', marginBottom: 3, lineHeight: 1.3 }}>
                   {ev.title}
                 </div>
-                <div style={{ fontSize: 11, color: 'rgba(26,42,58,0.5)' }}>
+                <div style={{ fontSize: 11, color: '#3A4A5A' }}>
                   {ev.mosque} · {ev.time}
                 </div>
               </div>
@@ -182,7 +182,7 @@ export default function Home() {
                 <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a', marginBottom: 2 }}>
                   {v.name}
                 </div>
-                <div style={{ fontSize: 12, color: 'rgba(26,42,58,0.5)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ fontSize: 12, color: '#3A4A5A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {v.location_area || 'Bay Area'}
                 </div>
               </div>
@@ -190,7 +190,7 @@ export default function Home() {
             </div>
           )) : (
             <div style={{ background: '#f7f7f7', borderRadius: 14, padding: '20px', textAlign: 'center' }}>
-              <div style={{ fontSize: 14, color: 'rgba(26,42,58,0.4)' }}>Featured vendors coming soon</div>
+              <div style={{ fontSize: 14, color: '#6A7A8A' }}>Featured vendors coming soon</div>
             </div>
           )}
         </div>

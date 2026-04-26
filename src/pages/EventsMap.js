@@ -111,10 +111,10 @@ export default function EventsMap() {
   }, [events, filter])
 
   return (
-    <div style={{ maxWidth: 430, margin: '0 auto', background: '#f5f5f5', height: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', height: '100vh', display: 'flex', flexDirection: 'column' }}>
 
       {/* Header */}
-      <div style={{ background: 'linear-gradient(180deg, #7db8e8 0%, #c8e4f8 60%, #f0c090 100%)', padding: '48px 16px 14px', flexShrink: 0 }}>
+      <div style={{ background: 'linear-gradient(180deg, #1A2F5C 0%, #5C2D7A 40%, #8B1A4A 70%, #C4500A 100%)', padding: '48px 16px 14px', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
           <button onClick={() => navigate('/events')} style={{ fontSize: 14, color: 'rgba(26,42,58,0.65)', background: 'none', border: 'none', cursor: 'pointer' }}>← Events</button>
           <div style={{ fontSize: 17, fontWeight: 800, color: '#1a2a3a' }}>Events Map</div>
@@ -155,11 +155,11 @@ export default function EventsMap() {
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#e8943a', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{selectedEvent.event_host}</div>
                 )}
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#1a2a3a', lineHeight: 1.3, marginBottom: 4 }}>{selectedEvent.name}</div>
-                <div style={{ fontSize: 12, color: 'rgba(26,42,58,0.6)' }}>
+                <div style={{ fontSize: 12, color: '#3A4A5A' }}>
                   {formatDate(selectedEvent.event_date)}{selectedEvent.event_time ? ` · ${formatTime(selectedEvent.event_time)}` : ''}
                 </div>
                 {selectedEvent.location_address && (
-                  <div style={{ fontSize: 11, color: 'rgba(26,42,58,0.4)', marginTop: 2 }}>{selectedEvent.location_address}</div>
+                  <div style={{ fontSize: 11, color: '#6A7A8A', marginTop: 2 }}>{selectedEvent.location_address}</div>
                 )}
               </div>
               <button onClick={() => setSelectedEvent(null)} style={{ background: 'none', border: 'none', fontSize: 18, color: 'rgba(26,42,58,0.3)', cursor: 'pointer', padding: '0 0 0 8px' }}>×</button>
@@ -172,7 +172,7 @@ export default function EventsMap() {
               {selectedEvent.location_address && (
                 <a href={`https://www.google.com/maps/dir/?api=1&destination=${selectedEvent.display_lat},${selectedEvent.display_lng}`}
                   target="_blank" rel="noreferrer" style={{
-                    flex: 1, background: '#e8943a', color: 'white', border: 'none',
+                    flex: 1, background: '#E8860A', color: 'white', border: 'none',
                     borderRadius: 10, padding: '9px 0', fontSize: 13, fontWeight: 700,
                     textDecoration: 'none', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>🗺️ Directions</a>

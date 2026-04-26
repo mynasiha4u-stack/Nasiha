@@ -91,7 +91,7 @@ function EventCard({ event, onTap }) {
         }
         {/* Mosque name top-left */}
         {(event.event_host || event.internal_notes) && (
-          <div style={{ position: 'absolute', top: 8, left: 8, background: '#e8943a', borderRadius: 6, padding: '3px 8px', fontSize: 10, fontWeight: 700, color: 'white' }}>
+          <div style={{ position: 'absolute', top: 8, left: 8, background: '#E8860A', borderRadius: 6, padding: '3px 8px', fontSize: 10, fontWeight: 700, color: 'white' }}>
             {event.event_host || event.internal_notes}
           </div>
         )}
@@ -107,14 +107,14 @@ function EventCard({ event, onTap }) {
           <span style={{ fontSize: 12, fontWeight: 700, color: '#1a2a3a' }}>{formatDate(event.event_date)}</span>
           {event.event_time && <>
             <span style={{ fontSize: 10, color: 'rgba(26,42,58,0.3)' }}>·</span>
-            <span style={{ fontSize: 12, color: 'rgba(26,42,58,0.6)' }}>{formatTime(event.event_time)}</span>
+            <span style={{ fontSize: 12, color: '#3A4A5A' }}>{formatTime(event.event_time)}</span>
           </>}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {(event.event_host || event.internal_notes) && (
             <span style={{ fontSize: 11, fontWeight: 700, color: '#1a2a3a', background: '#f0f0f0', padding: '2px 7px', borderRadius: 5 }}>{event.event_host || event.internal_notes}</span>
           )}
-          <span style={{ fontSize: 11, color: 'rgba(26,42,58,0.4)' }}>{event.location_area}</span>
+          <span style={{ fontSize: 11, color: '#6A7A8A' }}>{event.location_area}</span>
         </div>
       </div>
     </div>
@@ -239,7 +239,7 @@ function NewsletterStrip() {
             <input value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com"
               style={{ flex: 1, borderRadius: 10, border: 'none', padding: '10px 12px', fontSize: 14, outline: 'none' }} />
             <button onClick={() => email && setDone(true)}
-              style={{ background: '#e8a040', border: 'none', borderRadius: 10, padding: '10px 16px', color: 'white', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+              style={{ background: '#E8860A', border: 'none', borderRadius: 10, padding: '10px 16px', color: 'white', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
               Subscribe
             </button>
           </div>
@@ -262,12 +262,12 @@ export function EventDetailPage() {
 
   if (loading) return (
     <div style={{ maxWidth: 430, margin: '0 auto', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ textAlign: 'center', color: 'rgba(26,42,58,0.4)' }}><div style={{ fontSize: 32, marginBottom: 8 }}>📅</div>Loading...</div>
+      <div style={{ textAlign: 'center', color: '#6A7A8A' }}><div style={{ fontSize: 32, marginBottom: 8 }}>📅</div>Loading...</div>
     </div>
   )
   if (!event) return (
     <div style={{ maxWidth: 430, margin: '0 auto', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: 'rgba(26,42,58,0.4)' }}>Event not found</div>
+      <div style={{ color: '#6A7A8A' }}>Event not found</div>
     </div>
   )
 
@@ -276,15 +276,15 @@ export function EventDetailPage() {
   const imageUrl = event.image_url || event.instagram
 
   return (
-    <div style={{ maxWidth: 430, margin: '0 auto', background: '#f5f5f5', minHeight: '100vh', paddingBottom: 80 }}>
-      <div style={{ background: 'linear-gradient(180deg, #7db8e8 0%, #c8e4f8 60%, #f0c090 100%)', padding: '52px 20px 20px' }}>
-        <button onClick={() => navigate(-1)} style={{ fontSize: 14, color: 'rgba(26,42,58,0.65)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
+    <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
+      <div style={{ background: 'linear-gradient(180deg, #1A2F5C 0%, #5C2D7A 40%, #8B1A4A 70%, #C4500A 100%)', padding: '52px 20px 20px' }}>
+        <button onClick={() => navigate(-1)} style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
         <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
           {types.map(t => <TypeBadge key={t} type={t} />)}
           {audiences.filter(a => a !== 'General Public').map(a => <AudienceBadge key={a} audience={a} />)}
         </div>
-        <h1 style={{ fontSize: 20, fontWeight: 800, color: '#1a2a3a', lineHeight: 1.3, marginBottom: 4 }}>{event.name}</h1>
-        <div style={{ fontSize: 13, color: 'rgba(26,42,58,0.6)' }}>{event.location_area}</div>
+        <h1 style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', lineHeight: 1.3, marginBottom: 4 }}>{event.name}</h1>
+        <div style={{ fontSize: 13, color: '#3A4A5A' }}>{event.location_area}</div>
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
@@ -299,7 +299,7 @@ export function EventDetailPage() {
             <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
               <span style={{ fontSize: 18, width: 24, textAlign: 'center' }}>{row.icon}</span>
               <div>
-                <div style={{ fontSize: 10, color: 'rgba(26,42,58,0.4)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{row.label}</div>
+                <div style={{ fontSize: 10, color: '#6A7A8A', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{row.label}</div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#1a2a3a' }}>{row.value}</div>
               </div>
             </div>
@@ -309,7 +309,7 @@ export function EventDetailPage() {
         <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
           {event.location_address && (
             <a href={`https://www.google.com/maps/search/${encodeURIComponent(event.location_address)}`} target="_blank" rel="noreferrer"
-              style={{ flex: 1, background: '#e8a040', border: 'none', borderRadius: 12, padding: '13px 0', color: 'white', fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
+              style={{ flex: 1, background: '#E8860A', border: 'none', borderRadius: 12, padding: '13px 0', color: 'white', fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
               🗺️ Directions
             </a>
           )}
@@ -400,11 +400,11 @@ export default function Events() {
   const filterCount = activeTypes.length + activeAudiences.length + activeMosques.length + (activeDate ? 1 : 0)
 
   return (
-    <div style={{ maxWidth: 430, margin: '0 auto', background: '#f5f5f5', minHeight: '100vh', paddingBottom: 80 }}>
-      <div style={{ background: 'linear-gradient(180deg, #7db8e8 0%, #c8e4f8 60%, #f0c090 100%)', padding: '48px 20px 20px' }}>
-        <button onClick={() => navigate('/')} style={{ fontSize: 14, color: 'rgba(26,42,58,0.65)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
-        <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1a2a3a', marginBottom: 2 }}>📅 Events</h1>
-        <p style={{ fontSize: 13, color: 'rgba(26,42,58,0.6)' }}>{events.length} Bay Area Muslim events</p>
+    <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
+      <div style={{ background: 'linear-gradient(180deg, #1A2F5C 0%, #5C2D7A 40%, #8B1A4A 70%, #C4500A 100%)', padding: '48px 20px 20px' }}>
+        <button onClick={() => navigate('/')} style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
+        <h1 style={{ fontSize: 24, fontWeight: 800, color: '#FFFFFF', marginBottom: 2 }}>📅 Events</h1>
+        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>{events.length} Bay Area Muslim events</p>
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
@@ -501,16 +501,16 @@ export default function Events() {
         )}
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(26,42,58,0.4)' }}>
+          <div style={{ textAlign: 'center', padding: '40px 0', color: '#6A7A8A' }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>📅</div>Loading events...
           </div>
         ) : groups.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(26,42,58,0.4)' }}>
+          <div style={{ textAlign: 'center', padding: '40px 0', color: '#6A7A8A' }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>📅</div>No events match your filters
           </div>
         ) : groups.map(group => (
           <div key={group.label}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(26,42,58,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, marginLeft: -16, marginRight: -16, padding: '8px 16px', position: 'sticky', top: 0, zIndex: 5, background: '#f5f5f5' }}>{group.label}</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#3A4A5A', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, marginLeft: -16, marginRight: -16, padding: '8px 16px', position: 'sticky', top: 0, zIndex: 5, background: '#F7F3EE' }}>{group.label}</div>
             {group.events.map(e => <EventCard key={e.id} event={e} onTap={() => navigate(`/events/${e.url_slug}`)} />)}
           </div>
         ))}

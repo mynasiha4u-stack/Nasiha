@@ -29,12 +29,12 @@ function cleanDesc(text) {
 
 
 const TYPE_COLORS = {
-  'Daycare':     { bg: '#fde8c0', color: '#7a4a00' },
-  'Preschool':   { bg: '#dddaf8', color: '#3c2a8a' },
-  'Nanny':       { bg: '#c8f0dc', color: '#0a5c2a' },
-  'Babysitter':  { bg: '#ffd6e8', color: '#8a1a4a' },
-  'Elder Care':  { bg: '#b8d8f8', color: '#0a3a6a' },
-  'Other':       { bg: '#f0f0f0', color: '#444' },
+  'Daycare':     { bg: '#C4500A', color: '#FFFFFF' },
+  'Preschool':   { bg: '#5C2D7A', color: '#FFFFFF' },
+  'Nanny':       { bg: '#8B1A4A', color: '#FFFFFF' },
+  'Babysitter':  { bg: '#0A4A5C', color: '#FFFFFF' },
+  'Elder Care':  { bg: '#1A2F5C', color: '#FFFFFF' },
+  'Other':       { bg: '#3A4A5A', color: '#FFFFFF' },
 }
 
 function detectType(name, description) {
@@ -77,21 +77,21 @@ function ChildcareCard({ item, onTap }) {
       )}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         {item.phone && (
-          <a href={`tel:${item.phone}`} onClick={e => e.stopPropagation()} style={{ flex: 1, minWidth: 70, background: '#f5f5f5', borderRadius: 10, padding: '8px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textAlign: 'center', textDecoration: 'none' }}>📞 Call</a>
+          <a href={`tel:${item.phone}`} onClick={e => e.stopPropagation()} style={{ flex: 1, minWidth: 70, background: '#F7F3EE', borderRadius: 10, padding: '8px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textAlign: 'center', textDecoration: 'none' }}>📞 Call</a>
         )}
         {item.email && (
-          <a href={`mailto:${item.email}`} onClick={e => e.stopPropagation()} style={{ flex: 1, minWidth: 70, background: '#f5f5f5', borderRadius: 10, padding: '8px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textAlign: 'center', textDecoration: 'none' }}>✉️ Email</a>
+          <a href={`mailto:${item.email}`} onClick={e => e.stopPropagation()} style={{ flex: 1, minWidth: 70, background: '#F7F3EE', borderRadius: 10, padding: '8px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textAlign: 'center', textDecoration: 'none' }}>✉️ Email</a>
         )}
         {item.website && (
-          <a href={item.website.startsWith('http') ? item.website : 'https://' + item.website} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ flex: 1, minWidth: 70, background: '#f5f5f5', borderRadius: 10, padding: '8px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textAlign: 'center', textDecoration: 'none' }}>🌐 Website</a>
+          <a href={item.website.startsWith('http') ? item.website : 'https://' + item.website} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ flex: 1, minWidth: 70, background: '#F7F3EE', borderRadius: 10, padding: '8px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textAlign: 'center', textDecoration: 'none' }}>🌐 Website</a>
         )}
         {item.facebook && (
-          <a href={item.facebook} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ flex: 1, minWidth: 70, background: '#f5f5f5', borderRadius: 10, padding: '8px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textAlign: 'center', textDecoration: 'none' }}>
+          <a href={item.facebook} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ flex: 1, minWidth: 70, background: '#F7F3EE', borderRadius: 10, padding: '8px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textAlign: 'center', textDecoration: 'none' }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><div style={{ width: 14, height: 14, background: '#1877F2', borderRadius: 3, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 10, fontWeight: 900 }}>f</div> Facebook</div>
           </a>
         )}
         {item.instagram && (
-          <a href={item.instagram} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ flex: 1, minWidth: 70, background: '#f5f5f5', borderRadius: 10, padding: '8px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textAlign: 'center', textDecoration: 'none' }}>📸 IG</a>
+          <a href={item.instagram} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ flex: 1, minWidth: 70, background: '#F7F3EE', borderRadius: 10, padding: '8px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textAlign: 'center', textDecoration: 'none' }}>📸 IG</a>
         )}
         {!item.phone && !item.email && !item.website && !item.facebook && (
           <div style={{ fontSize: 12, color: 'rgba(26,42,58,0.3)' }}>Tap for details</div>
@@ -153,11 +153,11 @@ export default function Childcare() {
   })
 
   return (
-    <div style={{ maxWidth: 430, margin: '0 auto', background: '#f5f5f5', minHeight: '100vh', paddingBottom: 80 }}>
-      <div style={{ background: 'linear-gradient(180deg, #7db8e8 0%, #c8e4f8 60%, #f0c090 100%)', padding: '48px 20px 20px' }}>
-        <button onClick={() => navigate('/')} style={{ fontSize: 14, color: 'rgba(26,42,58,0.65)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
-        <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1a2a3a', marginBottom: 2 }}>👶 Childcare</h1>
-        <p style={{ fontSize: 13, color: 'rgba(26,42,58,0.6)' }}>{items.length} providers in the Bay Area</p>
+    <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
+      <div style={{ background: 'linear-gradient(180deg, #1A2F5C 0%, #5C2D7A 40%, #8B1A4A 70%, #C4500A 100%)', padding: '48px 20px 20px' }}>
+        <button onClick={() => navigate('/')} style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
+        <h1 style={{ fontSize: 24, fontWeight: 800, color: '#FFFFFF', marginBottom: 2 }}>👶 Childcare</h1>
+        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>{items.length} providers in the Bay Area</p>
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
@@ -183,15 +183,15 @@ export default function Childcare() {
         {/* List / Map toggle */}
         <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)', marginBottom: 16 }}>
           <button style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: '#1a2a3a', color: 'white' }}>☰ List View</button>
-          <button onClick={() => navigate('/childcare/map')} style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: 'rgba(26,42,58,0.5)' }}>🗺️ Map View</button>
+          <button onClick={() => navigate('/childcare/map')} style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#3A4A5A' }}>🗺️ Map View</button>
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(26,42,58,0.4)' }}>
+          <div style={{ textAlign: 'center', padding: '40px 0', color: '#6A7A8A' }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>👶</div>Loading...
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(26,42,58,0.4)' }}>
+          <div style={{ textAlign: 'center', padding: '40px 0', color: '#6A7A8A' }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>👶</div>No providers found
           </div>
         ) : filtered.map(item => (

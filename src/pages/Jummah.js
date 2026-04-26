@@ -145,7 +145,7 @@ function MosqueCard({ mosque, season, userLocation }) {
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 2, alignItems: 'center' }}>
             {mosque.location_area && (
-              <div style={{ fontSize: 13, color: 'rgba(26,42,58,0.5)' }}>📍 {mosque.location_area}</div>
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>📍 {mosque.location_area}</div>
             )}
             {dist !== null && (
               <div style={{ fontSize: 12, color: '#e8a040', fontWeight: 600 }}>{dist.toFixed(1)} mi</div>
@@ -160,8 +160,8 @@ function MosqueCard({ mosque, season, userLocation }) {
             <div key={i} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '9px 12px', marginBottom: 6,
-              background: '#f0edf8', borderRadius: 10,
-              borderLeft: '3px solid #9b87c4',
+              background: '#FFF0E8', borderRadius: 10,
+              borderLeft: '3px solid #C4500A',
             }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: 70 }}>{e.label}</span>
               <span style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a' }}>
@@ -171,13 +171,13 @@ function MosqueCard({ mosque, season, userLocation }) {
           ))}
         </div>
       ) : (
-        <div style={{ fontSize: 13, color: 'rgba(26,42,58,0.4)', marginBottom: 12 }}>Check website for times</div>
+        <div style={{ fontSize: 13, color: '#6A7A8A', marginBottom: 12 }}>Check website for times</div>
       )}
 
       <div style={{ display: 'flex', gap: 8 }}>
         {mosque.display_lat && mosque.display_lng && (
           <a href={`https://www.google.com/maps/dir/?api=1&destination=${mosque.display_lat},${mosque.display_lng}`}
-            style={{ flex: 1, background: '#e8a040', borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 700, color: 'white', textAlign: 'center', textDecoration: 'none' }}>
+            style={{ flex: 1, background: '#E8860A', borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 700, color: 'white', textAlign: 'center', textDecoration: 'none' }}>
             Get Directions
           </a>
         )}
@@ -259,17 +259,17 @@ export default function Jummah() {
   })
 
   return (
-    <div style={{ maxWidth: 430, margin: '0 auto', background: '#f5f5f5', minHeight: '100vh', paddingBottom: 80 }}>
-      <div style={{ background: 'linear-gradient(180deg, #7db8e8 0%, #c8e4f8 60%, #f0c090 100%)', padding: '52px 20px 24px' }}>
-        <button onClick={() => navigate('/')} style={{ fontSize: 14, color: 'rgba(26,42,58,0.65)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
+    <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
+      <div style={{ background: 'linear-gradient(180deg, #1A2F5C 0%, #5C2D7A 40%, #8B1A4A 70%, #C4500A 100%)', padding: '52px 20px 24px' }}>
+        <button onClick={() => navigate('/')} style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
         <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a2a3a', marginBottom: 4 }}>🕌 Jummah Timings</h1>
-        <p style={{ fontSize: 14, color: 'rgba(26,42,58,0.6)', marginBottom: 4 }}>
+        <p style={{ fontSize: 14, color: '#3A4A5A', marginBottom: 4 }}>
           {new Date().getDay() === 5 ? '🟢 Today is Friday · ' : ''}{mosques.length} mosques in the Bay Area
         </p>
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
-        <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#f5f5f5', paddingBottom: 12 }}>
+        <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#F7F3EE', paddingBottom: 12 }}>
 
           {/* Search bar with season toggle embedded on the right */}
           <div style={{ background: 'white', borderRadius: 12, border: '1px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', marginBottom: 10 }}>
@@ -307,14 +307,14 @@ export default function Jummah() {
                 <button key={s.key} onClick={() => setSortBy(s.key)} disabled={s.key === 'nearest' && locationDenied} style={{
                   flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: s.key === 'nearest' && locationDenied ? 'not-allowed' : 'pointer',
                   fontSize: 12, fontWeight: 600,
-                  background: sortBy === s.key ? '#1a2a3a' : 'transparent',
+                  background: sortBy === s.key ? '#1A2F5C' : 'transparent',
                   color: sortBy === s.key ? 'white' : s.key === 'nearest' && locationDenied ? 'rgba(26,42,58,0.25)' : 'rgba(26,42,58,0.5)',
                 }}>{s.label}</button>
               ))}
             </div>
             <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
               <button onClick={() => {}} style={{ padding: '8px 10px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: '#1a2a3a', color: 'white', whiteSpace: 'nowrap' }}>☰ List</button>
-              <button onClick={() => navigate('/map')} style={{ padding: '8px 10px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: 'rgba(26,42,58,0.5)', whiteSpace: 'nowrap' }}>🗺️ Map</button>
+              <button onClick={() => navigate('/map')} style={{ padding: '8px 10px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#3A4A5A', whiteSpace: 'nowrap' }}>🗺️ Map</button>
             </div>
           </div>
 
@@ -329,14 +329,14 @@ export default function Jummah() {
             <span style={{ fontSize: 20 }}>📍</span>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2a3a' }}>Enable location for better results</div>
-              <div style={{ fontSize: 12, color: 'rgba(26,42,58,0.6)', marginTop: 2 }}>Nasiha works best when it can sort mosques by closest to you</div>
+              <div style={{ fontSize: 12, color: '#3A4A5A', marginTop: 2 }}>Nasiha works best when it can sort mosques by closest to you</div>
             </div>
           </div>
         )}
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '48px 0', color: 'rgba(26,42,58,0.4)', fontSize: 15 }}>Loading mosques...</div>
+          <div style={{ textAlign: 'center', padding: '48px 0', color: '#6A7A8A', fontSize: 15 }}>Loading mosques...</div>
         ) : sorted.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px 0', color: 'rgba(26,42,58,0.4)', fontSize: 15 }}>No mosques found</div>
+          <div style={{ textAlign: 'center', padding: '48px 0', color: '#6A7A8A', fontSize: 15 }}>No mosques found</div>
         ) : (
           sorted.map(m => <MosqueCard key={m.id} mosque={m} season={season} userLocation={userLocation} />)
         )}

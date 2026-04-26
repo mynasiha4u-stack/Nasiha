@@ -35,12 +35,12 @@ export default function BottomNav() {
             <span style={{ fontSize: 22 }}>{t.icon}</span>
             <span style={{
               fontSize: 10, fontWeight: 600,
-              color: active ? '#1a2a3a' : 'rgba(26,42,58,0.35)'
+              color: active ? '#C4500A' : '#6A7A8A'
             }}>{t.label}</span>
             {active && (
               <div style={{
                 width: 4, height: 4, borderRadius: '50%',
-                background: '#e8a040', marginTop: 1,
+                background: '#E8860A', marginTop: 1,
               }}/>
             )}
           </button>

@@ -26,7 +26,7 @@ function Section({ title, children }) {
 function Field({ label, children }) {
   return (
     <div style={{ marginBottom: 14 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(26,42,58,0.5)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#3A4A5A', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>{label}</div>
       {children}
     </div>
   )
@@ -196,7 +196,7 @@ function RecentEntries({ category, refresh }) {
       .then(({ data }) => setItems(data || []))
   }, [category, refresh])
 
-  if (items.length === 0) return <div style={{ fontSize: 13, color: 'rgba(26,42,58,0.4)' }}>No entries yet</div>
+  if (items.length === 0) return <div style={{ fontSize: 13, color: '#6A7A8A' }}>No entries yet</div>
 
   return (
     <div>
@@ -204,7 +204,7 @@ function RecentEntries({ category, refresh }) {
         <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: '#1a2a3a' }}>{item.name}</div>
-            {item.event_date && <div style={{ fontSize: 11, color: 'rgba(26,42,58,0.4)' }}>{item.event_date}</div>}
+            {item.event_date && <div style={{ fontSize: 11, color: '#6A7A8A' }}>{item.event_date}</div>}
           </div>
           <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5, background: item.status === 'published' ? '#c8f0dc' : '#f0f0f0', color: item.status === 'published' ? '#0a5c2a' : '#666' }}>{item.status}</span>
         </div>
@@ -226,7 +226,7 @@ export default function Admin() {
   ]
 
   return (
-    <div style={{ maxWidth: 430, margin: '0 auto', background: '#f5f5f5', minHeight: '100vh', paddingBottom: 40 }}>
+    <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 40 }}>
 
       {/* Header */}
       <div style={{ background: 'linear-gradient(180deg, #1a2a3a 0%, #2d4a6a 100%)', padding: '52px 20px 20px' }}>

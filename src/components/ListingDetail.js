@@ -88,30 +88,30 @@ export default function ListingDetail({ item, typeBadge, typeColor, loading, not
 
   if (loading) return (
     <div style={{ maxWidth: 430, margin: '0 auto', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ textAlign: 'center', color: 'rgba(26,42,58,0.4)' }}><div style={{ fontSize: 32, marginBottom: 8 }}>⏳</div>Loading...</div>
+      <div style={{ textAlign: 'center', color: '#6A7A8A' }}><div style={{ fontSize: 32, marginBottom: 8 }}>⏳</div>Loading...</div>
     </div>
   )
 
   if (!item) return (
     <div style={{ maxWidth: 430, margin: '0 auto', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: 'rgba(26,42,58,0.4)' }}>{notFoundLabel}</div>
+      <div style={{ color: '#6A7A8A' }}>{notFoundLabel}</div>
     </div>
   )
 
   return (
-    <div style={{ maxWidth: 430, margin: '0 auto', background: '#f5f5f5', minHeight: '100vh', paddingBottom: 80 }}>
+    <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
 
       {/* Sunset header */}
-      <div style={{ background: 'linear-gradient(180deg, #7db8e8 0%, #c8e4f8 60%, #f0c090 100%)', padding: '52px 20px 20px' }}>
-        <button onClick={() => navigate(-1)} style={{ fontSize: 14, color: 'rgba(26,42,58,0.65)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
+      <div style={{ background: 'linear-gradient(180deg, #1A2F5C 0%, #5C2D7A 40%, #8B1A4A 70%, #C4500A 100%)', padding: '52px 20px 20px' }}>
+        <button onClick={() => navigate(-1)} style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
         {typeBadge && (
           <span style={{ background: typeColor?.bg || '#f0f0f0', color: typeColor?.color || '#444', fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 6, marginBottom: 10, display: 'inline-block' }}>{typeBadge}</span>
         )}
         {item.image_url && (
           <img src={item.image_url} alt={item.name} style={{ width: '100%', borderRadius: 12, marginBottom: 12, objectFit: 'cover', maxHeight: 200 }} />
         )}
-        <h1 style={{ fontSize: 20, fontWeight: 800, color: '#1a2a3a', lineHeight: 1.3, marginBottom: 4 }}>{item.name}</h1>
-        <div style={{ fontSize: 13, color: 'rgba(26,42,58,0.6)' }}>📍 {item.location_area}{item.location_address ? ` · ${item.location_address.split(',')[0]}` : ''}</div>
+        <h1 style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', lineHeight: 1.3, marginBottom: 4 }}>{item.name}</h1>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>📍 {item.location_area}{item.location_address ? ` · ${item.location_address.split(',')[0]}` : ''}</div>
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
@@ -126,11 +126,11 @@ export default function ListingDetail({ item, typeBadge, typeColor, loading, not
         {item.location_address && (
           <div style={{ background: 'white', borderRadius: 16, padding: 14, marginBottom: 12, border: '1px solid rgba(0,0,0,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <div style={{ fontSize: 10, color: 'rgba(26,42,58,0.4)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>Location</div>
+              <div style={{ fontSize: 10, color: '#6A7A8A', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>Location</div>
               <div style={{ fontSize: 14, fontWeight: 600, color: '#1a2a3a' }}>{item.location_address}</div>
             </div>
             <a href={`https://www.google.com/maps/search/${encodeURIComponent(item.location_address)}`} target="_blank" rel="noreferrer"
-              style={{ background: '#e8943a', borderRadius: 10, padding: '8px 14px', fontSize: 12, fontWeight: 700, color: 'white', textDecoration: 'none', flexShrink: 0 }}>
+              style={{ background: '#E8860A', borderRadius: 10, padding: '8px 14px', fontSize: 12, fontWeight: 700, color: 'white', textDecoration: 'none', flexShrink: 0 }}>
               🗺️ Map
             </a>
           </div>

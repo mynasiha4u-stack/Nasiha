@@ -114,7 +114,7 @@ export default function ChildcareMap() {
 
                 {/* Description */}
                 {selected.description && (
-                  <div style={{ fontSize: 13, color: 'rgba(26,42,58,0.65)', lineHeight: 1.6, marginBottom: 14, background: '#f8f8f8', borderRadius: 10, padding: '10px 12px' }}>
+                  <div style={{ fontSize: 13, color: '#1a2a3a', lineHeight: 1.7, marginBottom: 14, background: '#f5f5f5', borderRadius: 10, padding: '10px 12px' }}>
                     {selected.description.replace(/&nbsp;/g, ' ').substring(0, 200)}{selected.description.length > 200 ? '...' : ''}
                   </div>
                 )}

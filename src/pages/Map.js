@@ -225,7 +225,7 @@ export default function Map() {
 
                 {/* Description */}
                 {selected.description && (
-                  <div style={{ fontSize: 13, color: 'rgba(26,42,58,0.7)', lineHeight: 1.7, marginBottom: 14, background: '#f8f8f8', borderRadius: 12, padding: '12px 14px', whiteSpace: 'pre-wrap' }}>
+                  <div style={{ fontSize: 13, color: '#1a2a3a', lineHeight: 1.7, marginBottom: 14, background: '#f5f5f5', borderRadius: 12, padding: '12px 14px', whiteSpace: 'pre-wrap' }}>
                     {selected.description.replace(/&nbsp;/g, ' ').replace(/Age Group:/g, '\nAge Group:').replace(/Services:/g, '\nServices:').replace(/Location:/g, '\nLocation:').substring(0, 300)}{selected.description.length > 300 ? '...' : ''}
                   </div>
                 )}

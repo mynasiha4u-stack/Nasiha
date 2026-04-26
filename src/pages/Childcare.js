@@ -7,18 +7,22 @@ const AREAS = ['All', 'East Bay', 'South Bay', 'Peninsula', 'San Francisco', 'No
 
 function cleanDesc(text) {
   if (!text) return ''
+  const nl = '\n'
   return text
     .replace(/&nbsp;/g, ' ')
     .replace(/&#8217;/g, "'")
     .replace(/&#8220;/g, '"')
     .replace(/&#8221;/g, '"')
-    .replace(/Age Group:/g, '\nAge Group:')
-    .replace(/Delivery Offered:/g, '\nDelivery Offered:')
-    .replace(/On Site Prep:/g, '\nOn Site Prep:')
-    .replace(/Services:/g, '\nServices:')
-    .replace(/Location:/g, '\nLocation:')
-    .replace(/Price:/g, '\nPrice:')
-    .replace(/\n{3,}/g, '\n\n')
+    .replace(/Age Group:/g, nl + 'Age Group:')
+    .replace(/Delivery Offered:/g, nl + 'Delivery Offered:')
+    .replace(/On Site Prep:/g, nl + 'On Site Prep:')
+    .replace(/Services Offered:/g, nl + 'Services Offered:')
+    .replace(/Services:/g, nl + 'Services:')
+    .replace(/Location:/g, nl + 'Location:')
+    .replace(/Price:/g, nl + 'Price:')
+    .replace(/Hours:/g, nl + 'Hours:')
+    .replace(/Contact:/g, nl + 'Contact:')
+    .replace(/About:/g, nl + 'About:')
     .trim()
 }
 
@@ -61,12 +65,12 @@ function ChildcareCard({ item, onTap }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
         <div style={{ flex: 1, paddingRight: 8 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a', marginBottom: 3, lineHeight: 1.3 }}>{item.name}</div>
-          <div style={{ fontSize: 12, color: 'rgba(26,42,58,0.5)' }}>📍 {item.location_area}{item.location_address ? ` · ${item.location_address.split(',')[0]}` : ''}</div>
+          <div style={{ fontSize: 12, color: '#4a5a6a', fontWeight: 500 }}>📍 {item.location_area}{item.location_address ? ` · ${item.location_address.split(',')[0]}` : ''}</div>
         </div>
         <span style={{ background: tc.bg, color: tc.color, fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6, whiteSpace: 'nowrap', flexShrink: 0 }}>{type}</span>
       </div>
       {item.description && (
-        <div style={{ fontSize: 13, color: 'rgba(26,42,58,0.6)', lineHeight: 1.5, marginBottom: 10, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        <div style={{ fontSize: 13, color: '#2a3a4a', lineHeight: 1.6, marginBottom: 10, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
           {cleanDesc(item.description)}
         </div>
       )}
@@ -198,7 +202,7 @@ export function ChildcareDetail() {
         {item.description && (
           <div style={{ background: 'white', borderRadius: 16, padding: 16, marginBottom: 12, border: '1px solid rgba(0,0,0,0.08)' }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a', marginBottom: 10 }}>About</div>
-            <div style={{ fontSize: 14, color: 'rgba(26,42,58,0.75)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>{cleanDesc(item.description)}</div>
+            <div style={{ fontSize: 14, color: '#1a2a3a', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{cleanDesc(item.description)}</div>
           </div>
         )}
       </div>

@@ -152,7 +152,7 @@ export function ChildcareDetail() {
             {item.phone && (
               <a href={`tel:${item.phone}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 8px', textDecoration: 'none', gap: 3 }}>
                 <span style={{ fontSize: 20 }}>📞</span>
-                <span style={{ fontSize: 10, color: '#888', fontWeight: 600 }}>{item.phone}</span>
+                <span style={{ fontSize: 10, color: '#888', fontWeight: 600 }}>Call</span>
               </a>
             )}
             {item.whatsapp && (

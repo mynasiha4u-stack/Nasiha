@@ -15,11 +15,19 @@ const TYPE_COLORS = {
 }
 
 function detectType(name, description) {
+  const title = name.toLowerCase()
   const text = (name + ' ' + (description || '')).toLowerCase()
-  if (text.includes('preschool') || text.includes('pre-school')) return 'Preschool'
-  if (text.includes('daycare') || text.includes('day care')) return 'Daycare'
+  // Title is primary signal
+  if (title.includes('nanny')) return 'Nanny'
+  if (title.includes('babysit') || title.includes('sitter')) return 'Babysitter'
+  if (title.includes('elder') || title.includes('senior')) return 'Elder Care'
+  if (title.includes('preschool') || title.includes('pre-school')) return 'Preschool'
+  if (title.includes('daycare') || title.includes('day care')) return 'Daycare'
+  // Fall back to description
   if (text.includes('nanny')) return 'Nanny'
   if (text.includes('babysit') || text.includes('sitter')) return 'Babysitter'
+  if (text.includes('preschool') || text.includes('pre-school')) return 'Preschool'
+  if (text.includes('daycare') || text.includes('day care')) return 'Daycare'
   if (text.includes('elder') || text.includes('senior')) return 'Elder Care'
   return 'Other'
 }
@@ -41,7 +49,7 @@ function ChildcareCard({ item, onTap }) {
       </div>
       {item.description && (
         <div style={{ fontSize: 13, color: 'rgba(26,42,58,0.6)', lineHeight: 1.5, marginBottom: 10, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-          {item.description}
+          {item.description.replace(/&nbsp;/g, ' ').replace(/&#8217;/g, "'").replace(/&#8220;/g, '"').replace(/&#8221;/g, '"')}
         </div>
       )}
       <div style={{ display: 'flex', gap: 8 }}>
@@ -161,7 +169,7 @@ export function ChildcareDetail() {
         {item.description && (
           <div style={{ background: 'white', borderRadius: 16, padding: 16, marginBottom: 12, border: '1px solid rgba(0,0,0,0.08)' }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a', marginBottom: 10 }}>About</div>
-            <div style={{ fontSize: 14, color: 'rgba(26,42,58,0.75)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>{item.description}</div>
+            <div style={{ fontSize: 14, color: 'rgba(26,42,58,0.75)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>{item.description.replace(/&nbsp;/g, ' ').replace(/&#8217;/g, "'").replace(/&#8220;/g, '"').replace(/&#8221;/g, '"')}</div>
           </div>
         )}
       </div>

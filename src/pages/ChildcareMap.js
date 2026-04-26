@@ -73,7 +73,7 @@ export default function ChildcareMap() {
 
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ background: 'linear-gradient(180deg, #1A2F5C 0%, #5C2D7A 40%, #8B1A4A 70%, #C4500A 100%)', padding: '48px 16px 14px', flexShrink: 0 }}>
+      <div style={{ background: headerGradient, padding: '48px 16px 14px', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
           <button onClick={() => navigate('/childcare')} style={{ fontSize: 14, color: 'rgba(28,43,58,0.65)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>← Back</button>
           <h1 style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', margin: 0 }}>👶 Childcare</h1>
@@ -107,7 +107,7 @@ export default function ChildcareMap() {
                 {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                   <div style={{ flex: 1, paddingRight: 8 }}>
-                    <div style={{ fontSize: 17, fontWeight: 800, color: '#1a2a3a', marginBottom: 3, lineHeight: 1.3 }}>{selected.name}</div>
+                    <div style={{ fontSize: 17, fontWeight: 800, color: colors.textPrimary, marginBottom: 3, lineHeight: 1.3 }}>{selected.name}</div>
                     {selected.location_address && <div style={{ fontSize: 12, color: '#3A4A5A' }}>📍 {selected.location_address}</div>}
                     {!selected.location_address && selected.location_area && <div style={{ fontSize: 12, color: '#3A4A5A' }}>📍 {selected.location_area}</div>}
                   </div>
@@ -116,7 +116,7 @@ export default function ChildcareMap() {
 
                 {/* Description */}
                 {selected.description && (
-                  <div style={{ fontSize: 13, color: '#1a2a3a', lineHeight: 1.7, marginBottom: 14, background: '#F7F3EE', borderRadius: 10, padding: '10px 12px' }}>
+                  <div style={{ fontSize: 13, color: colors.textPrimary, lineHeight: 1.7, marginBottom: 14, background: '#F7F3EE', borderRadius: 10, padding: '10px 12px' }}>
                     {selected.description.replace(/&nbsp;/g, ' ').substring(0, 200)}{selected.description.length > 200 ? '...' : ''}
                   </div>
                 )}
@@ -133,13 +133,13 @@ export default function ChildcareMap() {
                 {(selected.website || selected.email || selected.whatsapp) && (
                   <div style={{ display: 'flex', gap: 8 }}>
                     {selected.website && (
-                      <a href={selected.website} target="_blank" rel="noreferrer" style={{ flex: 1, background: '#F7F3EE', borderRadius: 12, padding: '10px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textDecoration: 'none', textAlign: 'center' }}>🌐 Website</a>
+                      <a href={selected.website} target="_blank" rel="noreferrer" style={{ flex: 1, background: '#F7F3EE', borderRadius: 12, padding: '10px 0', fontSize: 12, fontWeight: 600, color: colors.textPrimary, textDecoration: 'none', textAlign: 'center' }}>🌐 Website</a>
                     )}
                     {selected.email && (
-                      <a href={`mailto:${selected.email}`} style={{ flex: 1, background: '#F7F3EE', borderRadius: 12, padding: '10px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textDecoration: 'none', textAlign: 'center' }}>✉️ Email</a>
+                      <a href={`mailto:${selected.email}`} style={{ flex: 1, background: '#F7F3EE', borderRadius: 12, padding: '10px 0', fontSize: 12, fontWeight: 600, color: colors.textPrimary, textDecoration: 'none', textAlign: 'center' }}>✉️ Email</a>
                     )}
                     {selected.whatsapp && (
-                      <a href={`https://wa.me/${selected.whatsapp.replace(/\D/g,'')}`} target="_blank" rel="noreferrer" style={{ flex: 1, background: '#F7F3EE', borderRadius: 12, padding: '10px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textDecoration: 'none', textAlign: 'center' }}>💬 WhatsApp</a>
+                      <a href={`https://wa.me/${selected.whatsapp.replace(/\D/g,'')}`} target="_blank" rel="noreferrer" style={{ flex: 1, background: '#F7F3EE', borderRadius: 12, padding: '10px 0', fontSize: 12, fontWeight: 600, color: colors.textPrimary, textDecoration: 'none', textAlign: 'center' }}>💬 WhatsApp</a>
                     )}
                   </div>
                 )}

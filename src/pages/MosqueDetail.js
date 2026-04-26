@@ -1,3 +1,4 @@
+import { colors, headerGradient, card, radius } from '../theme'
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -87,11 +88,11 @@ export default function MosqueDetail() {
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
 
       {/* Hero header */}
-      <div style={{ background: 'linear-gradient(180deg, #1A2F5C 0%, #5C2D7A 40%, #8B1A4A 70%, #C4500A 100%)', padding: '52px 20px 20px' }}>
-        <button onClick={() => navigate(-1)} style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
+      <div style={{ background: headerGradient, padding: '52px 20px 20px' }}>
+        <button onClick={() => navigate(-1)} style={{ fontSize: 14, color: colors.textSecondary, marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
         <div style={{ fontSize: 32, marginBottom: 8 }}>🕌</div>
         <h1 style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', lineHeight: 1.3, marginBottom: 4 }}>{mosque.name}</h1>
-        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>📍 {mosque.location_area}{mosque.location_address ? ` · ${mosque.location_address}` : ''}</div>
+        <div style={{ fontSize: 13, color: colors.textSecondary }}>📍 {mosque.location_area}{mosque.location_address ? ` · ${mosque.location_address}` : ''}</div>
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
@@ -99,7 +100,7 @@ export default function MosqueDetail() {
         {/* Jummah times */}
         <div style={{ background: 'white', borderRadius: 16, padding: 16, marginBottom: 12, border: '1px solid rgba(0,0,0,0.08)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#1a2a3a' }}>Jummah Times</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: colors.textPrimary }}>Jummah Times</div>
             <div style={{ display: 'inline-flex', background: '#f0f0f0', borderRadius: 20, padding: 2 }}>
               {['summer', 'winter'].map(s => (
                 <button key={s} onClick={e => { e.stopPropagation(); setLocalSeason(s) }} style={{
@@ -119,7 +120,7 @@ export default function MosqueDetail() {
               borderLeft: '3px solid #C4500A',
             }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{e.label}</span>
-              <span style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a' }}>
+              <span style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary }}>
                 {e.j}{e.iq ? <span style={{ color: '#555', fontWeight: 500 }}> / Iqama {e.iq}</span> : ''}
               </span>
             </div>
@@ -137,7 +138,7 @@ export default function MosqueDetail() {
           {mosque.website && (
             <a href={mosque.website} target="_blank" rel="noreferrer" style={{
               flex: 1, background: 'white', borderRadius: 12, padding: '13px 0',
-              fontSize: 13, fontWeight: 700, color: '#1a2a3a', textAlign: 'center', textDecoration: 'none',
+              fontSize: 13, fontWeight: 700, color: colors.textPrimary, textAlign: 'center', textDecoration: 'none',
               border: '1px solid rgba(0,0,0,0.1)',
             }}>🌐 Website</a>
           )}
@@ -175,7 +176,7 @@ export default function MosqueDetail() {
         {/* Description */}
         {description ? (
           <div style={{ background: 'white', borderRadius: 16, padding: 16, marginBottom: 12, border: '1px solid rgba(0,0,0,0.08)' }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a', marginBottom: 12 }}>About</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary, marginBottom: 12 }}>About</div>
             <div style={{ fontSize: 14, color: 'rgba(26,42,58,0.75)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>
               {description}
             </div>

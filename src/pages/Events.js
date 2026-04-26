@@ -229,7 +229,7 @@ function NewsletterStrip() {
   const [email, setEmail] = useState('')
   const [done, setDone] = useState(false)
   return (
-    <div style={{ background: 'linear-gradient(135deg, #1a2a3a 0%, #2d4a6a 100%)', borderRadius: 16, padding: 16, marginBottom: 16 }}>
+    <div style={{ background: headerGradient, borderRadius: 16, padding: 16, marginBottom: 16 }}>
       {done ? (
         <div style={{ textAlign: 'center', color: 'white', fontSize: 14, fontWeight: 600, padding: '4px 0' }}>✅ You're in! Top events every week.</div>
       ) : (
@@ -278,7 +278,7 @@ export function EventDetailPage() {
 
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
-      <div style={{ background: 'linear-gradient(180deg, #1A2F5C 0%, #5C2D7A 40%, #8B1A4A 70%, #C4500A 100%)', padding: '52px 20px 20px' }}>
+      <div style={{ background: headerGradient, padding: '52px 20px 20px' }}>
         <button onClick={() => navigate(-1)} style={{ fontSize: 14, color: 'rgba(28,43,58,0.65)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
         <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
           {types.map(t => <TypeBadge key={t} type={t} />)}
@@ -402,7 +402,7 @@ export default function Events() {
 
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
-      <div style={{ background: 'linear-gradient(180deg, #1A2F5C 0%, #5C2D7A 40%, #8B1A4A 70%, #C4500A 100%)', padding: '48px 20px 20px' }}>
+      <div style={{ background: headerGradient, padding: '48px 20px 20px' }}>
         <button onClick={() => navigate('/')} style={{ fontSize: 14, color: 'rgba(28,43,58,0.65)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: '#FFFFFF', marginBottom: 2 }}>📅 Events</h1>
         <p style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)' }}>{events.length} Bay Area Muslim events</p>

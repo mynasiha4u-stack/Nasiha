@@ -164,14 +164,14 @@ export default function Map() {
     <div style={{ maxWidth: 430, margin: '0 auto', height: '100vh', display: 'flex', flexDirection: 'column' }}>
 
       {/* Header */}
-      <div style={{ background: 'linear-gradient(180deg, #1A2F5C 0%, #5C2D7A 40%, #8B1A4A 70%, #C4500A 100%)', padding: '48px 16px 14px', flexShrink: 0 }}>
+      <div style={{ background: headerGradient, padding: '48px 16px 14px', flexShrink: 0 }}>
         <h1 style={{ fontSize: 22, fontWeight: 800, color: colors.textPrimary, marginBottom: 12 }}>🗺️ Map</h1>
         {/* Category filter */}
         <div style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' }}>
           <button onClick={() => setCategory(null)} style={{
             padding: '6px 14px', borderRadius: 20, whiteSpace: 'nowrap',
             fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
-            background: category === null ? '#1a2a3a' : 'rgba(255,255,255,0.7)',
+            background: category === null ? colors.brand : 'white',
             color: category === null ? 'white' : 'rgba(26,42,58,0.7)',
             border: 'none',
           }}>All</button>
@@ -179,7 +179,7 @@ export default function Map() {
             <button key={c.id} onClick={() => setCategory(c.id)} style={{
               padding: '6px 14px', borderRadius: 20, whiteSpace: 'nowrap',
               fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
-              background: category === c.id ? c.color : 'rgba(255,255,255,0.7)',
+              background: category === c.id ? c.color : 'white',
               color: category === c.id ? 'white' : 'rgba(26,42,58,0.7)',
               border: 'none',
             }}>{c.label}</button>

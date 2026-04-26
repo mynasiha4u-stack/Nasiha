@@ -1,3 +1,4 @@
+import { colors, headerGradient, card, radius } from '../theme'
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -114,10 +115,10 @@ export default function EventsMap() {
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', height: '100vh', display: 'flex', flexDirection: 'column' }}>
 
       {/* Header */}
-      <div style={{ background: 'linear-gradient(180deg, #1A2F5C 0%, #5C2D7A 40%, #8B1A4A 70%, #C4500A 100%)', padding: '48px 16px 14px', flexShrink: 0 }}>
+      <div style={{ background: headerGradient, padding: '48px 16px 14px', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-          <button onClick={() => navigate('/events')} style={{ fontSize: 14, color: 'rgba(26,42,58,0.65)', background: 'none', border: 'none', cursor: 'pointer' }}>← Events</button>
-          <div style={{ fontSize: 17, fontWeight: 800, color: '#1a2a3a' }}>Events Map</div>
+          <button onClick={() => navigate('/events')} style={{ fontSize: 14, color: colors.textSecondary, background: 'none', border: 'none', cursor: 'pointer' }}>← Events</button>
+          <div style={{ fontSize: 17, fontWeight: 800, color: colors.textPrimary }}>Events Map</div>
         </div>
 
         {/* Time filter */}
@@ -138,7 +139,7 @@ export default function EventsMap() {
         <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
 
         {/* Event count */}
-        <div style={{ position: 'absolute', top: 10, right: 10, background: 'white', borderRadius: 20, padding: '5px 12px', fontSize: 12, fontWeight: 600, color: '#1a2a3a', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+        <div style={{ position: 'absolute', top: 10, right: 10, background: 'white', borderRadius: 20, padding: '5px 12px', fontSize: 12, fontWeight: 600, color: colors.textPrimary, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
           {getFilteredEvents().length} events
         </div>
 
@@ -154,7 +155,7 @@ export default function EventsMap() {
                 {selectedEvent.event_host && (
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#e8943a', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{selectedEvent.event_host}</div>
                 )}
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#1a2a3a', lineHeight: 1.3, marginBottom: 4 }}>{selectedEvent.name}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: colors.textPrimary, lineHeight: 1.3, marginBottom: 4 }}>{selectedEvent.name}</div>
                 <div style={{ fontSize: 12, color: '#3A4A5A' }}>
                   {formatDate(selectedEvent.event_date)}{selectedEvent.event_time ? ` · ${formatTime(selectedEvent.event_time)}` : ''}
                 </div>
@@ -166,7 +167,7 @@ export default function EventsMap() {
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => navigate(`/events/${selectedEvent.url_slug}`)} style={{
-                flex: 1, background: '#1a2a3a', color: 'white', border: 'none',
+                flex: 1, background: colors.brand, color: 'white', border: 'none',
                 borderRadius: 10, padding: '9px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer',
               }}>View Event</button>
               {selectedEvent.location_address && (

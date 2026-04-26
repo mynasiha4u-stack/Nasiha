@@ -1,3 +1,4 @@
+import { colors, headerGradient, card, radius } from '../theme'
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -17,7 +18,7 @@ const AREAS = ['East Bay', 'South Bay', 'Peninsula', 'San Francisco', 'North Bay
 function Section({ title, children }) {
   return (
     <div style={{ background: 'white', borderRadius: 16, padding: 20, marginBottom: 16, border: '1px solid rgba(0,0,0,0.08)' }}>
-      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a', marginBottom: 16 }}>{title}</div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary, marginBottom: 16 }}>{title}</div>
       {children}
     </div>
   )
@@ -127,7 +128,7 @@ function AddEventForm({ onSuccess }) {
       <Field label="Image URL (flyer)"><Input value={form.image_url} onChange={set('image_url')} placeholder="https://..." /></Field>
       <Field label="Description"><Textarea value={form.description} onChange={set('description')} placeholder="What is this event about?" /></Field>
       {msg && <div style={{ fontSize: 13, color: msg.includes('✅') ? '#2a8a4a' : '#c00', marginBottom: 12 }}>{msg}</div>}
-      <button onClick={save} disabled={saving} style={{ width: '100%', background: '#1a2a3a', color: 'white', border: 'none', borderRadius: 12, padding: '14px 0', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+      <button onClick={save} disabled={saving} style={{ width: '100%', background: colors.brand, color: 'white', border: 'none', borderRadius: 12, padding: '14px 0', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
         {saving ? 'Saving...' : 'Add Event'}
       </button>
     </div>
@@ -177,7 +178,7 @@ function AddMosqueForm({ onSuccess }) {
       <Field label="Facebook"><Input value={form.facebook} onChange={set('facebook')} placeholder="https://facebook.com/..." /></Field>
       <Field label="Description"><Textarea value={form.description} onChange={set('description')} placeholder="About this mosque..." /></Field>
       {msg && <div style={{ fontSize: 13, color: msg.includes('✅') ? '#2a8a4a' : '#c00', marginBottom: 12 }}>{msg}</div>}
-      <button onClick={save} disabled={saving} style={{ width: '100%', background: '#1a2a3a', color: 'white', border: 'none', borderRadius: 12, padding: '14px 0', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+      <button onClick={save} disabled={saving} style={{ width: '100%', background: colors.brand, color: 'white', border: 'none', borderRadius: 12, padding: '14px 0', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
         {saving ? 'Saving...' : 'Add Mosque'}
       </button>
     </div>
@@ -203,7 +204,7 @@ function RecentEntries({ category, refresh }) {
       {items.map(item => (
         <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#1a2a3a' }}>{item.name}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: colors.textPrimary }}>{item.name}</div>
             {item.event_date && <div style={{ fontSize: 11, color: '#6A7A8A' }}>{item.event_date}</div>}
           </div>
           <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5, background: item.status === 'published' ? '#c8f0dc' : '#f0f0f0', color: item.status === 'published' ? '#0a5c2a' : '#666' }}>{item.status}</span>
@@ -229,7 +230,7 @@ export default function Admin() {
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 40 }}>
 
       {/* Header */}
-      <div style={{ background: 'linear-gradient(180deg, #1a2a3a 0%, #2d4a6a 100%)', padding: '52px 20px 20px' }}>
+      <div style={{ background: headerGradient, padding: '52px 20px 20px' }}>
         <button onClick={() => navigate('/')} style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
         <h1 style={{ fontSize: 22, fontWeight: 800, color: 'white', marginBottom: 4 }}>⚙️ Admin</h1>
         <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>Add and manage Nasiha content</p>

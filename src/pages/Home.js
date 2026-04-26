@@ -141,8 +141,8 @@ export default function Home() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 10, marginBottom: 28 }}>
           {CATEGORIES.map(cat => (
             <button key={cat.label} onClick={() => navigate(cat.path)} style={{
-              background: 'white',
-              border: `1px solid ${colors.border}`,
+              background: '#FFF8F3',
+              border: `1px solid rgba(194,65,12,0.12)`,
               borderRadius: radius.md,
               padding: '16px 8px 12px',
               display: 'flex', flexDirection: 'column',
@@ -174,7 +174,7 @@ export default function Home() {
                 }}>
                   <div style={{
                     height: 100,
-                    background: ev.image_url ? `url(${ev.image_url}) center/cover` : `linear-gradient(135deg, #1C2B3A 0%, #C2410C 100%)`,
+                    background: ev.image_url ? `url(${ev.image_url}) center/cover` : headerGradient,
                     position: 'relative',
                   }}>
                     {ev.event_host && (
@@ -211,7 +211,7 @@ export default function Home() {
                 cursor: 'pointer',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: radius.sm, background: `linear-gradient(135deg, #1C2B3A, #C2410C)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>🕌</div>
+                  <div style={{ width: 40, height: 40, borderRadius: radius.sm, background: headerGradient, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>🕌</div>
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: colors.textPrimary }}>{m.name}</div>
                     <div style={{ fontSize: 12, color: colors.textSecondary }}>{m.location_area}</div>

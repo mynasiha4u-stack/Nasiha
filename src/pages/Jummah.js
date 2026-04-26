@@ -261,7 +261,7 @@ export default function Jummah() {
 
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
-      <div style={{ background: 'linear-gradient(180deg, #1A2F5C 0%, #5C2D7A 40%, #8B1A4A 70%, #C4500A 100%)', padding: '52px 20px 24px' }}>
+      <div style={{ background: headerGradient, padding: '52px 20px 24px' }}>
         <button onClick={() => navigate('/')} style={{ fontSize: 14, color: 'rgba(28,43,58,0.65)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
         <h1 style={{ fontSize: 26, fontWeight: 700, color: colors.textPrimary, marginBottom: 4 }}>🕌 Jummah Timings</h1>
         <p style={{ fontSize: 14, color: '#3A4A5A', marginBottom: 4 }}>

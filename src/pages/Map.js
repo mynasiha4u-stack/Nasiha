@@ -38,6 +38,7 @@ export default function Map() {
   const [mosques, setMosques] = useState([])
   const [loading, setLoading] = useState(true)
   const [mapReady, setMapReady] = useState(false)
+  const [category, setCategory] = useState('mosques')
 
   // Load mosques from DB
   useEffect(() => {
@@ -166,26 +167,26 @@ export default function Map() {
 
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#f5f5f5', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ background: 'linear-gradient(180deg, #7db8e8 0%, #c8e4f8 60%, #f0c090 100%)', padding: '52px 20px 20px' }}>
-        <button onClick={() => navigate('/')} style={{ fontSize: 14, color: 'rgba(26,42,58,0.65)', marginBottom: 10, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
-        <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a2a3a', marginBottom: 2 }}>🗺️ Mosque Map</h1>
-        <p style={{ fontSize: 14, color: 'rgba(26,42,58,0.6)' }}>
-          {mosques.length} mosques · Tap a pin for Jummah times
-        </p>
-      </div>
-
-      <div style={{ padding: '12px 16px 0', background: '#f5f5f5' }}>
-        <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
-          <button onClick={() => navigate('/jummah')} style={{
-            flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
-            fontSize: 12, fontWeight: 600,
-            background: 'transparent', color: 'rgba(26,42,58,0.5)',
-          }}>☰ List View</button>
-          <button style={{
-            flex: 1, padding: '8px 0', borderRadius: 10, border: 'none',
-            fontSize: 12, fontWeight: 600,
-            background: '#1a2a3a', color: 'white',
-          }}>🗺️ Map View</button>
+      <div style={{ background: 'linear-gradient(180deg, #7db8e8 0%, #c8e4f8 60%, #f0c090 100%)', padding: '48px 16px 14px' }}>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1a2a3a', marginBottom: 12 }}>🗺️ Map</h1>
+        {/* Category filter */}
+        <div style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' }}>
+          {[
+            { id: 'mosques',    label: '🕌 Masjids' },
+            { id: 'events',     label: '📅 Events' },
+            { id: 'restaurants',label: '🍽️ Restaurants' },
+            { id: 'homecooks',  label: '👨‍🍳 Home Cooks' },
+            { id: 'childcare',  label: '👶 Childcare' },
+            { id: 'schools',    label: '🏫 Schools' },
+          ].map(c => (
+            <button key={c.id} onClick={() => setCategory(c.id)} style={{
+              padding: '6px 14px', borderRadius: 20, whiteSpace: 'nowrap',
+              fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
+              background: category === c.id ? '#1a2a3a' : 'rgba(255,255,255,0.7)',
+              color: category === c.id ? 'white' : 'rgba(26,42,58,0.7)',
+              border: 'none',
+            }}>{c.label}</button>
+          ))}
         </div>
       </div>
 

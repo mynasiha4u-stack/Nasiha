@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 const tabs = [
   { path: '/',        icon: '🏠', label: 'Home'   },
   { path: '/map',     icon: '🗺️', label: 'Map'    },
-  { path: '/jummah',  icon: '🕌', label: 'Jummah Timings' },
+  { path: '/jummah',  icon: '🕌', label: 'Masjids' },
   { path: '/events',  icon: '📅', label: 'Events' },
 ]
 

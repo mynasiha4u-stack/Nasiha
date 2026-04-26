@@ -9,14 +9,26 @@ const http = require('http')
 const { createClient } = require('@supabase/supabase-js')
 const fs = require('fs')
 
-// Load .env
-try {
-  const env = fs.readFileSync('.env', 'utf8')
-  env.split('\n').forEach(line => {
-    const [k, v] = line.split('=')
-    if (k && v) process.env[k.trim()] = v.trim()
-  })
-} catch {}
+// Load .env from current directory or parent
+const envPaths = ['.env', '../.env', require('os').homedir() + '/Desktop/mynasiha/.env']
+for (const p of envPaths) {
+  try {
+    const env = fs.readFileSync(p, 'utf8')
+    env.split('\n').forEach(line => {
+      const idx = line.indexOf('=')
+      if (idx > 0) {
+        const k = line.substring(0, idx).trim()
+        const v = line.substring(idx + 1).trim()
+        if (k && v) process.env[k] = v
+      }
+    })
+    console.log('Loaded .env from', p)
+    break
+  } catch {}
+}
+if (!process.env.REACT_APP_GOOGLE_MAPS_API_KEY) {
+  console.log('⚠️  No Google Maps API key found — geocoding will be skipped')
+}
 
 const SUPABASE_URL = 'https://puymhxfhoqryxnjubryw.supabase.co'
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1eW1oeGZob3FyeXhuanVicnl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MjY2OTMsImV4cCI6MjA5MTAwMjY5M30.yP_jGHNmJcGKaKXF7O-ctJaO8iqhujqZ8AKSGc_yGSY'
@@ -289,6 +301,19 @@ async function backfill() {
       const { types, audiences } = classifyEvent(event.name, event.description)
       updates.event_type = types[0] || 'Community'
       updates.event_audience = audiences
+    }
+
+    // Geocode if missing coordinates
+    if (!event.display_lat && event.location_address) {
+      process.stdout.write(`  📍 Geocoding "${event.name.substring(0, 35)}"... `)
+      const coords = await geocodeAddress(event.location_address)
+      if (coords.lat) {
+        updates.display_lat = coords.lat
+        updates.display_lng = coords.lng
+        console.log('✅')
+      } else {
+        console.log('—')
+      }
     }
 
     // Fix image if missing (check instagram field too from old hack)

@@ -209,7 +209,7 @@ export default function Map() {
         {selected && (
           <>
             <div onClick={() => setSelected(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.3)' }} />
-            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'white', borderRadius: '20px 20px 0 0', padding: '0 0 90px', boxShadow: '0 -4px 30px rgba(0,0,0,0.2)', maxHeight: '75vh', overflowY: 'auto' }}>
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'white', borderRadius: '20px 20px 0 0', padding: '0 0 90px', boxShadow: '0 -4px 30px rgba(0,0,0,0.2)', minHeight: '50vh', maxHeight: '75vh', overflowY: 'auto' }}>
               <div style={{ width: 36, height: 4, background: 'rgba(0,0,0,0.12)', borderRadius: 2, margin: '14px auto 18px' }} />
               <div style={{ padding: '0 18px' }}>
 

@@ -7,6 +7,16 @@
 const https = require('https')
 const http = require('http')
 const { createClient } = require('@supabase/supabase-js')
+const fs = require('fs')
+
+// Load .env
+try {
+  const env = fs.readFileSync('.env', 'utf8')
+  env.split('\n').forEach(line => {
+    const [k, v] = line.split('=')
+    if (k && v) process.env[k.trim()] = v.trim()
+  })
+} catch {}
 
 const SUPABASE_URL = 'https://puymhxfhoqryxnjubryw.supabase.co'
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1eW1oeGZob3FyeXhuanVicnl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MjY2OTMsImV4cCI6MjA5MTAwMjY5M30.yP_jGHNmJcGKaKXF7O-ctJaO8iqhujqZ8AKSGc_yGSY'
@@ -94,6 +104,23 @@ function fetchUrl(url) {
     req.on('error', reject)
     req.setTimeout(8000, () => { req.destroy(); reject(new Error('Timeout')) })
   })
+}
+
+async function geocodeAddress(address) {
+  if (!address) return { lat: null, lng: null }
+  try {
+    const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || ''
+    if (!apiKey) return { lat: null, lng: null }
+    const encoded = encodeURIComponent(address)
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encoded}&key=${apiKey}`
+    const data = await fetchUrl(url)
+    const json = JSON.parse(data)
+    if (json.results && json.results[0]) {
+      const loc = json.results[0].geometry.location
+      return { lat: loc.lat, lng: loc.lng }
+    }
+  } catch {}
+  return { lat: null, lng: null }
 }
 
 async function fetchEventImage(url) {
@@ -200,6 +227,14 @@ async function syncFeed(feed) {
       console.log(imageUrl ? '✅' : '—')
     }
 
+    // Geocode the event address
+    let coords = { lat: null, lng: null }
+    if (event.location) {
+      process.stdout.write(`  📍 Geocoding "${event.summary.substring(0, 30)}"... `)
+      coords = await geocodeAddress(event.location)
+      console.log(coords.lat ? '✅' : '—')
+    }
+
     const { error } = await supabase.from('content').insert({
       content_type: 'listing',
       category_id: EVENTS_CATEGORY_ID,
@@ -219,6 +254,8 @@ async function syncFeed(feed) {
       submitted_by: 'sync',
       event_host: feed.mosque,
       internal_notes: feed.mosque,
+      display_lat: coords.lat,
+      display_lng: coords.lng,
     })
 
     if (error) {

@@ -419,7 +419,7 @@ export default function Events() {
             border: '1px solid rgba(0,0,0,0.1)',
           }}>This Weekend</button>
           <div style={{ flex: 1 }} />
-          <button onClick={() => navigate('/map')} style={{
+          <button onClick={() => navigate('/events/map')} style={{
             padding: '7px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
             background: 'white', color: '#1a2a3a', border: '1px solid rgba(0,0,0,0.1)',
             display: 'flex', alignItems: 'center', gap: 5,

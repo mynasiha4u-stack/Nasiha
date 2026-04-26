@@ -73,10 +73,13 @@ export default function ChildcareMap() {
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <div style={{ background: 'linear-gradient(180deg, #7db8e8 0%, #c8e4f8 60%, #f0c090 100%)', padding: '48px 16px 14px', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
-          <button onClick={() => navigate('/childcare')} style={{ fontSize: 14, color: 'rgba(26,42,58,0.65)', background: 'none', border: 'none', cursor: 'pointer' }}>← List</button>
-          <div style={{ fontSize: 17, fontWeight: 800, color: '#1a2a3a' }}>👶 Childcare Map</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+          <h1 style={{ fontSize: 20, fontWeight: 800, color: '#1a2a3a', margin: 0 }}>👶 Childcare</h1>
           <div style={{ marginLeft: 'auto', fontSize: 12, color: 'rgba(26,42,58,0.5)', fontWeight: 600 }}>{items.length} providers</div>
+        </div>
+        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.7)', borderRadius: 12, padding: 3 }}>
+          <button onClick={() => navigate('/childcare')} style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: 'rgba(26,42,58,0.5)' }}>☰ List View</button>
+          <button style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: '#1a2a3a', color: 'white' }}>🗺️ Map View</button>
         </div>
       </div>
 

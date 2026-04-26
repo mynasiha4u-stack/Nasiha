@@ -1,3 +1,4 @@
+import { colors, headerGradient, radius } from '../theme'
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -57,7 +58,7 @@ export default function ChildcareMap() {
         map: mapInstanceRef.current,
         icon: {
           path: 'M12 0C7.6 0 4 3.6 4 8c0 6.4 8 16 8 16s8-9.6 8-16C20 3.6 16.4 0 12 0z',
-          fillColor: '#9b87c4',
+          fillColor: colors.pinChildcare,
           fillOpacity: 1,
           strokeColor: 'white',
           strokeWeight: 1.5,
@@ -74,13 +75,13 @@ export default function ChildcareMap() {
     <div style={{ maxWidth: 430, margin: '0 auto', height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <div style={{ background: 'linear-gradient(180deg, #1A2F5C 0%, #5C2D7A 40%, #8B1A4A 70%, #C4500A 100%)', padding: '48px 16px 14px', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-          <button onClick={() => navigate('/childcare')} style={{ fontSize: 14, color: 'rgba(26,42,58,0.65)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>← Back</button>
+          <button onClick={() => navigate('/childcare')} style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>← Back</button>
           <h1 style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', margin: 0 }}>👶 Childcare</h1>
           <div style={{ marginLeft: 'auto', fontSize: 12, color: '#3A4A5A', fontWeight: 600 }}>{items.length} providers</div>
         </div>
         <div style={{ display: 'flex', background: 'rgba(255,255,255,0.7)', borderRadius: 12, padding: 3 }}>
           <button onClick={() => navigate('/childcare')} style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#3A4A5A' }}>☰ List View</button>
-          <button style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: '#1a2a3a', color: 'white' }}>🗺️ Map View</button>
+          <button style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'rgba(255,255,255,0.2)', color: 'white' }}>🗺️ Map View</button>
         </div>
       </div>
 
@@ -122,9 +123,9 @@ export default function ChildcareMap() {
 
                 {/* Contact buttons */}
                 <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-                  <button onClick={() => navigate(`/childcare/${selected.url_slug}`)} style={{ flex: 1, background: '#1a2a3a', color: 'white', border: 'none', borderRadius: 12, padding: '12px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>View Full Details</button>
+                  <button onClick={() => navigate(`/childcare/${selected.url_slug}`)} style={{ flex: 1, background: colors.deep, color: 'white', border: 'none', borderRadius: 12, padding: '12px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>View Full Details</button>
                   {selected.phone && (
-                    <a href={`tel:${selected.phone}`} style={{ flex: 1, background: '#9b87c4', color: 'white', borderRadius: 12, padding: '12px 0', fontSize: 13, fontWeight: 700, textDecoration: 'none', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>📞 Call</a>
+                    <a href={`tel:${selected.phone}`} style={{ flex: 1, background: colors.pinChildcare, color: 'white', borderRadius: 12, padding: '12px 0', fontSize: 13, fontWeight: 700, textDecoration: 'none', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>📞 Call</a>
                   )}
                 </div>
 

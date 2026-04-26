@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import BottomNav from '../components/BottomNav'
 import ListingDetail, { cleanText } from '../components/ListingDetail'
+import { colors, headerGradient, card, radius } from '../theme'
 
 const AREAS = ['All', 'East Bay', 'South Bay', 'Peninsula', 'San Francisco', 'North Bay']
 
@@ -60,8 +61,7 @@ function ChildcareCard({ item, onTap }) {
   const tc = TYPE_COLORS[type] || TYPE_COLORS.Other
   return (
     <div onClick={() => onTap(item)} style={{
-      background: 'white', borderRadius: 16, border: '1px solid rgba(0,0,0,0.08)',
-      padding: 16, marginBottom: 12, cursor: 'pointer',
+      ...card, padding: 16, cursor: 'pointer',
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
         <div style={{ flex: 1, paddingRight: 8 }}>
@@ -173,16 +173,16 @@ export default function Childcare() {
           {AREAS.map(a => (
             <button key={a} onClick={() => setArea(a)} style={{
               padding: '6px 14px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
-              background: area === a ? '#1a2a3a' : 'white',
-              color: area === a ? 'white' : 'rgba(26,42,58,0.6)',
+              background: area === a ? colors.deep : 'white',
+              color: area === a ? 'white' : colors.textSecondary,
               border: '1px solid rgba(0,0,0,0.1)',
             }}>{a}</button>
           ))}
         </div>
 
         {/* List / Map toggle */}
-        <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)', marginBottom: 16 }}>
-          <button style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: '#1a2a3a', color: 'white' }}>☰ List View</button>
+        <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, border: `1px solid ${colors.border}`, marginBottom: 16 }}>
+          <button style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: colors.deep, color: 'white' }}>☰ List View</button>
           <button onClick={() => navigate('/childcare/map')} style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#3A4A5A' }}>🗺️ Map View</button>
         </div>
 

@@ -1,3 +1,4 @@
+import { colors, headerGradient, card, radius } from '../theme'
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -136,7 +137,7 @@ function MosqueCard({ mosque, season, userLocation }) {
         <MosqueIcon />
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a', lineHeight: 1.3, flex: 1, paddingRight: 8 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary, lineHeight: 1.3, flex: 1, paddingRight: 8 }}>
               {mosque.name}
             </div>
             {isFriday && (
@@ -164,7 +165,7 @@ function MosqueCard({ mosque, season, userLocation }) {
               borderLeft: '3px solid #C4500A',
             }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: 70 }}>{e.label}</span>
-              <span style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a' }}>
+              <span style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary }}>
                 {e.j}{e.iq ? <span style={{ color: '#555', fontWeight: 500 }}> / Iqama {e.iq}</span> : ''}
               </span>
             </div>
@@ -183,7 +184,7 @@ function MosqueCard({ mosque, season, userLocation }) {
         )}
         {mosque.website && (
           <a href={mosque.website} target="_blank" rel="noreferrer"
-            style={{ flex: 1, background: '#f0f0f0', borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 600, color: '#1a2a3a', textAlign: 'center', textDecoration: 'none' }}>
+            style={{ flex: 1, background: '#f0f0f0', borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 600, color: colors.textPrimary, textAlign: 'center', textDecoration: 'none' }}>
             Website
           </a>
         )}
@@ -262,7 +263,7 @@ export default function Jummah() {
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
       <div style={{ background: 'linear-gradient(180deg, #1A2F5C 0%, #5C2D7A 40%, #8B1A4A 70%, #C4500A 100%)', padding: '52px 20px 24px' }}>
         <button onClick={() => navigate('/')} style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
-        <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a2a3a', marginBottom: 4 }}>🕌 Jummah Timings</h1>
+        <h1 style={{ fontSize: 26, fontWeight: 700, color: colors.textPrimary, marginBottom: 4 }}>🕌 Jummah Timings</h1>
         <p style={{ fontSize: 14, color: '#3A4A5A', marginBottom: 4 }}>
           {new Date().getDay() === 5 ? '🟢 Today is Friday · ' : ''}{mosques.length} mosques in the Bay Area
         </p>
@@ -313,7 +314,7 @@ export default function Jummah() {
               ))}
             </div>
             <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
-              <button onClick={() => {}} style={{ padding: '8px 10px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: '#1a2a3a', color: 'white', whiteSpace: 'nowrap' }}>☰ List</button>
+              <button onClick={() => {}} style={{ padding: '8px 10px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: colors.deep, color: 'white', whiteSpace: 'nowrap' }}>☰ List</button>
               <button onClick={() => navigate('/map')} style={{ padding: '8px 10px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#3A4A5A', whiteSpace: 'nowrap' }}>🗺️ Map</button>
             </div>
           </div>
@@ -328,7 +329,7 @@ export default function Jummah() {
           }}>
             <span style={{ fontSize: 20 }}>📍</span>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2a3a' }}>Enable location for better results</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: colors.textPrimary }}>Enable location for better results</div>
               <div style={{ fontSize: 12, color: '#3A4A5A', marginTop: 2 }}>Nasiha works best when it can sort mosques by closest to you</div>
             </div>
           </div>

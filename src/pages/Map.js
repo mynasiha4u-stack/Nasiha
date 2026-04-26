@@ -1,3 +1,4 @@
+import { colors, headerGradient, card, radius } from '../theme'
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -6,7 +7,7 @@ import BottomNav from '../components/BottomNav'
 const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY
 
 const CATEGORIES = [
-  { id: 'mosques',     label: '🕌 Masjids',       slug: 'mosques',          color: '#e8943a' },
+  { id: 'mosques',     label: '🕌 Masjids',       slug: 'mosques',          color: colors.brand },
   { id: 'childcare',   label: '👶 Childcare',     slug: 'childcare',        color: '#9b87c4' },
   { id: 'restaurants', label: '🍽️ Restaurants',   slug: 'restaurants',      color: '#2a8a4a' },
   { id: 'homecooks',   label: '👨‍🍳 Home Cooks',    slug: 'home-cooked-food', color: '#c87c0a' },
@@ -164,7 +165,7 @@ export default function Map() {
 
       {/* Header */}
       <div style={{ background: 'linear-gradient(180deg, #1A2F5C 0%, #5C2D7A 40%, #8B1A4A 70%, #C4500A 100%)', padding: '48px 16px 14px', flexShrink: 0 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1a2a3a', marginBottom: 12 }}>🗺️ Map</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: colors.textPrimary, marginBottom: 12 }}>🗺️ Map</h1>
         {/* Category filter */}
         <div style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' }}>
           <button onClick={() => setCategory(null)} style={{
@@ -200,7 +201,7 @@ export default function Map() {
 
         {/* Pin count */}
         {!loading && (
-          <div style={{ position: 'absolute', top: 10, right: 10, background: 'white', borderRadius: 20, padding: '5px 12px', fontSize: 12, fontWeight: 600, color: '#1a2a3a', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+          <div style={{ position: 'absolute', top: 10, right: 10, background: 'white', borderRadius: 20, padding: '5px 12px', fontSize: 12, fontWeight: 600, color: colors.textPrimary, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
             {pins.length} {category ? CATEGORIES.find(c => c.id === category)?.label.split(' ').slice(1).join(' ') : 'places'}
           </div>
         )}
@@ -216,16 +217,16 @@ export default function Map() {
                 {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                   <div style={{ flex: 1, paddingRight: 8 }}>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: '#1a2a3a', marginBottom: 4, lineHeight: 1.3 }}>{selected.name}</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary, marginBottom: 4, lineHeight: 1.3 }}>{selected.name}</div>
                     <div style={{ fontSize: 12, color: '#3A4A5A' }}>📍 {selected.location_area}</div>
-                    {selected.event_date && <div style={{ fontSize: 12, color: '#e8943a', fontWeight: 600, marginTop: 3 }}>📅 {new Date(selected.event_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>}
+                    {selected.event_date && <div style={{ fontSize: 12, color: colors.brand, fontWeight: 600, marginTop: 3 }}>📅 {new Date(selected.event_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>}
                   </div>
                   <button onClick={() => setSelected(null)} style={{ background: '#f0f0f0', border: 'none', borderRadius: 20, width: 30, height: 30, fontSize: 15, color: '#6A7A8A', cursor: 'pointer', flexShrink: 0 }}>×</button>
                 </div>
 
                 {/* Description */}
                 {selected.description && (
-                  <div style={{ fontSize: 13, color: '#1a2a3a', lineHeight: 1.7, marginBottom: 14, background: '#F7F3EE', borderRadius: 12, padding: '12px 14px', whiteSpace: 'pre-wrap' }}>
+                  <div style={{ fontSize: 13, color: colors.textPrimary, lineHeight: 1.7, marginBottom: 14, background: '#F7F3EE', borderRadius: 12, padding: '12px 14px', whiteSpace: 'pre-wrap' }}>
                     {selected.description.replace(/&nbsp;/g, ' ').replace(/Age Group:/g, '\nAge Group:').replace(/Services:/g, '\nServices:').replace(/Location:/g, '\nLocation:').substring(0, 300)}{selected.description.length > 300 ? '...' : ''}
                   </div>
                 )}
@@ -233,7 +234,7 @@ export default function Map() {
                 {/* Primary actions */}
                 <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                   {getDetailPath(selected) && (
-                    <button onClick={() => navigate(getDetailPath(selected))} style={{ flex: 1, background: '#1a2a3a', color: 'white', border: 'none', borderRadius: 12, padding: '12px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>View Details</button>
+                    <button onClick={() => navigate(getDetailPath(selected))} style={{ flex: 1, background: colors.deep, color: 'white', border: 'none', borderRadius: 12, padding: '12px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>View Details</button>
                   )}
                   <a href={`https://www.google.com/maps/dir/?api=1&destination=${selected.display_lat},${selected.display_lng}`} target="_blank" rel="noreferrer"
                     style={{ flex: 1, background: '#E8860A', color: 'white', borderRadius: 12, padding: '12px 0', fontSize: 13, fontWeight: 700, textDecoration: 'none', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
@@ -244,14 +245,14 @@ export default function Map() {
                 {/* All contact methods */}
                 {(selected.phone || selected.email || selected.website || selected.instagram || selected.facebook || selected.whatsapp) && (
                   <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
-                    {selected.phone && <a href={`tel:${selected.phone}`} style={{ flex: 1, minWidth: 70, background: '#F7F3EE', borderRadius: 10, padding: '9px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textDecoration: 'none', textAlign: 'center' }}>📞 Call</a>}
-                    {selected.email && <a href={`mailto:${selected.email}`} style={{ flex: 1, minWidth: 70, background: '#F7F3EE', borderRadius: 10, padding: '9px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textDecoration: 'none', textAlign: 'center' }}>✉️ Email</a>}
-                    {selected.website && <a href={selected.website.startsWith('http') ? selected.website : 'https://' + selected.website} target="_blank" rel="noreferrer" style={{ flex: 1, minWidth: 70, background: '#F7F3EE', borderRadius: 10, padding: '9px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textDecoration: 'none', textAlign: 'center' }}>🌐 Website</a>}
-                    {selected.instagram && <a href={selected.instagram} target="_blank" rel="noreferrer" style={{ flex: 1, minWidth: 70, background: '#F7F3EE', borderRadius: 10, padding: '9px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textDecoration: 'none', textAlign: 'center' }}>📸 IG</a>}
-                    {selected.facebook && <a href={selected.facebook} target="_blank" rel="noreferrer" style={{ flex: 1, minWidth: 70, background: '#F7F3EE', borderRadius: 10, padding: '9px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textDecoration: 'none', textAlign: 'center' }}>
+                    {selected.phone && <a href={`tel:${selected.phone}`} style={{ flex: 1, minWidth: 70, background: '#F7F3EE', borderRadius: 10, padding: '9px 0', fontSize: 12, fontWeight: 600, color: colors.textPrimary, textDecoration: 'none', textAlign: 'center' }}>📞 Call</a>}
+                    {selected.email && <a href={`mailto:${selected.email}`} style={{ flex: 1, minWidth: 70, background: '#F7F3EE', borderRadius: 10, padding: '9px 0', fontSize: 12, fontWeight: 600, color: colors.textPrimary, textDecoration: 'none', textAlign: 'center' }}>✉️ Email</a>}
+                    {selected.website && <a href={selected.website.startsWith('http') ? selected.website : 'https://' + selected.website} target="_blank" rel="noreferrer" style={{ flex: 1, minWidth: 70, background: '#F7F3EE', borderRadius: 10, padding: '9px 0', fontSize: 12, fontWeight: 600, color: colors.textPrimary, textDecoration: 'none', textAlign: 'center' }}>🌐 Website</a>}
+                    {selected.instagram && <a href={selected.instagram} target="_blank" rel="noreferrer" style={{ flex: 1, minWidth: 70, background: '#F7F3EE', borderRadius: 10, padding: '9px 0', fontSize: 12, fontWeight: 600, color: colors.textPrimary, textDecoration: 'none', textAlign: 'center' }}>📸 IG</a>}
+                    {selected.facebook && <a href={selected.facebook} target="_blank" rel="noreferrer" style={{ flex: 1, minWidth: 70, background: '#F7F3EE', borderRadius: 10, padding: '9px 0', fontSize: 12, fontWeight: 600, color: colors.textPrimary, textDecoration: 'none', textAlign: 'center' }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><span style={{ background: '#1877F2', color: 'white', borderRadius: 3, padding: '0 3px', fontSize: 10, fontWeight: 900 }}>f</span> FB</span>
                     </a>}
-                    {selected.whatsapp && <a href={`https://wa.me/${selected.whatsapp.replace(/\D/g,'')}`} target="_blank" rel="noreferrer" style={{ flex: 1, minWidth: 70, background: '#F7F3EE', borderRadius: 10, padding: '9px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textDecoration: 'none', textAlign: 'center' }}>💬 WA</a>}
+                    {selected.whatsapp && <a href={`https://wa.me/${selected.whatsapp.replace(/\D/g,'')}`} target="_blank" rel="noreferrer" style={{ flex: 1, minWidth: 70, background: '#F7F3EE', borderRadius: 10, padding: '9px 0', fontSize: 12, fontWeight: 600, color: colors.textPrimary, textDecoration: 'none', textAlign: 'center' }}>💬 WA</a>}
                   </div>
                 )}
               </div>

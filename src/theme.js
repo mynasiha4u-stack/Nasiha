@@ -1,88 +1,75 @@
 /**
- * Nasiha Golden Hour Design System
- * Inspired by Asr/Maghrib — the most beautiful hour
+ * NASIHA DESIGN SYSTEM
+ * Maghrib/Asr sunset palette — 4 colors + neutrals only
+ * 
+ * RULES:
+ * - Dark surface → white text
+ * - Light surface → deep text
+ * - Brand gradient on every page header
+ * - Cards are always white
+ * - Tiles are all the same — icon does the work, not the color
  */
 
-export const COLORS = {
-  // Core palette
-  burntSienna:  '#C4500A',  // Deep sunset orange — primary action
-  maghribRose:  '#8B1A4A',  // Deep rose/magenta — secondary
-  deepIndigo:   '#1A2F5C',  // Night sky — dark backgrounds, text
-  goldenAmber:  '#E8860A',  // Last light — highlights, CTAs
-  duskPurple:   '#5C2D7A',  // Dusk purple — accents
-  deepTeal:     '#0A4A5C',  // Deep teal — cool accent
+export const colors = {
+  // Core 4
+  brand:   '#C2410C',  // Burnt orange — primary CTA, active states
+  deep:    '#1C2B3A',  // Deep navy — nav, dark text, dark surfaces
+  warm:    '#EA580C',  // Warm orange — accent, highlights
+  surface: '#FBF9F7',  // Warm off-white — page background
 
-  // Backgrounds
-  warmWhite:    '#F7F3EE',  // Warm off-white — page background
-  cardWhite:    '#FFFFFF',  // Pure white — cards
+  // Neutrals
+  card:    '#FFFFFF',
+  border:  'rgba(0,0,0,0.07)',
+  textPrimary:   '#1C2B3A',
+  textSecondary: '#64748B',
+  textMuted:     '#94A3B8',
 
-  // Text
-  textDark:     '#0F1F2E',  // Near black — primary text
-  textMid:      '#3A4A5A',  // Dark gray — secondary text
-  textLight:    '#6A7A8A',  // Medium gray — tertiary text (use sparingly)
-
-  // Header gradient — night sky bleeding into sunset
-  headerGradient: 'linear-gradient(180deg, #1A2F5C 0%, #5C2D7A 40%, #8B1A4A 70%, #C4500A 100%)',
-
-  // Category tile colors — rich and saturated
-  tiles: {
-    homeCooks:   { bg: '#8B1A4A', text: '#FFFFFF' },  // Maghrib rose
-    jummah:      { bg: '#1A2F5C', text: '#FFFFFF' },  // Deep indigo
-    desserts:    { bg: '#C4500A', text: '#FFFFFF' },  // Burnt sienna
-    childcare:   { bg: '#5C2D7A', text: '#FFFFFF' },  // Dusk purple
-    events:      { bg: '#0A4A5C', text: '#FFFFFF' },  // Deep teal
-    schools:     { bg: '#1A2F5C', text: '#FFFFFF' },  // Deep indigo
-    lawyers:     { bg: '#3A4A5A', text: '#FFFFFF' },  // Dark slate
-    cafes:       { bg: '#8B1A4A', text: '#FFFFFF' },  // Maghrib rose
-    restaurants: { bg: '#C4500A', text: '#FFFFFF' },  // Burnt sienna
-    eventSvc:    { bg: '#5C2D7A', text: '#FFFFFF' },  // Dusk purple
-  },
-
-  // Event type badge colors
-  eventTypes: {
-    'Halaqa':          { bg: '#5C2D7A', color: '#FFFFFF' },
-    'Islamic Learning':{ bg: '#1A2F5C', color: '#FFFFFF' },
-    'Wellness':        { bg: '#0A4A5C', color: '#FFFFFF' },
-    'Family & Kids':   { bg: '#8B1A4A', color: '#FFFFFF' },
-    'Community':       { bg: '#1A2F5C', color: '#FFFFFF' },
-    'Fundraiser':      { bg: '#C4500A', color: '#FFFFFF' },
-    'Matrimonial':     { bg: '#5C2D7A', color: '#FFFFFF' },
-    'Civic':           { bg: '#0A4A5C', color: '#FFFFFF' },
-    'Arts & Culture':  { bg: '#3A4A5A', color: '#FFFFFF' },
-    'Food & Drink':    { bg: '#8B1A4A', color: '#FFFFFF' },
-    'Default':         { bg: '#3A4A5A', color: '#FFFFFF' },
-  },
-
-  // Filter pill active states
-  filterActive:   { bg: '#1A2F5C', text: '#FFFFFF' },
-  filterInactive: { bg: '#FFFFFF',  text: '#3A4A5A', border: '1px solid rgba(0,0,0,0.12)' },
-
-  // Jummah time tiles
-  jummahTile:  { bg: '#FFF0E8', border: '#C4500A', text: '#0F1F2E' },
-
-  // Map pins
-  mapPins: {
-    mosques:     '#E8860A',
-    childcare:   '#5C2D7A',
-    restaurants: '#C4500A',
-    homecooks:   '#8B1A4A',
-    schools:     '#1A2F5C',
-    events:      '#0A4A5C',
-    default:     '#1A2F5C',
-  },
+  // Semantic (used sparingly for map pins and type badges only)
+  pinMosque:      '#C2410C',
+  pinChildcare:   '#7C3AED',
+  pinRestaurant:  '#059669',
+  pinHomecook:    '#D97706',
+  pinSchool:      '#2563EB',
+  pinEvent:       '#DB2777',
 }
 
-export const HEADER_STYLE = {
-  background: COLORS.headerGradient,
-  padding: '52px 20px 20px',
+// The one gradient — used on every page header
+export const headerGradient = 'linear-gradient(160deg, #1C2B3A 0%, #7C2D12 50%, #C2410C 100%)'
+
+// Softer version for inner page headers
+export const subheaderGradient = 'linear-gradient(160deg, #1C2B3A 0%, #92400E 60%, #C2410C 100%)'
+
+// Typography scale
+export const text = {
+  xs:   { fontSize: 11, lineHeight: 1.4 },
+  sm:   { fontSize: 13, lineHeight: 1.5 },
+  base: { fontSize: 15, lineHeight: 1.6 },
+  lg:   { fontSize: 17, lineHeight: 1.4 },
+  xl:   { fontSize: 20, lineHeight: 1.3 },
+  xxl:  { fontSize: 26, lineHeight: 1.2 },
 }
 
-export const CARD_STYLE = {
-  background: COLORS.cardWhite,
-  borderRadius: 16,
-  border: '1px solid rgba(0,0,0,0.08)',
-  padding: 16,
+// Spacing
+export const radius = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  full: 999,
+}
+
+// Card style — used for all cards everywhere
+export const card = {
+  background: colors.card,
+  borderRadius: radius.lg,
+  border: `1px solid ${colors.border}`,
   marginBottom: 12,
 }
 
-export const PAGE_BG = COLORS.warmWhite
+// Standard page header style
+export const pageHeader = (extraPadding = 0) => ({
+  background: headerGradient,
+  padding: `${52 + extraPadding}px 20px 20px`,
+})
+
+export default { colors, headerGradient, subheaderGradient, text, radius, card, pageHeader }

@@ -1,3 +1,4 @@
+import { colors, headerGradient, card, radius } from '../theme'
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -102,9 +103,9 @@ function EventCard({ event, onTap }) {
         </div>
       </div>
       <div style={{ padding: '12px 14px' }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a', marginBottom: 6, lineHeight: 1.3 }}>{event.name}</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary, marginBottom: 6, lineHeight: 1.3 }}>{event.name}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#1a2a3a' }}>{formatDate(event.event_date)}</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: colors.textPrimary }}>{formatDate(event.event_date)}</span>
           {event.event_time && <>
             <span style={{ fontSize: 10, color: 'rgba(26,42,58,0.3)' }}>·</span>
             <span style={{ fontSize: 12, color: '#3A4A5A' }}>{formatTime(event.event_time)}</span>
@@ -112,7 +113,7 @@ function EventCard({ event, onTap }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {(event.event_host || event.internal_notes) && (
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#1a2a3a', background: '#f0f0f0', padding: '2px 7px', borderRadius: 5 }}>{event.event_host || event.internal_notes}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: colors.textPrimary, background: '#f0f0f0', padding: '2px 7px', borderRadius: 5 }}>{event.event_host || event.internal_notes}</span>
           )}
           <span style={{ fontSize: 11, color: '#6A7A8A' }}>{event.location_area}</span>
         </div>
@@ -145,11 +146,11 @@ function InlineCalendar({ selectedDate, onChange, onClose }) {
   return (
     <div style={{ background: 'white', borderRadius: 14, padding: '12px 14px', marginBottom: 12, border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 4px 16px rgba(0,0,0,0.1)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <button onClick={prevMonth} style={{ background: 'none', border: 'none', fontSize: 16, cursor: 'pointer', color: '#1a2a3a', padding: '2px 6px' }}>‹</button>
-        <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2a3a' }}>{monthName}</div>
+        <button onClick={prevMonth} style={{ background: 'none', border: 'none', fontSize: 16, cursor: 'pointer', color: colors.textPrimary, padding: '2px 6px' }}>‹</button>
+        <div style={{ fontSize: 13, fontWeight: 700, color: colors.textPrimary }}>{monthName}</div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           {selectedDate && <button onClick={() => { onChange(null); onClose() }} style={{ fontSize: 11, color: '#9b87c4', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Clear</button>}
-          <button onClick={nextMonth} style={{ background: 'none', border: 'none', fontSize: 16, cursor: 'pointer', color: '#1a2a3a', padding: '2px 6px' }}>›</button>
+          <button onClick={nextMonth} style={{ background: 'none', border: 'none', fontSize: 16, cursor: 'pointer', color: colors.textPrimary, padding: '2px 6px' }}>›</button>
         </div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 4 }}>
@@ -187,16 +188,16 @@ function FiltersPanel({ activeTypes, activeAudiences, activeMosques, onTypesChan
       <div onClick={onClose} style={{ flex: 1, background: 'rgba(0,0,0,0.35)' }} />
       <div style={{ background: 'white', borderRadius: '18px 18px 0 0', padding: '16px 16px 32px', maxHeight: '40vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a' }}>Filters</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary }}>Filters</div>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
             <button onClick={() => { setLocalTypes([]); setLocalAudiences([]) }} style={{ fontSize: 12, color: '#9b87c4', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Clear</button>
-            <button onClick={() => { onTypesChange(localTypes); onAudiencesChange(localAudiences); onClose() }} style={{ background: '#1a2a3a', color: 'white', border: 'none', borderRadius: 20, padding: '6px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+            <button onClick={() => { onTypesChange(localTypes); onAudiencesChange(localAudiences); onClose() }} style={{ background: colors.deep, color: 'white', border: 'none', borderRadius: 20, padding: '6px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
               Apply {(localTypes.length + localAudiences.length) > 0 ? `(${localTypes.length + localAudiences.length})` : ''}
             </button>
           </div>
         </div>
 
-        <div style={{ fontSize: 10, fontWeight: 800, color: '#1a2a3a', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Event Type</div>
+        <div style={{ fontSize: 10, fontWeight: 800, color: colors.textPrimary, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Event Type</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
           {EVENT_TYPES.map(t => (
             <button key={t} onClick={() => toggleType(t)} style={{
@@ -208,7 +209,7 @@ function FiltersPanel({ activeTypes, activeAudiences, activeMosques, onTypesChan
           ))}
         </div>
 
-        <div style={{ fontSize: 10, fontWeight: 800, color: '#1a2a3a', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Audience</div>
+        <div style={{ fontSize: 10, fontWeight: 800, color: colors.textPrimary, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Audience</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {AUDIENCES.map(a => (
             <button key={a} onClick={() => toggleAudience(a)} style={{
@@ -300,7 +301,7 @@ export function EventDetailPage() {
               <span style={{ fontSize: 18, width: 24, textAlign: 'center' }}>{row.icon}</span>
               <div>
                 <div style={{ fontSize: 10, color: '#6A7A8A', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{row.label}</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#1a2a3a' }}>{row.value}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary }}>{row.value}</div>
               </div>
             </div>
           ))}
@@ -315,7 +316,7 @@ export function EventDetailPage() {
           )}
           {event.website && (
             <a href={event.website} target="_blank" rel="noreferrer"
-              style={{ flex: 1, background: 'white', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: '13px 0', color: '#1a2a3a', fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
+              style={{ flex: 1, background: 'white', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: '13px 0', color: colors.textPrimary, fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
               🔗 Event page
             </a>
           )}
@@ -323,7 +324,7 @@ export function EventDetailPage() {
 
         {event.description && (
           <div style={{ background: 'white', borderRadius: 16, padding: 16, marginBottom: 12, border: '1px solid rgba(0,0,0,0.08)' }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a', marginBottom: 10 }}>About this event</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary, marginBottom: 10 }}>About this event</div>
             <div style={{ fontSize: 14, color: 'rgba(26,42,58,0.75)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>{event.description}</div>
           </div>
         )}
@@ -421,7 +422,7 @@ export default function Events() {
           <div style={{ flex: 1 }} />
           <button onClick={() => navigate('/events/map')} style={{
             padding: '7px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
-            background: 'white', color: '#1a2a3a', border: '1px solid rgba(0,0,0,0.1)',
+            background: 'white', color: colors.textPrimary, border: '1px solid rgba(0,0,0,0.1)',
             display: 'flex', alignItems: 'center', gap: 5,
           }}>🗺️ Map</button>
         </div>

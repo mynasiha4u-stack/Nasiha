@@ -1,201 +1,229 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import AsrHero from '../components/AsrHero'
 import BottomNav from '../components/BottomNav'
+import { colors, headerGradient, card, radius } from '../theme'
 
 const CATEGORIES = [
-  { icon: '🍛', label: 'Home Cooks',  bg: '#8B1A4A', path: '/directory?cat=home-cooked-food' },
-  { icon: '🕌', label: 'Jummah Timings',      bg: '#1A2F5C', path: '/jummah' },
-  { icon: '🎂', label: 'Desserts',    bg: '#C4500A', path: '/directory?cat=dessert-catering' },
-  { icon: '👶', label: 'Childcare',   bg: '#5C2D7A', path: '/childcare' },
-  { icon: '📅', label: 'Events',      bg: '#0A4A5C', path: '/events' },
-  { icon: '🏫', label: 'Schools',     bg: '#1A2F5C', path: '/directory?cat=islamic-schools' },
-  { icon: '⚖️', label: 'Lawyers',     bg: '#3A4A5A', path: '/directory?cat=lawyers' },
-  { icon: '☕', label: 'Cafes',       bg: '#8B1A4A', path: '/directory?cat=restaurants' },
+  { icon: '👨‍🍳', label: 'Home Cooks',     path: '/directory?cat=home-cooked-food' },
+  { icon: '🕌', label: 'Jummah',          path: '/jummah' },
+  { icon: '🎂', label: 'Desserts',        path: '/directory?cat=dessert-catering' },
+  { icon: '👶', label: 'Childcare',       path: '/childcare' },
+  { icon: '📅', label: 'Events',          path: '/events' },
+  { icon: '🏫', label: 'Schools',         path: '/directory?cat=islamic-schools' },
+  { icon: '⚖️', label: 'Lawyers',         path: '/directory?cat=lawyers' },
+  { icon: '🍽️', label: 'Restaurants',     path: '/directory?cat=restaurants' },
 ]
 
-const FEATURED_EVENTS = [
-  { id: 1, title: 'Sisters Healing Circle', mosque: 'MCC East Bay', date: 'Sun Apr 7', time: '11am', bg: '#c8f0dc', tag: 'Community', tagBg: '#c8f0dc', tagColor: '#0a5c2a', free: true },
-  { id: 2, title: "Brothers Halaqa Night", mosque: 'ICF Fremont', date: 'Fri Apr 12', time: '8pm', bg: '#b8d8f8', tag: 'Youth', tagBg: '#b8d8f8', tagColor: '#0a3a6a', free: true },
-  { id: 3, title: 'Monthly Mawlid', mosque: 'MCC East Bay', date: 'Sat Apr 13', time: '6:30pm', bg: '#fde8c0', tag: 'Lecture', tagBg: '#fde8c0', tagColor: '#7a4a00', free: true },
-]
+const SUGGESTIONS = ['Halal food near me', 'Jummah times', 'Events this weekend', 'Islamic schools']
 
 export default function Home() {
   const navigate = useNavigate()
-  const [city] = useState('Bay Area')
-  const [query, setQuery] = useState('')
-  const [featured, setFeatured] = useState([])
+  const [events, setEvents] = useState([])
+  const [mosques, setMosques] = useState([])
 
   useEffect(() => {
-    async function loadFeatured() {
-      const { data } = await supabase
-        .from('content')
-        .select('id, name, description, location_area, url_slug, category_id')
-        .eq('status', 'published')
-        .eq('content_type', 'listing')
-        .limit(3)
-      if (data) setFeatured(data)
-    }
-    loadFeatured()
+    // Fetch upcoming events
+    const today = new Date().toISOString().substring(0, 10)
+    supabase.from('content')
+      .select('id, name, event_date, event_time, event_host, url_slug, image_url')
+      .eq('category_id', 'd916a550-c316-40a9-9582-35836417b6cb')
+      .eq('status', 'published')
+      .gte('event_date', today)
+      .order('event_date')
+      .limit(4)
+      .then(({ data }) => {
+        const filtered = (data || []).filter(e => !/jumu.{0,3}ah|jummah/i.test(e.name))
+        setEvents(filtered)
+      })
+
+    // Fetch featured mosques
+    supabase.from('categories').select('id').eq('slug', 'mosques').single()
+      .then(({ data: cat }) => {
+        if (!cat) return
+        supabase.from('content')
+          .select('id, name, location_area, url_slug')
+          .eq('category_id', cat.id)
+          .eq('status', 'published')
+          .eq('featured', true)
+          .limit(6)
+          .then(({ data }) => setMosques(data || []))
+      })
   }, [])
 
-  return (
-    <div style={{ maxWidth: 430, margin: '0 auto', background: 'white', minHeight: '100vh', paddingBottom: 80 }}>
+  const formatDate = (d) => {
+    if (!d) return ''
+    return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+  }
 
-      <AsrHero city={city} onCityTap={() => alert('City picker coming soon')}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 20, fontWeight: 800, color: '#1a2a3a', letterSpacing: -0.5 }}>nasiha</span>
-          <span style={{ fontSize: 15, fontWeight: 500, color: '#3A4A5A' }}>Your community, all in one place</span>
+  return (
+    <div style={{ maxWidth: 430, margin: '0 auto', background: colors.surface, minHeight: '100vh', paddingBottom: 80 }}>
+
+      {/* Hero header */}
+      <div style={{
+        background: headerGradient,
+        padding: '56px 20px 28px',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        {/* Subtle texture overlay */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.05) 0%, transparent 60%)',
+          pointerEvents: 'none',
+        }} />
+
+        {/* Location pill */}
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          background: 'rgba(255,255,255,0.15)',
+          borderRadius: radius.full, padding: '5px 12px',
+          marginBottom: 16,
+          backdropFilter: 'blur(8px)',
+        }}>
+          <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#FCD34D' }} />
+          <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>Bay Area</span>
         </div>
 
-        <div style={{
-          background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.9)',
-          borderRadius: 16, padding: '13px 14px', display: 'flex', alignItems: 'center', gap: 10,
+        {/* Wordmark */}
+        <div style={{ marginBottom: 6 }}>
+          <span style={{ fontSize: 32, fontWeight: 900, color: 'white', letterSpacing: -1 }}>nasiha</span>
+        </div>
+        <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', marginBottom: 24, fontWeight: 400 }}>
+          Your community, all in one place
+        </div>
+
+        {/* Search bar */}
+        <div onClick={() => {}} style={{
+          background: 'white',
+          borderRadius: radius.lg,
+          padding: '14px 16px',
+          display: 'flex', alignItems: 'center', gap: 12,
+          cursor: 'text',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
         }}>
           <div style={{
-            width: 30, height: 30, borderRadius: 9, background: '#E8860A',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 15,
-          }}>✦</div>
-          <input
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="What are you looking for?"
-            style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: 15, color: '#1a2a3a' }}
-          />
-          {query && (
-            <button onClick={() => alert(`Searching: ${query}`)} style={{
-              width: 30, height: 30, borderRadius: 9, background: '#E8860A',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'white', fontSize: 14, border: 'none',
-            }}>→</button>
-          )}
+            width: 32, height: 32, borderRadius: radius.sm,
+            background: colors.brand,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <span style={{ fontSize: 14 }}>✦</span>
+          </div>
+          <span style={{ fontSize: 15, color: colors.textMuted, flex: 1 }}>What are you looking for?</span>
         </div>
 
-        <div style={{ display: 'flex', gap: 7, marginTop: 10, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' }}>
-          {['Halal food near me', 'Jummah times', 'Events this weekend'].map(c => (
-            <button key={c} onClick={() => setQuery(c)} style={{
-              fontSize: 12, color: 'rgba(26,42,58,0.65)',
-              background: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.75)',
-              borderRadius: 20, padding: '5px 12px', whiteSpace: 'nowrap',
-            }}>{c}</button>
+        {/* Quick suggestions */}
+        <div style={{ display: 'flex', gap: 8, marginTop: 12, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
+          {SUGGESTIONS.map(s => (
+            <button key={s} style={{
+              background: 'rgba(255,255,255,0.15)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: radius.full,
+              padding: '6px 14px',
+              fontSize: 12, fontWeight: 500,
+              color: 'rgba(255,255,255,0.9)',
+              whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0,
+            }}>{s}</button>
           ))}
         </div>
-      </AsrHero>
+      </div>
 
       <div style={{ padding: '24px 16px 0' }}>
 
-        {/* Categories */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
-          <span style={{ fontSize: 18, fontWeight: 700 }}>Browse</span>
-          <span style={{ fontSize: 13, color: '#7db8e8' }}>See all</span>
+        {/* Browse section */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <span style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary }}>Browse</span>
+          <span style={{ fontSize: 13, color: colors.brand, fontWeight: 600 }}>See all</span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 32 }}>
+        {/* Category grid — all same card color, icon does the work */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 10, marginBottom: 28 }}>
           {CATEGORIES.map(cat => (
             <button key={cat.label} onClick={() => navigate(cat.path)} style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center',
-              gap: 8, padding: '16px 4px 14px',
-              background: cat.bg, borderRadius: 16, border: 'none', cursor: 'pointer',
+              background: 'white',
+              border: `1px solid ${colors.border}`,
+              borderRadius: radius.md,
+              padding: '16px 8px 12px',
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', gap: 8,
+              cursor: 'pointer',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
             }}>
-              <span style={{ fontSize: 26 }}>{cat.icon}</span>
-              <span style={{ fontSize: 11, fontWeight: 600, textAlign: 'center', lineHeight: 1.3, color: '#1a2a3a' }}>
-                {cat.label}
-              </span>
+              <span style={{ fontSize: 28 }}>{cat.icon}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: colors.textPrimary, textAlign: 'center', lineHeight: 1.3 }}>{cat.label}</span>
             </button>
           ))}
         </div>
 
-        {/* Featured Events */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
-          <span style={{ fontSize: 18, fontWeight: 700 }}>This weekend</span>
-          <button onClick={() => navigate('/events')} style={{ fontSize: 13, color: '#7db8e8', background: 'none', border: 'none', cursor: 'pointer' }}>
-            All events
-          </button>
-        </div>
+        {/* Upcoming Events */}
+        {events.length > 0 && (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <span style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary }}>Upcoming Events</span>
+              <span onClick={() => navigate('/events')} style={{ fontSize: 13, color: colors.brand, fontWeight: 600, cursor: 'pointer' }}>See all</span>
+            </div>
 
-        <div style={{ display: 'flex', gap: 10, overflowX: 'auto', marginLeft: -16, marginRight: -16, paddingLeft: 16, paddingRight: 16, paddingBottom: 4, scrollbarWidth: 'none', marginBottom: 32 }}>
-          {FEATURED_EVENTS.map(ev => (
-            <button key={ev.id} onClick={() => navigate('/events')} style={{
-              minWidth: 200, flexShrink: 0, background: 'white',
-              borderRadius: 16, border: '1px solid rgba(0,0,0,0.08)',
-              overflow: 'hidden', textAlign: 'left', cursor: 'pointer',
-              padding: 0,
-            }}>
-              <div style={{
-                height: 80, background: ev.bg,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 28, fontWeight: 700, color: 'rgba(26,42,58,0.2)',
-                letterSpacing: 2, position: 'relative',
-              }}>
-                {ev.mosque.split(' ').filter(w => w.length > 2).slice(0,2).map(w => w[0]).join('')}
-                {ev.free && (
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', scrollbarWidth: 'none', marginBottom: 28, paddingBottom: 4 }}>
+              {events.map(ev => (
+                <div key={ev.id} onClick={() => navigate(`/events/${ev.url_slug}`)} style={{
+                  flexShrink: 0, width: 200, background: 'white',
+                  borderRadius: radius.lg, overflow: 'hidden',
+                  border: `1px solid ${colors.border}`,
+                  cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+                }}>
                   <div style={{
-                    position: 'absolute', top: 8, left: 8,
-                    background: '#E8860A', borderRadius: 6,
-                    padding: '3px 7px', fontSize: 10, color: 'white', fontWeight: 700,
-                  }}>Free</div>
-                )}
-                <div style={{
-                  position: 'absolute', top: 8, right: 8,
-                  background: 'rgba(0,0,0,0.28)', borderRadius: 6,
-                  padding: '3px 7px', fontSize: 10, color: 'white', fontWeight: 600,
-                }}>{ev.date}</div>
-              </div>
-              <div style={{ padding: '10px 12px' }}>
-                <div style={{
-                  display: 'inline-block', background: ev.tagBg, color: ev.tagColor,
-                  fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 5, marginBottom: 5,
-                }}>{ev.tag}</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2a3a', marginBottom: 3, lineHeight: 1.3 }}>
-                  {ev.title}
+                    height: 100,
+                    background: ev.image_url ? `url(${ev.image_url}) center/cover` : `linear-gradient(135deg, #1C2B3A 0%, #C2410C 100%)`,
+                    position: 'relative',
+                  }}>
+                    {ev.event_host && (
+                      <div style={{
+                        position: 'absolute', top: 8, left: 8,
+                        background: colors.brand,
+                        borderRadius: 5, padding: '2px 7px',
+                        fontSize: 9, fontWeight: 700, color: 'white',
+                      }}>{ev.event_host}</div>
+                    )}
+                  </div>
+                  <div style={{ padding: '10px 12px' }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: colors.textPrimary, marginBottom: 4, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ev.name}</div>
+                    <div style={{ fontSize: 11, color: colors.textSecondary, fontWeight: 500 }}>{formatDate(ev.event_date)}</div>
+                  </div>
                 </div>
-                <div style={{ fontSize: 11, color: '#3A4A5A' }}>
-                  {ev.mosque} · {ev.time}
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
+              ))}
+            </div>
+          </>
+        )}
 
-        {/* Featured Vendors */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
-          <span style={{ fontSize: 18, fontWeight: 700 }}>Featured</span>
-          <span style={{ fontSize: 13, color: '#7db8e8' }}>See all</span>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
-          {featured.length > 0 ? featured.map(v => (
-            <div key={v.id} style={{
-              background: 'white', borderRadius: 14,
-              border: '1px solid rgba(0,0,0,0.08)',
-              padding: '14px', display: 'flex', gap: 12, alignItems: 'center',
-            }}>
-              <div style={{
-                width: 48, height: 48, borderRadius: 12, flexShrink: 0,
-                background: '#fde8c0', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#1a2a3a',
+        {/* Featured Mosques */}
+        {mosques.length > 0 && (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <span style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary }}>Masjids</span>
+              <span onClick={() => navigate('/jummah')} style={{ fontSize: 13, color: colors.brand, fontWeight: 600, cursor: 'pointer' }}>See all</span>
+            </div>
+            {mosques.map(m => (
+              <div key={m.id} onClick={() => navigate(`/jummah/${m.url_slug}`)} style={{
+                ...card,
+                padding: '14px 16px',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                cursor: 'pointer',
               }}>
-                {v.name.split(' ').filter(w => w.length > 1).slice(0,2).map(w => w[0].toUpperCase()).join('')}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a', marginBottom: 2 }}>
-                  {v.name}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: radius.sm, background: `linear-gradient(135deg, #1C2B3A, #C2410C)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>🕌</div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: colors.textPrimary }}>{m.name}</div>
+                    <div style={{ fontSize: 12, color: colors.textSecondary }}>{m.location_area}</div>
+                  </div>
                 </div>
-                <div style={{ fontSize: 12, color: '#3A4A5A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {v.location_area || 'Bay Area'}
-                </div>
+                <span style={{ color: colors.textMuted, fontSize: 16 }}>›</span>
               </div>
-              <span style={{ color: '#e8a040', fontSize: 18, flexShrink: 0 }}>→</span>
-            </div>
-          )) : (
-            <div style={{ background: '#f7f7f7', borderRadius: 14, padding: '20px', textAlign: 'center' }}>
-              <div style={{ fontSize: 14, color: '#6A7A8A' }}>Featured vendors coming soon</div>
-            </div>
-          )}
-        </div>
-
+            ))}
+          </>
+        )}
       </div>
+
       <BottomNav />
     </div>
   )

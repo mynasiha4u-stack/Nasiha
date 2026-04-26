@@ -6,7 +6,6 @@ import BottomNav from '../components/BottomNav'
 const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY
 
 const CATEGORIES = [
-  { id: 'all',         label: '🌟 All',          slug: null,               color: '#1a2a3a' },
   { id: 'mosques',     label: '🕌 Masjids',       slug: 'mosques',          color: '#e8943a' },
   { id: 'childcare',   label: '👶 Childcare',     slug: 'childcare',        color: '#9b87c4' },
   { id: 'restaurants', label: '🍽️ Restaurants',   slug: 'restaurants',      color: '#2a8a4a' },
@@ -14,6 +13,8 @@ const CATEGORIES = [
   { id: 'schools',     label: '🏫 Schools',        slug: 'islamic-schools',  color: '#1a5a9a' },
   { id: 'events',      label: '📅 Events',         slug: 'events',           color: '#c43a6a' },
 ]
+
+const CAT_COLOR = Object.fromEntries(CATEGORIES.map(c => [c.slug, c.color]))
 
 function isSummer() {
   const now = new Date()
@@ -36,7 +37,7 @@ export default function Map() {
   const [pins, setPins] = useState([])
   const [loading, setLoading] = useState(true)
   const [mapReady, setMapReady] = useState(false)
-  const [category, setCategory] = useState('all')
+  const [category, setCategory] = useState(null) // null = all
   const [selected, setSelected] = useState(null)
 
   // Load data when category changes
@@ -46,7 +47,7 @@ export default function Map() {
       setSelected(null)
       const cat = CATEGORIES.find(c => c.id === category)
 
-      if (category === 'all') {
+      if (!category) {
         // Load from all categories that have coordinates
         const { data: cats } = await supabase.from('categories').select('id, slug, name')
         if (!cats) { setLoading(false); return }
@@ -124,13 +125,11 @@ export default function Map() {
     }
     mapInstanceRef.current._markers = []
 
-    const cat = CATEGORIES.find(c => c.id === category)
-    const pinColor = cat?.color || '#1a2a3a'
-
     pins.forEach(pin => {
       if (!pin.display_lat || !pin.display_lng) return
-      // For events filter out jummah
       if (pin._catSlug === 'events' && /jumu.{0,3}ah|jummah/i.test(pin.name)) return
+
+      const pinColor = CAT_COLOR[pin._catSlug] || '#1a2a3a'
 
       const marker = new window.google.maps.Marker({
         position: { lat: pin.display_lat, lng: pin.display_lng },
@@ -168,6 +167,13 @@ export default function Map() {
         <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1a2a3a', marginBottom: 12 }}>🗺️ Map</h1>
         {/* Category filter */}
         <div style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' }}>
+          <button onClick={() => setCategory(null)} style={{
+            padding: '6px 14px', borderRadius: 20, whiteSpace: 'nowrap',
+            fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
+            background: category === null ? '#1a2a3a' : 'rgba(255,255,255,0.7)',
+            color: category === null ? 'white' : 'rgba(26,42,58,0.7)',
+            border: 'none',
+          }}>All</button>
           {CATEGORIES.map(c => (
             <button key={c.id} onClick={() => setCategory(c.id)} style={{
               padding: '6px 14px', borderRadius: 20, whiteSpace: 'nowrap',
@@ -195,7 +201,7 @@ export default function Map() {
         {/* Pin count */}
         {!loading && (
           <div style={{ position: 'absolute', top: 10, right: 10, background: 'white', borderRadius: 20, padding: '5px 12px', fontSize: 12, fontWeight: 600, color: '#1a2a3a', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
-            {pins.length} {CATEGORIES.find(c => c.id === category)?.label.split(' ').slice(1).join(' ') || 'places'}
+            {pins.length} {category ? CATEGORIES.find(c => c.id === category)?.label.split(' ').slice(1).join(' ') : 'places'}
           </div>
         )}
 

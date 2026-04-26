@@ -90,11 +90,11 @@ export default function ListingDetail({ item, typeBadge, typeColor, loading, not
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: colors.surface, minHeight: '100vh', paddingBottom: 80 }}>
       <div style={{ background: headerGradient, padding: '52px 20px 24px' }}>
-        <button onClick={() => navigate(-1)} style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
+        <button onClick={() => navigate(-1)} style={{ fontSize: 14, color: 'rgba(28,43,58,0.65)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
         {item.image_url && <img src={item.image_url} alt={item.name} style={{ width: '100%', borderRadius: radius.md, marginBottom: 14, objectFit: 'cover', maxHeight: 200 }} />}
-        {typeBadge && <span style={{ background: 'rgba(255,255,255,0.2)', color: 'white', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: radius.full, marginBottom: 10, display: 'inline-block' }}>{typeBadge}</span>}
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: 'white', lineHeight: 1.3, marginBottom: 6 }}>{item.name}</h1>
-        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>📍 {item.location_area}{item.location_address ? ` · ${item.location_address.split(',')[0]}` : ''}</div>
+        {typeBadge && <span style={{ background: 'rgba(28,43,58,0.1)', color: '#1C2B3A', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: radius.full, marginBottom: 10, display: 'inline-block' }}>{typeBadge}</span>}
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1C2B3A', lineHeight: 1.3, marginBottom: 6 }}>{item.name}</h1>
+        <div style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)' }}>📍 {item.location_area}{item.location_address ? ` · ${item.location_address.split(',')[0]}` : ''}</div>
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>

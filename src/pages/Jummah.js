@@ -146,7 +146,7 @@ function MosqueCard({ mosque, season, userLocation }) {
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 2, alignItems: 'center' }}>
             {mosque.location_area && (
-              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>📍 {mosque.location_area}</div>
+              <div style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)' }}>📍 {mosque.location_area}</div>
             )}
             {dist !== null && (
               <div style={{ fontSize: 12, color: '#e8a040', fontWeight: 600 }}>{dist.toFixed(1)} mi</div>
@@ -262,7 +262,7 @@ export default function Jummah() {
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
       <div style={{ background: 'linear-gradient(180deg, #1A2F5C 0%, #5C2D7A 40%, #8B1A4A 70%, #C4500A 100%)', padding: '52px 20px 24px' }}>
-        <button onClick={() => navigate('/')} style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
+        <button onClick={() => navigate('/')} style={{ fontSize: 14, color: 'rgba(28,43,58,0.65)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
         <h1 style={{ fontSize: 26, fontWeight: 700, color: colors.textPrimary, marginBottom: 4 }}>🕌 Jummah Timings</h1>
         <p style={{ fontSize: 14, color: '#3A4A5A', marginBottom: 4 }}>
           {new Date().getDay() === 5 ? '🟢 Today is Friday · ' : ''}{mosques.length} mosques in the Bay Area

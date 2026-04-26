@@ -155,9 +155,9 @@ export default function Childcare() {
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
       <div style={{ background: 'linear-gradient(180deg, #1A2F5C 0%, #5C2D7A 40%, #8B1A4A 70%, #C4500A 100%)', padding: '48px 20px 20px' }}>
-        <button onClick={() => navigate('/')} style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
+        <button onClick={() => navigate('/')} style={{ fontSize: 14, color: 'rgba(28,43,58,0.65)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: '#FFFFFF', marginBottom: 2 }}>👶 Childcare</h1>
-        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>{items.length} providers in the Bay Area</p>
+        <p style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)' }}>{items.length} providers in the Bay Area</p>
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>

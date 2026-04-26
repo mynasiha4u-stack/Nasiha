@@ -82,14 +82,14 @@ export default function Home() {
           backdropFilter: 'blur(8px)',
         }}>
           <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#FCD34D' }} />
-          <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>Bay Area</span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(28,43,58,0.75)' }}>Bay Area</span>
         </div>
 
         {/* Wordmark */}
         <div style={{ marginBottom: 6 }}>
-          <span style={{ fontSize: 32, fontWeight: 900, color: 'white', letterSpacing: -1 }}>nasiha</span>
+          <span style={{ fontSize: 32, fontWeight: 900, color: '#1C2B3A', letterSpacing: -1 }}>nasiha</span>
         </div>
-        <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', marginBottom: 24, fontWeight: 400 }}>
+        <div style={{ fontSize: 14, color: 'rgba(28,43,58,0.65)', marginBottom: 24, fontWeight: 400 }}>
           Your community, all in one place
         </div>
 

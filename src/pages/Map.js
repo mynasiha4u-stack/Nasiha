@@ -1,9 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import BottomNav from '../components/BottomNav'
 
 const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY
+
+const CATEGORIES = [
+  { id: 'all',         label: '🌟 All',          slug: null,               color: '#1a2a3a' },
+  { id: 'mosques',     label: '🕌 Masjids',       slug: 'mosques',          color: '#e8943a' },
+  { id: 'childcare',   label: '👶 Childcare',     slug: 'childcare',        color: '#9b87c4' },
+  { id: 'restaurants', label: '🍽️ Restaurants',   slug: 'restaurants',      color: '#2a8a4a' },
+  { id: 'homecooks',   label: '👨‍🍳 Home Cooks',    slug: 'home-cooked-food', color: '#c87c0a' },
+  { id: 'schools',     label: '🏫 Schools',        slug: 'islamic-schools',  color: '#1a5a9a' },
+  { id: 'events',      label: '📅 Events',         slug: 'events',           color: '#c43a6a' },
+]
 
 function isSummer() {
   const now = new Date()
@@ -19,170 +29,150 @@ function isSummer() {
   return now >= springForward && now < fallBack
 }
 
-function formatTimes(mosque) {
-  const times = mosque.jummah_times || {}
-  const season = isSummer() ? 's' : 'w'
-  const lines = []
-  for (let i = 1; i <= 3; i++) {
-    const j = times[`${season}${i}j`]
-    const iq = times[`${season}${i}iq`]
-    if (j) lines.push(`${['1st','2nd','3rd'][i-1]}: ${j}${iq ? ` / Iqama ${iq}` : ''}`)
-  }
-  return lines.length > 0 ? lines.join('<br>') : 'Check website for times'
-}
-
 export default function Map() {
   const navigate = useNavigate()
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
-  const [mosques, setMosques] = useState([])
+  const [pins, setPins] = useState([])
   const [loading, setLoading] = useState(true)
   const [mapReady, setMapReady] = useState(false)
-  const [category, setCategory] = useState('mosques')
+  const [category, setCategory] = useState('all')
+  const [selected, setSelected] = useState(null)
 
-  // Load mosques from DB
+  // Load data when category changes
   useEffect(() => {
     async function load() {
-      const { data: catData } = await supabase
-        .from('categories').select('id').eq('slug', 'mosques').single()
-      if (catData) {
-        const { data } = await supabase
-          .from('content')
-          .select('id, name, jummah_times, location_area, display_lat, display_lng, website, phone')
+      setLoading(true)
+      setSelected(null)
+      const cat = CATEGORIES.find(c => c.id === category)
+
+      if (category === 'all') {
+        // Load from all categories that have coordinates
+        const { data: cats } = await supabase.from('categories').select('id, slug, name')
+        if (!cats) { setLoading(false); return }
+
+        let allPins = []
+        for (const c of cats) {
+          const { data } = await supabase.from('content')
+            .select('id, name, location_area, display_lat, display_lng, url_slug, category_id, phone, website, description')
+            .eq('category_id', c.id)
+            .eq('status', 'published')
+            .not('display_lat', 'is', null)
+            .limit(100)
+          if (data) allPins = [...allPins, ...data.map(d => ({ ...d, _catSlug: c.slug }))]
+        }
+        setPins(allPins)
+      } else {
+        const { data: catData } = await supabase.from('categories').select('id').eq('slug', cat.slug).single()
+        if (!catData) { setLoading(false); return }
+
+        let query = supabase.from('content')
+          .select('id, name, location_area, display_lat, display_lng, url_slug, phone, website, description, jummah_times, event_date, event_time, event_host')
           .eq('category_id', catData.id)
           .eq('status', 'published')
           .not('display_lat', 'is', null)
-        setMosques(data || [])
+
+        // For events, only show upcoming
+        if (category === 'events') {
+          const today = new Date().toISOString().substring(0, 10)
+          query = query.gte('event_date', today)
+        }
+
+        const { data } = await query.limit(200)
+        setPins((data || []).map(d => ({ ...d, _catSlug: cat.slug })))
       }
       setLoading(false)
     }
     load()
-  }, [])
+  }, [category])
 
-  // Load Google Maps script
+  // Init map
   useEffect(() => {
-    if (window.google && window.google.maps) {
+    if (!window.google) {
+      const existing = document.querySelector('script[src*="maps.googleapis.com"]')
+      if (!existing) {
+        const script = document.createElement('script')
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}`
+        script.async = true
+        script.onload = () => setMapReady(true)
+        document.head.appendChild(script)
+      } else {
+        existing.addEventListener('load', () => setMapReady(true))
+      }
+    } else {
       setMapReady(true)
-      return
     }
-    const script = document.createElement('script')
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}`
-    script.async = true
-    script.defer = true
-    script.onload = () => setMapReady(true)
-    document.head.appendChild(script)
   }, [])
 
-  // Init map once both ready
   useEffect(() => {
-    if (!mapReady || !mosques.length || !mapRef.current) return
-    if (mapInstanceRef.current) return
-
-    const map = new window.google.maps.Map(mapRef.current, {
-      center: { lat: 37.6, lng: -122.0 },
+    if (!mapReady || !mapRef.current || mapInstanceRef.current) return
+    mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
+      center: { lat: 37.5630, lng: -121.9760 },
       zoom: 10,
-      gestureHandling: 'greedy', // one finger scroll
-      mapTypeControl: false,
-      streetViewControl: false,
-      fullscreenControl: false,
-      zoomControlOptions: {
-        position: window.google.maps.ControlPosition.RIGHT_CENTER,
-      },
-      styles: [
-        { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-      ],
+      gestureHandling: 'greedy',
+      disableDefaultUI: true,
+      zoomControl: true,
+      styles: [{ featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] }]
     })
+  }, [mapReady])
 
-    mapInstanceRef.current = map
-    const infoWindow = new window.google.maps.InfoWindow()
+  // Update pins when data or category changes
+  useEffect(() => {
+    if (!mapInstanceRef.current || !window.google) return
+    if (mapInstanceRef.current._markers) {
+      mapInstanceRef.current._markers.forEach(m => m.setMap(null))
+    }
+    mapInstanceRef.current._markers = []
 
-    mosques.forEach(mosque => {
-      if (!mosque.display_lat || !mosque.display_lng) return
+    const cat = CATEGORIES.find(c => c.id === category)
+    const pinColor = cat?.color || '#1a2a3a'
+
+    pins.forEach(pin => {
+      if (!pin.display_lat || !pin.display_lng) return
+      // For events filter out jummah
+      if (pin._catSlug === 'events' && /jumu.{0,3}ah|jummah/i.test(pin.name)) return
 
       const marker = new window.google.maps.Marker({
-        position: { lat: mosque.display_lat, lng: mosque.display_lng },
-        map,
-        title: mosque.name,
+        position: { lat: pin.display_lat, lng: pin.display_lng },
+        map: mapInstanceRef.current,
         icon: {
-          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44">
-              <path d="M18 0C10.8 0 5 5.8 5 13c0 10 13 31 13 31s13-21 13-31C31 5.8 25.2 0 18 0z" fill="#f4a261"/>
-              <circle cx="18" cy="13" r="7" fill="white"/>
-              <text x="18" y="17" font-size="9" text-anchor="middle" fill="#c4744a">🕌</text>
-            </svg>
-          `),
-          scaledSize: new window.google.maps.Size(32, 40),
-          anchor: new window.google.maps.Point(16, 40),
-        },
+          path: 'M12 0C7.6 0 4 3.6 4 8c0 6.4 8 16 8 16s8-9.6 8-16C20 3.6 16.4 0 12 0z',
+          fillColor: pinColor,
+          fillOpacity: 1,
+          strokeColor: 'white',
+          strokeWeight: 1.5,
+          scale: 1.4,
+          anchor: new window.google.maps.Point(12, 24),
+        }
       })
-
-      marker.addListener('click', () => {
-        const times = formatTimes(mosque)
-        const season = isSummer() ? '☀️ Summer' : '❄️ Winter'
-        const content = `
-          <div style="font-family: -apple-system, sans-serif; max-width: 220px; padding: 4px;">
-            <div style="font-size: 14px; font-weight: 700; color: #1a2a3a; margin-bottom: 6px; line-height: 1.3;">${mosque.name}</div>
-            <div style="font-size: 11px; color: #888; margin-bottom: 6px;">${season} Jummah Times</div>
-            <div style="font-size: 12px; color: #1a2a3a; line-height: 1.8; margin-bottom: 10px;">${times}</div>
-            <div style="display: flex; gap: 6px;">
-              <a href="https://www.google.com/maps/dir/?api=1&destination=${mosque.display_lat},${mosque.display_lng}" target="_blank"
-                style="flex: 1; background: #e8a040; color: white; text-align: center; padding: 7px 0; border-radius: 8px; font-size: 12px; font-weight: 700; text-decoration: none;">
-                Directions
-              </a>
-              ${mosque.website ? `<a href="${mosque.website}" target="_blank"
-                style="flex: 1; background: #f0f0f0; color: #1a2a3a; text-align: center; padding: 7px 0; border-radius: 8px; font-size: 12px; font-weight: 600; text-decoration: none;">
-                Website
-              </a>` : ''}
-            </div>
-          </div>
-        `
-        infoWindow.setContent(content)
-        infoWindow.open(map, marker)
-      })
+      marker.addListener('click', () => setSelected(pin))
+      mapInstanceRef.current._markers.push(marker)
     })
+  }, [pins, mapReady, category])
 
-    // Try to center on user location
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(pos => {
-        map.setCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-        map.setZoom(11)
-        new window.google.maps.Marker({
-          position: { lat: pos.coords.latitude, lng: pos.coords.longitude },
-          map,
-          icon: {
-            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-                <circle cx="8" cy="8" r="8" fill="#4a90d9" opacity="0.3"/>
-                <circle cx="8" cy="8" r="5" fill="#4a90d9"/>
-              </svg>
-            `),
-            scaledSize: new window.google.maps.Size(16, 16),
-            anchor: new window.google.maps.Point(8, 8),
-          },
-          zIndex: 1000,
-        })
-      })
-    }
-  }, [mapReady, mosques])
+  const getDetailPath = (pin) => {
+    const slug = pin._catSlug || ''
+    if (slug === 'mosques') return `/jummah/${pin.url_slug}`
+    if (slug === 'childcare') return `/childcare/${pin.url_slug}`
+    if (slug === 'events') return `/events/${pin.url_slug}`
+    return null
+  }
+
+  const season = isSummer() ? 's' : 'w'
 
   return (
-    <div style={{ maxWidth: 430, margin: '0 auto', background: '#f5f5f5', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ background: 'linear-gradient(180deg, #7db8e8 0%, #c8e4f8 60%, #f0c090 100%)', padding: '48px 16px 14px' }}>
+    <div style={{ maxWidth: 430, margin: '0 auto', height: '100vh', display: 'flex', flexDirection: 'column' }}>
+
+      {/* Header */}
+      <div style={{ background: 'linear-gradient(180deg, #7db8e8 0%, #c8e4f8 60%, #f0c090 100%)', padding: '48px 16px 14px', flexShrink: 0 }}>
         <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1a2a3a', marginBottom: 12 }}>🗺️ Map</h1>
         {/* Category filter */}
         <div style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' }}>
-          {[
-            { id: 'mosques',    label: '🕌 Masjids' },
-            { id: 'events',     label: '📅 Events' },
-            { id: 'restaurants',label: '🍽️ Restaurants' },
-            { id: 'homecooks',  label: '👨‍🍳 Home Cooks' },
-            { id: 'childcare',  label: '👶 Childcare' },
-            { id: 'schools',    label: '🏫 Schools' },
-          ].map(c => (
+          {CATEGORIES.map(c => (
             <button key={c.id} onClick={() => setCategory(c.id)} style={{
               padding: '6px 14px', borderRadius: 20, whiteSpace: 'nowrap',
               fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
-              background: category === c.id ? '#1a2a3a' : 'rgba(255,255,255,0.7)',
+              background: category === c.id ? c.color : 'rgba(255,255,255,0.7)',
               color: category === c.id ? 'white' : 'rgba(26,42,58,0.7)',
               border: 'none',
             }}>{c.label}</button>
@@ -190,16 +180,67 @@ export default function Map() {
         </div>
       </div>
 
+      {/* Map */}
       <div style={{ flex: 1, position: 'relative' }}>
         {(loading || !mapReady) && (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5', zIndex: 10 }}>
             <div style={{ textAlign: 'center', color: 'rgba(26,42,58,0.4)' }}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>🕌</div>
-              <div style={{ fontSize: 15 }}>Loading map...</div>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>🗺️</div>
+              <div>Loading map...</div>
             </div>
           </div>
         )}
         <div ref={mapRef} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+
+        {/* Pin count */}
+        {!loading && (
+          <div style={{ position: 'absolute', top: 10, right: 10, background: 'white', borderRadius: 20, padding: '5px 12px', fontSize: 12, fontWeight: 600, color: '#1a2a3a', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+            {pins.length} {CATEGORIES.find(c => c.id === category)?.label.split(' ').slice(1).join(' ') || 'places'}
+          </div>
+        )}
+
+        {/* Selected popup */}
+        {selected && (
+          <>
+            <div onClick={() => setSelected(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)' }} />
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'white', borderRadius: '20px 20px 0 0', padding: '0 0 80px', boxShadow: '0 -4px 30px rgba(0,0,0,0.15)', maxHeight: '50vh', overflowY: 'auto' }}>
+              <div style={{ width: 36, height: 4, background: 'rgba(0,0,0,0.12)', borderRadius: 2, margin: '12px auto 16px' }} />
+              <div style={{ padding: '0 16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                  <div style={{ flex: 1, paddingRight: 8 }}>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: '#1a2a3a', marginBottom: 3, lineHeight: 1.3 }}>{selected.name}</div>
+                    <div style={{ fontSize: 12, color: 'rgba(26,42,58,0.5)' }}>📍 {selected.location_area}</div>
+                    {selected.event_date && <div style={{ fontSize: 12, color: '#e8943a', fontWeight: 600, marginTop: 2 }}>📅 {new Date(selected.event_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>}
+                  </div>
+                  <button onClick={() => setSelected(null)} style={{ background: '#f5f5f5', border: 'none', borderRadius: 20, width: 28, height: 28, fontSize: 14, color: 'rgba(26,42,58,0.4)', cursor: 'pointer', flexShrink: 0 }}>×</button>
+                </div>
+
+                {selected.description && (
+                  <div style={{ fontSize: 13, color: 'rgba(26,42,58,0.65)', lineHeight: 1.6, marginBottom: 12, background: '#f8f8f8', borderRadius: 10, padding: '10px 12px' }}>
+                    {selected.description.replace(/&nbsp;/g, ' ').substring(0, 150)}{selected.description.length > 150 ? '...' : ''}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                  {getDetailPath(selected) && (
+                    <button onClick={() => navigate(getDetailPath(selected))} style={{ flex: 1, background: '#1a2a3a', color: 'white', border: 'none', borderRadius: 12, padding: '11px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>View Details</button>
+                  )}
+                  <a href={`https://www.google.com/maps/dir/?api=1&destination=${selected.display_lat},${selected.display_lng}`} target="_blank" rel="noreferrer"
+                    style={{ flex: 1, background: '#e8943a', color: 'white', borderRadius: 12, padding: '11px 0', fontSize: 13, fontWeight: 700, textDecoration: 'none', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    🗺️ Directions
+                  </a>
+                </div>
+
+                {(selected.phone || selected.website) && (
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {selected.phone && <a href={`tel:${selected.phone}`} style={{ flex: 1, background: '#f5f5f5', borderRadius: 12, padding: '9px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textDecoration: 'none', textAlign: 'center' }}>📞 Call</a>}
+                    {selected.website && <a href={selected.website.startsWith('http') ? selected.website : 'https://' + selected.website} target="_blank" rel="noreferrer" style={{ flex: 1, background: '#f5f5f5', borderRadius: 12, padding: '9px 0', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textDecoration: 'none', textAlign: 'center' }}>🌐 Website</a>}
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       <BottomNav />

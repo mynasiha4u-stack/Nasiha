@@ -22,17 +22,6 @@ function cleanDesc(text) {
     .trim()
 }
 
-$1')
-    .replace(/;\s*/g, ';
-')
-    .replace(/:\s+/g, ':
-')
-    .replace(/
-{3,}/g, '
-
-')
-    .trim()
-}
 
 const TYPE_COLORS = {
   'Daycare':     { bg: '#fde8c0', color: '#7a4a00' },

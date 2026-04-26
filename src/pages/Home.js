@@ -8,7 +8,7 @@ const CATEGORIES = [
   { icon: '🍛', label: 'Home Cooks',  bg: '#c8f0dc', path: '/directory?cat=home-cooked-food' },
   { icon: '🕌', label: 'Jummah Timings',      bg: '#b8d8f8', path: '/jummah' },
   { icon: '🎂', label: 'Desserts',    bg: '#fde8c0', path: '/directory?cat=dessert-catering' },
-  { icon: '👶', label: 'Childcare',   bg: '#dddaf8', path: '/directory?cat=childcare' },
+  { icon: '👶', label: 'Childcare',   bg: '#dddaf8', path: '/childcare' },
   { icon: '📅', label: 'Events',      bg: '#fcd8cc', path: '/events' },
   { icon: '🏫', label: 'Schools',     bg: '#d4edc0', path: '/directory?cat=islamic-schools' },
   { icon: '⚖️', label: 'Lawyers',     bg: '#b8d8f8', path: '/directory?cat=lawyers' },

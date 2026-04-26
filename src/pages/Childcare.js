@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import BottomNav from '../components/BottomNav'
+import ListingDetail, { cleanText } from '../components/ListingDetail'
 
 const AREAS = ['All', 'East Bay', 'South Bay', 'Peninsula', 'San Francisco', 'North Bay']
 
@@ -71,7 +72,7 @@ function ChildcareCard({ item, onTap }) {
       </div>
       {item.description && (
         <div style={{ fontSize: 13, color: '#2a3a4a', lineHeight: 1.6, marginBottom: 10, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-          {cleanDesc(item.description)}
+          {cleanText(item.description)}
         </div>
       )}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -102,7 +103,6 @@ function ChildcareCard({ item, onTap }) {
 
 export function ChildcareDetail() {
   const { slug } = useParams()
-  const navigate = useNavigate()
   const [item, setItem] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -111,103 +111,11 @@ export function ChildcareDetail() {
       .then(({ data }) => { setItem(data); setLoading(false) })
   }, [slug])
 
-  if (loading) return (
-    <div style={{ maxWidth: 430, margin: '0 auto', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ textAlign: 'center', color: 'rgba(26,42,58,0.4)' }}><div style={{ fontSize: 32, marginBottom: 8 }}>👶</div>Loading...</div>
-    </div>
-  )
-  if (!item) return (
-    <div style={{ maxWidth: 430, margin: '0 auto', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: 'rgba(26,42,58,0.4)' }}>Not found</div>
-    </div>
-  )
-
-  const type = detectType(item.name, item.description)
+  const type = item ? detectType(item.name, item.description) : ''
   const tc = TYPE_COLORS[type] || TYPE_COLORS.Other
 
   return (
-    <div style={{ maxWidth: 430, margin: '0 auto', background: '#f5f5f5', minHeight: '100vh', paddingBottom: 80 }}>
-      <div style={{ background: 'linear-gradient(180deg, #7db8e8 0%, #c8e4f8 60%, #f0c090 100%)', padding: '52px 20px 20px' }}>
-        <button onClick={() => navigate(-1)} style={{ fontSize: 14, color: 'rgba(26,42,58,0.65)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
-        <span style={{ background: tc.bg, color: tc.color, fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, marginBottom: 10, display: 'inline-block' }}>{type}</span>
-        <h1 style={{ fontSize: 20, fontWeight: 800, color: '#1a2a3a', lineHeight: 1.3, marginBottom: 4 }}>{item.name}</h1>
-        <div style={{ fontSize: 13, color: 'rgba(26,42,58,0.6)' }}>📍 {item.location_area}{item.location_address ? ` · ${item.location_address}` : ''}</div>
-      </div>
-
-      <div style={{ padding: '16px 16px 0' }}>
-        {/* Contact actions */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-          {item.phone && (
-            <a href={`tel:${item.phone}`} style={{ flex: 1, minWidth: 100, background: '#e8943a', borderRadius: 12, padding: '13px 0', color: 'white', fontWeight: 700, fontSize: 13, textAlign: 'center', textDecoration: 'none' }}>📞 Call</a>
-          )}
-          {item.website && (
-            <a href={item.website} target="_blank" rel="noreferrer" style={{ flex: 1, minWidth: 100, background: 'white', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: '13px 0', color: '#1a2a3a', fontWeight: 700, fontSize: 13, textAlign: 'center', textDecoration: 'none' }}>🌐 Website</a>
-          )}
-          {item.email && (
-            <a href={`mailto:${item.email}`} style={{ flex: 1, minWidth: 100, background: 'white', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: '13px 0', color: '#1a2a3a', fontWeight: 700, fontSize: 13, textAlign: 'center', textDecoration: 'none' }}>✉️ Email</a>
-          )}
-        </div>
-
-        {/* Contact ribbon */}
-        {(item.phone || item.email || item.instagram || item.facebook || item.whatsapp) && (
-          <div style={{ background: 'white', borderRadius: 16, padding: '4px 8px', marginBottom: 12, border: '1px solid rgba(0,0,0,0.08)', display: 'flex', justifyContent: 'space-around' }}>
-            {item.phone && (
-              <a href={`tel:${item.phone}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 8px', textDecoration: 'none', gap: 3 }}>
-                <span style={{ fontSize: 20 }}>📞</span>
-                <span style={{ fontSize: 10, color: '#888', fontWeight: 600 }}>Call</span>
-              </a>
-            )}
-            {item.whatsapp && (
-              <a href={`https://wa.me/${item.whatsapp.replace(/\D/g,'')}`} target="_blank" rel="noreferrer" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 8px', textDecoration: 'none', gap: 3 }}>
-                <span style={{ fontSize: 20 }}>💬</span>
-                <span style={{ fontSize: 10, color: '#888', fontWeight: 600 }}>WhatsApp</span>
-              </a>
-            )}
-            {item.email && (
-              <a href={`mailto:${item.email}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 8px', textDecoration: 'none', gap: 3 }}>
-                <span style={{ fontSize: 20 }}>✉️</span>
-                <span style={{ fontSize: 10, color: '#888', fontWeight: 600 }}>Email</span>
-              </a>
-            )}
-            {item.instagram && (
-              <a href={item.instagram} target="_blank" rel="noreferrer" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 8px', textDecoration: 'none', gap: 3 }}>
-                <div style={{ width: 26, height: 26, background: 'linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 12, fontWeight: 800 }}>IG</div>
-                <span style={{ fontSize: 10, color: '#888', fontWeight: 600 }}>Instagram</span>
-              </a>
-            )}
-            {item.facebook && (
-              <a href={item.facebook} target="_blank" rel="noreferrer" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 8px', textDecoration: 'none', gap: 3 }}>
-                <div style={{ width: 26, height: 26, background: '#1877F2', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 15, fontWeight: 900 }}>f</div>
-                <span style={{ fontSize: 10, color: '#888', fontWeight: 600 }}>Facebook</span>
-              </a>
-            )}
-          </div>
-        )}
-
-        {/* Location */}
-        {item.location_address && (
-          <div style={{ background: 'white', borderRadius: 16, padding: 14, marginBottom: 12, border: '1px solid rgba(0,0,0,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontSize: 11, color: 'rgba(26,42,58,0.4)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>Location</div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#1a2a3a' }}>{item.location_address}</div>
-            </div>
-            <a href={`https://www.google.com/maps/search/${encodeURIComponent(item.location_address)}`} target="_blank" rel="noreferrer"
-              style={{ background: '#e8943a', borderRadius: 10, padding: '8px 14px', fontSize: 12, fontWeight: 700, color: 'white', textDecoration: 'none' }}>
-              🗺️ Map
-            </a>
-          </div>
-        )}
-
-        {/* Description */}
-        {item.description && (
-          <div style={{ background: 'white', borderRadius: 16, padding: 16, marginBottom: 12, border: '1px solid rgba(0,0,0,0.08)' }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a', marginBottom: 10 }}>About</div>
-            <div style={{ fontSize: 14, color: '#1a2a3a', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{cleanDesc(item.description)}</div>
-          </div>
-        )}
-      </div>
-      <BottomNav />
-    </div>
+    <ListingDetail item={item} loading={loading} typeBadge={type} typeColor={tc} notFoundLabel="Provider not found" />
   )
 }
 

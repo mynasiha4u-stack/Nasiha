@@ -220,12 +220,6 @@ export default function Childcare() {
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
-        {/* List / Map toggle */}
-        <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)', marginBottom: 10 }}>
-          <button style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: '#1a2a3a', color: 'white' }}>☰ List View</button>
-          <button onClick={() => navigate('/childcare/map')} style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: 'rgba(26,42,58,0.5)' }}>🗺️ Map View</button>
-        </div>
-
         {/* Search */}
         <div style={{ background: 'white', borderRadius: 12, border: '1px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', marginBottom: 10 }}>
           <span style={{ fontSize: 16 }}>🔍</span>
@@ -234,7 +228,7 @@ export default function Childcare() {
         </div>
 
         {/* Area filter */}
-        <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 16, paddingBottom: 2, scrollbarWidth: 'none', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 10, paddingBottom: 2, scrollbarWidth: 'none' }}>
           {AREAS.map(a => (
             <button key={a} onClick={() => setArea(a)} style={{
               padding: '6px 14px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
@@ -243,7 +237,12 @@ export default function Childcare() {
               border: '1px solid rgba(0,0,0,0.1)',
             }}>{a}</button>
           ))}
+        </div>
 
+        {/* List / Map toggle */}
+        <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)', marginBottom: 16 }}>
+          <button style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: '#1a2a3a', color: 'white' }}>☰ List View</button>
+          <button onClick={() => navigate('/childcare/map')} style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: 'rgba(26,42,58,0.5)' }}>🗺️ Map View</button>
         </div>
 
         {loading ? (

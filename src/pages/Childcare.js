@@ -227,8 +227,8 @@ export default function Childcare() {
             style={{ flex: 1, border: 'none', outline: 'none', fontSize: 15 }} />
         </div>
 
-        {/* Area filter */}
-        <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 16, paddingBottom: 2, scrollbarWidth: 'none' }}>
+        {/* Area filter + Map toggle */}
+        <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 16, paddingBottom: 2, scrollbarWidth: 'none', alignItems: 'center' }}>
           {AREAS.map(a => (
             <button key={a} onClick={() => setArea(a)} style={{
               padding: '6px 14px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
@@ -237,6 +237,10 @@ export default function Childcare() {
               border: '1px solid rgba(0,0,0,0.1)',
             }}>{a}</button>
           ))}
+          <button onClick={() => navigate('/childcare/map')} style={{
+            padding: '6px 14px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
+            background: 'white', color: 'rgba(26,42,58,0.6)', border: '1px solid rgba(0,0,0,0.1)',
+          }}>🗺️ Map</button>
         </div>
 
         {loading ? (

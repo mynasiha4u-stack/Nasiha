@@ -5,7 +5,7 @@ import BottomNav from '../components/BottomNav'
 
 const EVENT_TYPES = ['Halaqa', 'Islamic Learning', 'Wellness', 'Family & Kids', 'Community', 'Fundraiser', 'Matrimonial', 'Civic', 'Arts & Culture', 'Food & Drink']
 const AUDIENCES = ['General Public', 'Sisters Only', 'Brothers Only', 'Youth', 'Families']
-const MOSQUES = ['MCC East Bay', 'MCA Santa Clara', 'ICF Fremont', 'ICL Livermore', 'SRVIC San Ramon', 'WVMA Los Gatos', 'Lamorinda', 'Yaseen Foundation']
+const MOSQUES = ['MCC East Bay', 'MCA Santa Clara', 'ICF Fremont', 'SRVIC San Ramon', 'WVMA Los Gatos', 'Lamorinda']
 
 const TYPE_COLOR = { bg: '#e8943a', color: 'white' }
 const AUDIENCE_COLOR = { bg: '#9b87c4', color: 'white' }
@@ -338,6 +338,7 @@ export default function Events() {
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [showFilters, setShowFilters] = useState(null)
+  const [thisWeekend, setThisWeekend] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
   const [activeTypes, setActiveTypes] = useState([])
   const [activeAudiences, setActiveAudiences] = useState([])
@@ -361,7 +362,18 @@ export default function Events() {
       })
   }, [])
 
+  // Calculate this weekend dates
+  const todayDate = new Date()
+  const dayOfWeek = todayDate.getDay()
+  const daysUntilSat = (6 - dayOfWeek + 7) % 7 || 0
+  const daysUntilSun = (0 - dayOfWeek + 7) % 7 || 7
+  const satDate = new Date(todayDate); satDate.setDate(todayDate.getDate() + daysUntilSat)
+  const sunDate = new Date(todayDate); sunDate.setDate(todayDate.getDate() + (dayOfWeek === 0 ? 0 : daysUntilSun))
+  const satStr = satDate.toISOString().substring(0, 10)
+  const sunStr = sunDate.toISOString().substring(0, 10)
+
   const filtered = events.filter(e => {
+    if (thisWeekend && e.event_date !== satStr && e.event_date !== sunStr) return false
     if (activeDate && e.event_date !== activeDate) return false
     if (activeTypes.length > 0) {
       const types = e.event_type ? [e.event_type] : detectTypes(e.name, e.description)
@@ -397,6 +409,22 @@ export default function Events() {
 
       <div style={{ padding: '16px 16px 0' }}>
         <NewsletterStrip />
+
+        {/* Top row: This Weekend + Map toggle */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+          <button onClick={() => setThisWeekend(t => !t)} style={{
+            padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
+            background: thisWeekend ? '#e8943a' : 'white',
+            color: thisWeekend ? 'white' : '#1a2a3a',
+            border: '1px solid rgba(0,0,0,0.1)',
+          }}>This Weekend</button>
+          <div style={{ flex: 1 }} />
+          <button onClick={() => navigate('/map')} style={{
+            padding: '7px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
+            background: 'white', color: '#1a2a3a', border: '1px solid rgba(0,0,0,0.1)',
+            display: 'flex', alignItems: 'center', gap: 5,
+          }}>🗺️ Map</button>
+        </div>
 
         {/* Mosque scrolling filter */}
         <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 8, paddingBottom: 2, scrollbarWidth: 'none' }}>

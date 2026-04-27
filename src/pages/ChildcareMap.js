@@ -8,9 +8,19 @@ export default function ChildcareMap() {
   const navigate = useNavigate()
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
+  const userMarkerRef = useRef(null)
   const [items, setItems] = useState([])
   const [selected, setSelected] = useState(null)
   const [mapReady, setMapReady] = useState(false)
+  const [userLocation, setUserLocation] = useState(null)
+
+  useEffect(() => {
+    if (!navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(
+      pos => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {}
+    )
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -47,6 +57,31 @@ export default function ChildcareMap() {
   }, [mapReady])
 
   useEffect(() => {
+    if (!mapInstanceRef.current || !window.google || !userLocation) return
+    if (userMarkerRef.current) userMarkerRef.current.setMap(null)
+    userMarkerRef.current = new window.google.maps.Marker({
+      position: { lat: userLocation.lat, lng: userLocation.lng },
+      map: mapInstanceRef.current,
+      icon: {
+        path: window.google.maps.SymbolPath.CIRCLE,
+        fillColor: '#1E88E5',
+        fillOpacity: 1,
+        strokeColor: 'white',
+        strokeWeight: 3,
+        scale: 9,
+      },
+      zIndex: 9999,
+      title: 'Your location',
+    })
+  }, [userLocation, mapReady])
+
+  const recenterToUser = () => {
+    if (!mapInstanceRef.current || !userLocation) return
+    mapInstanceRef.current.panTo({ lat: userLocation.lat, lng: userLocation.lng })
+    mapInstanceRef.current.setZoom(13)
+  }
+
+  useEffect(() => {
     if (!mapInstanceRef.current || !window.google || !items.length) return
     if (mapInstanceRef.current._markers) mapInstanceRef.current._markers.forEach(m => m.setMap(null))
     mapInstanceRef.current._markers = []
@@ -79,14 +114,24 @@ export default function ChildcareMap() {
           <h1 style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', margin: 0 }}>👶 Childcare</h1>
           <div style={{ marginLeft: 'auto', fontSize: 12, color: '#3A4A5A', fontWeight: 600 }}>{items.length} providers</div>
         </div>
-        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.7)', borderRadius: 12, padding: 3 }}>
-          <button onClick={() => navigate('/childcare')} style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#3A4A5A' }}>☰ List View</button>
-          <button style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'rgba(28,43,58,0.1)', color: '#1C2B3A' }}>🗺️ Map View</button>
+        <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+          <div style={{ display: 'inline-flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
+            <button onClick={() => navigate('/childcare')} style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#3A4A5A', whiteSpace: 'nowrap' }}>☰ List</button>
+            <button style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: '#1C2B3A', color: 'white', whiteSpace: 'nowrap' }}>🗺️ Map</button>
+          </div>
         </div>
       </div>
 
       <div style={{ flex: 1, position: 'relative' }}>
         <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
+        {userLocation && !selected && (
+          <button onClick={recenterToUser} style={{
+            position: 'absolute', bottom: 20, right: 16, zIndex: 5,
+            background: 'white', border: '1px solid rgba(0,0,0,0.15)', borderRadius: 999,
+            padding: '10px 14px', fontSize: 13, fontWeight: 700, color: '#1C2B3A',
+            cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+          }}>Recenter</button>
+        )}
 
         {selected && (
           <>
@@ -130,7 +175,7 @@ export default function ChildcareMap() {
                         : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(selected.location_address)}`}
                       target="_blank" rel="noreferrer"
                       style={{ flex: 1, background: colors.brand, color: 'white', borderRadius: 12, padding: '12px 0', fontSize: 13, fontWeight: 700, textDecoration: 'none', textAlign: 'center' }}>
-                      🧭 Directions
+                      Directions
                     </a>
                   )}
                   {selected.phone && (

@@ -112,7 +112,7 @@ export default function ListingDetail({ item, typeBadge, typeColor, loading, not
                 : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(item.location_address)}`}
               target="_blank" rel="noreferrer"
               style={{ background: colors.brand, borderRadius: radius.sm, padding: '10px 14px', fontSize: 12, fontWeight: 700, color: 'white', textDecoration: 'none', flexShrink: 0, whiteSpace: 'nowrap' }}>
-              🧭 Directions
+              Directions
             </a>
           </div>
         )}

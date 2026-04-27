@@ -112,7 +112,7 @@ function ChildcareCard({ item, onTap, userLocation }) {
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {directionsUrl && (
-          <a href={directionsUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ background: colors.brand, borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 700, color: 'white', textAlign: 'center', textDecoration: 'none' }}>🧭 Directions</a>
+          <a href={directionsUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ background: colors.brand, borderRadius: 8, padding: '7px 0', fontSize: 12, fontWeight: 600, color: 'white', textAlign: 'center', textDecoration: 'none' }}>Directions</a>
         )}
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {item.phone && (

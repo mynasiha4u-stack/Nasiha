@@ -70,7 +70,7 @@ function buildInfoHtml(mosque, season, userLocation) {
         ${dist !== null ? `<span style="font-size:11px;color:#C4500A;font-weight:700;white-space:nowrap;flex-shrink:0;">${dist.toFixed(1)} mi</span>` : ''}
       </div>
       ${timesHtml}
-      <a href="${dirUrl}" target="_blank" rel="noreferrer" style="display:block;margin-top:8px;background:#C2410C;border-radius:8px;padding:9px 0;font-size:12px;font-weight:700;color:white;text-align:center;text-decoration:none;">🧭 Directions</a>
+      <a href="${dirUrl}" target="_blank" rel="noreferrer" style="display:block;margin-top:8px;background:#C2410C;border-radius:8px;padding:9px 0;font-size:12px;font-weight:700;color:white;text-align:center;text-decoration:none;">Directions</a>
     </div>
   `
 }
@@ -143,6 +143,33 @@ export default function JummahMap() {
     })
   }, [mapReady])
 
+  // User location blue dot
+  const userMarkerRef = useRef(null)
+  useEffect(() => {
+    if (!mapInstanceRef.current || !window.google || !userLocation) return
+    if (userMarkerRef.current) userMarkerRef.current.setMap(null)
+    userMarkerRef.current = new window.google.maps.Marker({
+      position: { lat: userLocation.lat, lng: userLocation.lng },
+      map: mapInstanceRef.current,
+      icon: {
+        path: window.google.maps.SymbolPath.CIRCLE,
+        fillColor: '#1E88E5',
+        fillOpacity: 1,
+        strokeColor: 'white',
+        strokeWeight: 3,
+        scale: 9,
+      },
+      zIndex: 9999,
+      title: 'Your location',
+    })
+  }, [userLocation, mapReady])
+
+  const recenterToUser = () => {
+    if (!mapInstanceRef.current || !userLocation) return
+    mapInstanceRef.current.panTo({ lat: userLocation.lat, lng: userLocation.lng })
+    mapInstanceRef.current.setZoom(13)
+  }
+
   // Drop markers + bind InfoWindow handlers
   useEffect(() => {
     if (!mapInstanceRef.current || !window.google || !mosques.length) return
@@ -199,14 +226,25 @@ export default function JummahMap() {
           <h1 style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', margin: 0 }}>🕌 Jummah</h1>
           <div style={{ marginLeft: 'auto', fontSize: 12, color: '#3A4A5A', fontWeight: 600 }}>{mosques.length} mosques</div>
         </div>
-        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.7)', borderRadius: 12, padding: 3 }}>
-          <button onClick={() => navigate('/jummah')} style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#3A4A5A' }}>☰ List View</button>
-          <button style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'rgba(28,43,58,0.1)', color: '#1C2B3A' }}>🗺️ Map View</button>
+        {/* Small pill toggle, matches Jummah list page */}
+        <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+          <div style={{ display: 'inline-flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
+            <button onClick={() => navigate('/jummah')} style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#3A4A5A', whiteSpace: 'nowrap' }}>☰ List</button>
+            <button style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: '#1C2B3A', color: 'white', whiteSpace: 'nowrap' }}>🗺️ Map</button>
+          </div>
         </div>
       </div>
 
       <div style={{ flex: 1, position: 'relative' }}>
         <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
+        {userLocation && (
+          <button onClick={recenterToUser} style={{
+            position: 'absolute', bottom: 20, right: 16, zIndex: 5,
+            background: 'white', border: '1px solid rgba(0,0,0,0.15)', borderRadius: 999,
+            padding: '10px 14px', fontSize: 13, fontWeight: 700, color: '#1C2B3A',
+            cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+          }}>Recenter</button>
+        )}
       </div>
 
       <BottomNav />

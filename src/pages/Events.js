@@ -314,7 +314,7 @@ export function EventDetailPage() {
                 : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(event.location_address)}`}
               target="_blank" rel="noreferrer"
               style={{ flex: 1, background: '#E8860A', border: 'none', borderRadius: 12, padding: '13px 0', color: 'white', fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
-              🧭 Directions
+              Directions
             </a>
           )}
           {event.website && (

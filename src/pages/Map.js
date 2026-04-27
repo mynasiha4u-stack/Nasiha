@@ -48,7 +48,7 @@ export default function Map() {
   useEffect(() => {
     if (category) setSearchParams({ category }, { replace: true })
     else setSearchParams({}, { replace: true })
-  }, [category]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [category, setSearchParams])
 
   // Load data when category changes
   useEffect(() => {

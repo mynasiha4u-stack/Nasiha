@@ -15,7 +15,7 @@ export const colors = {
   brand:   '#C2410C',  // Burnt orange — primary CTA, active states
   deep:    '#1C2B3A',  // Deep navy — nav, dark text, dark surfaces
   warm:    '#EA580C',  // Warm orange — accent, highlights
-  surface: '#FBF9F7',  // Warm off-white — page background
+  surface: '#FAF7F2',  // Creamy warm off-white — page background
 
   // Neutrals
   card:    '#FFFFFF',

@@ -262,7 +262,7 @@ export default function Jummah() {
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
       <div style={{ background: headerGradient, padding: '52px 20px 24px' }}>
-        <button onClick={() => navigate('/')} style={{ fontSize: 14, color: 'rgba(28,43,58,0.65)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
+        <button onClick={() => navigate('/')} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', marginBottom: 14, display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
         <h1 style={{ fontSize: 26, fontWeight: 700, color: colors.textPrimary, marginBottom: 4 }}>🕌 Jummah Timings</h1>
         <p style={{ fontSize: 14, color: '#3A4A5A', marginBottom: 4 }}>
           {new Date().getDay() === 5 ? '🟢 Today is Friday · ' : ''}{mosques.length} mosques in the Bay Area
@@ -315,7 +315,7 @@ export default function Jummah() {
             </div>
             <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
               <button onClick={() => {}} style={{ padding: '8px 10px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: colors.deep, color: 'white', whiteSpace: 'nowrap' }}>☰ List</button>
-              <button onClick={() => navigate('/map')} style={{ padding: '8px 10px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#3A4A5A', whiteSpace: 'nowrap' }}>🗺️ Map</button>
+              <button onClick={() => navigate('/map?category=mosques')} style={{ padding: '8px 10px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#3A4A5A', whiteSpace: 'nowrap' }}>🗺️ Map</button>
             </div>
           </div>
 

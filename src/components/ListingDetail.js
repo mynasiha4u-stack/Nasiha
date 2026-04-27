@@ -90,7 +90,7 @@ export default function ListingDetail({ item, typeBadge, typeColor, loading, not
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: colors.surface, minHeight: '100vh', paddingBottom: 80 }}>
       <div style={{ background: headerGradient, padding: '52px 20px 24px' }}>
-        <button onClick={() => navigate(-1)} style={{ fontSize: 14, color: 'rgba(28,43,58,0.65)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
+        <button onClick={() => navigate(-1)} style={{ fontSize: 13, fontWeight: 700, color: colors.deep, marginBottom: 14, display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: radius.full }}>← Back</button>
         {item.image_url && <img src={item.image_url} alt={item.name} style={{ width: '100%', borderRadius: radius.md, marginBottom: 14, objectFit: 'cover', maxHeight: 200 }} />}
         {typeBadge && <span style={{ background: 'rgba(28,43,58,0.1)', color: '#1C2B3A', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: radius.full, marginBottom: 10, display: 'inline-block' }}>{typeBadge}</span>}
         <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1C2B3A', lineHeight: 1.3, marginBottom: 6 }}>{item.name}</h1>
@@ -100,15 +100,19 @@ export default function ListingDetail({ item, typeBadge, typeColor, loading, not
       <div style={{ padding: '16px 16px 0' }}>
         <ActionButtons item={item} />
         <ContactRibbon item={item} />
-        {item.location_address && (
+        {(item.display_lat || item.location_address) && (
           <div style={{ ...card, padding: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
+            <div style={{ flex: 1, paddingRight: 12 }}>
               <div style={{ fontSize: 10, color: colors.textMuted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Location</div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary }}>{item.location_address}</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary }}>{item.location_address || item.location_area}</div>
             </div>
-            <a href={`https://www.google.com/maps/search/${encodeURIComponent(item.location_address)}`} target="_blank" rel="noreferrer"
-              style={{ background: colors.brand, borderRadius: radius.sm, padding: '8px 14px', fontSize: 12, fontWeight: 700, color: 'white', textDecoration: 'none', flexShrink: 0 }}>
-              🗺️ Map
+            <a
+              href={item.display_lat && item.display_lng
+                ? `https://www.google.com/maps/dir/?api=1&destination=${item.display_lat},${item.display_lng}`
+                : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(item.location_address)}`}
+              target="_blank" rel="noreferrer"
+              style={{ background: colors.brand, borderRadius: radius.sm, padding: '10px 14px', fontSize: 12, fontWeight: 700, color: 'white', textDecoration: 'none', flexShrink: 0, whiteSpace: 'nowrap' }}>
+              🧭 Directions
             </a>
           </div>
         )}

@@ -1,6 +1,6 @@
 import { colors, headerGradient, card, radius } from '../theme'
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import BottomNav from '../components/BottomNav'
 
@@ -33,13 +33,22 @@ function isSummer() {
 
 export default function Map() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
   const [pins, setPins] = useState([])
   const [loading, setLoading] = useState(true)
   const [mapReady, setMapReady] = useState(false)
-  const [category, setCategory] = useState(null) // null = all
+  const initialCat = searchParams.get('category')
+  const [category, setCategory] = useState(
+    initialCat && CATEGORIES.some(c => c.id === initialCat) ? initialCat : null
+  )
   const [selected, setSelected] = useState(null)
+
+  useEffect(() => {
+    if (category) setSearchParams({ category }, { replace: true })
+    else setSearchParams({}, { replace: true })
+  }, [category]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load data when category changes
   useEffect(() => {

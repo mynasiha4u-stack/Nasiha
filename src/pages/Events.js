@@ -279,7 +279,7 @@ export function EventDetailPage() {
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
       <div style={{ background: headerGradient, padding: '52px 20px 20px' }}>
-        <button onClick={() => navigate(-1)} style={{ fontSize: 14, color: 'rgba(28,43,58,0.65)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
+        <button onClick={() => navigate(-1)} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', marginBottom: 14, display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
         <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
           {types.map(t => <TypeBadge key={t} type={t} />)}
           {audiences.filter(a => a !== 'General Public').map(a => <AudienceBadge key={a} audience={a} />)}
@@ -308,10 +308,13 @@ export function EventDetailPage() {
         </div>
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-          {event.location_address && (
-            <a href={`https://www.google.com/maps/search/${encodeURIComponent(event.location_address)}`} target="_blank" rel="noreferrer"
+          {(event.display_lat || event.location_address) && (
+            <a href={event.display_lat && event.display_lng
+                ? `https://www.google.com/maps/dir/?api=1&destination=${event.display_lat},${event.display_lng}`
+                : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(event.location_address)}`}
+              target="_blank" rel="noreferrer"
               style={{ flex: 1, background: '#E8860A', border: 'none', borderRadius: 12, padding: '13px 0', color: 'white', fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
-              🗺️ Directions
+              🧭 Directions
             </a>
           )}
           {event.website && (
@@ -403,7 +406,7 @@ export default function Events() {
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
       <div style={{ background: headerGradient, padding: '48px 20px 20px' }}>
-        <button onClick={() => navigate('/')} style={{ fontSize: 14, color: 'rgba(28,43,58,0.65)', marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
+        <button onClick={() => navigate('/')} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', marginBottom: 14, display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: '#FFFFFF', marginBottom: 2 }}>📅 Events</h1>
         <p style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)' }}>{events.length} Bay Area Muslim events</p>
       </div>

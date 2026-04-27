@@ -75,7 +75,7 @@ export default function ChildcareMap() {
     <div style={{ maxWidth: 430, margin: '0 auto', height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <div style={{ background: headerGradient, padding: '48px 16px 14px', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-          <button onClick={() => navigate('/childcare')} style={{ fontSize: 14, color: 'rgba(28,43,58,0.65)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>← Back</button>
+          <button onClick={() => navigate('/childcare')} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
           <h1 style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', margin: 0 }}>👶 Childcare</h1>
           <div style={{ marginLeft: 'auto', fontSize: 12, color: '#3A4A5A', fontWeight: 600 }}>{items.length} providers</div>
         </div>
@@ -121,12 +121,26 @@ export default function ChildcareMap() {
                   </div>
                 )}
 
-                {/* Contact buttons */}
-                <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-                  <button onClick={() => navigate(`/childcare/${selected.url_slug}`)} style={{ flex: 1, background: colors.deep, color: 'white', border: 'none', borderRadius: 12, padding: '12px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>View Full Details</button>
+                {/* Primary action row: Directions + Call */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                  {(selected.display_lat || selected.location_address) && (
+                    <a
+                      href={selected.display_lat && selected.display_lng
+                        ? `https://www.google.com/maps/dir/?api=1&destination=${selected.display_lat},${selected.display_lng}`
+                        : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(selected.location_address)}`}
+                      target="_blank" rel="noreferrer"
+                      style={{ flex: 1, background: colors.brand, color: 'white', borderRadius: 12, padding: '12px 0', fontSize: 13, fontWeight: 700, textDecoration: 'none', textAlign: 'center' }}>
+                      🧭 Directions
+                    </a>
+                  )}
                   {selected.phone && (
                     <a href={`tel:${selected.phone}`} style={{ flex: 1, background: colors.pinChildcare, color: 'white', borderRadius: 12, padding: '12px 0', fontSize: 13, fontWeight: 700, textDecoration: 'none', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>📞 Call</a>
                   )}
+                </div>
+
+                {/* Secondary: full details */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                  <button onClick={() => navigate(`/childcare/${selected.url_slug}`)} style={{ flex: 1, background: colors.deep, color: 'white', border: 'none', borderRadius: 12, padding: '12px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>View Full Details</button>
                 </div>
 
                 {/* Extra contact row */}

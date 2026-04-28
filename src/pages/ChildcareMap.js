@@ -4,6 +4,39 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import BottomNav from '../components/BottomNav'
 
+// Break a description into short paragraphs at natural sentence boundaries.
+// Combines very short sentences, splits long blocks every 1-2 sentences,
+// and breaks before transition phrases that usually start a new thought.
+function formatDescription(text, maxChars = null) {
+  if (!text) return []
+  let s = text.replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
+  if (maxChars && s.length > maxChars) s = s.substring(0, maxChars).replace(/\s\S*$/, '') + '…'
+
+  // Break before known transition starts (force a paragraph break)
+  const transitions = /(\s)(We offer|Our program|Located|Hours|Contact|Please|For more|Open|Currently|Our staff|We are|Tuition|Ages|We provide|We accept|Email|Call|Visit|Website|Cost|Pricing|Schedule|Daily)/g
+  s = s.replace(transitions, '$1\n$2')
+
+  // Split into sentences, then group into short paragraphs (max 2 sentences or ~140 chars per paragraph)
+  const paragraphs = []
+  s.split(/\n+/).forEach(block => {
+    const sentences = block.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [block]
+    let buf = ''
+    sentences.forEach(sent => {
+      const t = sent.trim()
+      if (!t) return
+      if (!buf) { buf = t; return }
+      if ((buf.length + t.length) < 140 && buf.split(/[.!?]/).length <= 2) {
+        buf += ' ' + t
+      } else {
+        paragraphs.push(buf)
+        buf = t
+      }
+    })
+    if (buf) paragraphs.push(buf)
+  })
+  return paragraphs.filter(p => p.trim().length > 0)
+}
+
 export default function ChildcareMap() {
   const navigate = useNavigate()
   const mapRef = useRef(null)
@@ -137,13 +170,13 @@ export default function ChildcareMap() {
           <>
             {/* Backdrop */}
             <div onClick={() => setSelected(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)' }} />
-            {/* Bottom sheet card */}
+            {/* Bottom sheet card — auto-fits content */}
             <div style={{
               position: 'absolute', bottom: 0, left: 0, right: 0,
               background: 'white', borderRadius: '20px 20px 0 0',
-              padding: '0 0 32px',
+              padding: '0 0 24px',
               boxShadow: '0 -4px 30px rgba(0,0,0,0.15)',
-              minHeight: '50vh', maxHeight: '75vh', overflowY: 'auto', paddingBottom: 80,
+              maxHeight: '75vh', overflowY: 'auto',
             }}>
               {/* Drag handle */}
               <div style={{ width: 36, height: 4, background: 'rgba(0,0,0,0.12)', borderRadius: 2, margin: '12px auto 16px' }} />
@@ -159,10 +192,12 @@ export default function ChildcareMap() {
                   <button onClick={() => setSelected(null)} style={{ background: '#F7F3EE', border: 'none', borderRadius: 20, width: 28, height: 28, fontSize: 14, color: '#6A7A8A', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>×</button>
                 </div>
 
-                {/* Description */}
+                {/* Description — formatted with line breaks, capped at 200 chars */}
                 {selected.description && (
                   <div style={{ fontSize: 13, color: colors.textPrimary, lineHeight: 1.7, marginBottom: 14, background: '#F7F3EE', borderRadius: 10, padding: '10px 12px' }}>
-                    {selected.description.replace(/&nbsp;/g, ' ').substring(0, 200)}{selected.description.length > 200 ? '...' : ''}
+                    {formatDescription(selected.description, 200).map((p, i) => (
+                      <p key={i} style={{ margin: i === 0 ? 0 : '8px 0 0' }}>{p}</p>
+                    ))}
                   </div>
                 )}
 

@@ -6,7 +6,7 @@ import { colors, headerGradient, card, radius } from '../theme'
 export function cleanText(text) {
   if (!text) return ''
   const nl = '\n'
-  return text
+  let s = text
     .replace(/&nbsp;/g, ' ')
     .replace(/&#8217;/g, "'")
     .replace(/&#8220;/g, '"')
@@ -22,8 +22,31 @@ export function cleanText(text) {
     .replace(/Hours:/g, nl + 'Hours:')
     .replace(/Contact:/g, nl + 'Contact:')
     .replace(/About:/g, nl + 'About:')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
+
+  // Break before common transition phrases that usually start new thoughts
+  const transitions = [
+    'We offer', 'Our program', 'Our staff', 'Located', 'Hours are', 'Hours:',
+    'Please', 'For more', 'Currently', 'We are', 'Tuition', 'Ages ',
+    'We provide', 'We accept', 'Email ', 'Call ', 'Visit ', 'Cost ',
+    'Pricing', 'Schedule', 'Daily ', 'Weekly ', 'Children', 'Open ',
+  ]
+  transitions.forEach(t => {
+    const re = new RegExp('([.!?])\\s+(' + t.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&') + ')', 'g')
+    s = s.replace(re, '$1' + nl + '$2')
+  })
+
+  // Group every ~2 sentences into a paragraph (heuristic for unbroken walls of text)
+  s = s.split(nl).map(line => {
+    if (line.length < 200) return line
+    const sentences = line.match(/[^.!?]+[.!?]+/g) || [line]
+    const grouped = []
+    for (let i = 0; i < sentences.length; i += 2) {
+      grouped.push(sentences.slice(i, i + 2).join(' ').trim())
+    }
+    return grouped.join(nl)
+  }).join(nl)
+
+  return s.replace(/\n{3,}/g, '\n\n').trim()
 }
 
 export function ContactRibbon({ item }) {

@@ -40,6 +40,10 @@ export const headerGradient = 'linear-gradient(180deg, #4a7fa5 0%, #7fb3cc 30%, 
 // Same for inner pages
 export const subheaderGradient = 'linear-gradient(180deg, #4a7fa5 0%, #7fb3cc 30%, #f4c18a 75%, #f0a96e 100%)'
 
+// Compressed warm gradient — for short map-page headers
+// Skips the blue portion so the header feels harmonious with the warmer bottom of list-page headers
+export const mapHeaderGradient = 'linear-gradient(180deg, #f7d4a8 0%, #f4c18a 50%, #f0a96e 100%)'
+
 // Typography scale
 export const text = {
   xs:   { fontSize: 11, lineHeight: 1.4 },

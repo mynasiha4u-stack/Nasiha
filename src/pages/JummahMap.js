@@ -1,4 +1,4 @@
-import { colors, headerGradient } from '../theme'
+import { colors, mapHeaderGradient } from '../theme'
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -220,14 +220,14 @@ export default function JummahMap() {
 
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ background: headerGradient, padding: '48px 16px 14px', flexShrink: 0 }}>
+      <div style={{ background: mapHeaderGradient, padding: '48px 16px 14px', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
           <button onClick={() => navigate('/jummah')} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
-          <h1 style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', margin: 0 }}>🕌 Jummah</h1>
+          <h1 style={{ fontSize: 20, fontWeight: 800, color: '#1C2B3A', margin: 0 }}>🕌 Jummah</h1>
           <div style={{ marginLeft: 'auto', fontSize: 12, color: '#3A4A5A', fontWeight: 600 }}>{mosques.length} mosques</div>
         </div>
-        {/* Small pill toggle, matches Jummah list page */}
-        <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+        {/* Small pill toggle pinned right (matches Jummah list page position) */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <div style={{ display: 'inline-flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
             <button onClick={() => navigate('/jummah')} style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#3A4A5A', whiteSpace: 'nowrap' }}>☰ List</button>
             <button style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: '#1C2B3A', color: 'white', whiteSpace: 'nowrap' }}>🗺️ Map</button>

@@ -86,6 +86,9 @@ export default function ChildcareMap() {
       gestureHandling: 'greedy',
       disableDefaultUI: true,
       zoomControl: true,
+      zoomControlOptions: {
+        position: window.google.maps.ControlPosition.RIGHT_TOP,
+      },
     })
   }, [mapReady])
 

@@ -55,7 +55,7 @@ export default function RecommendationCarousel({ items, userLocation, onCardTap,
       <button
         onClick={() => setExpanded(true)}
         style={{
-          position: 'fixed', bottom: bottomOffset, right: 16, zIndex: 50,
+          position: 'absolute', bottom: bottomOffset, right: 16, zIndex: 50,
           background: colors.brand, color: 'white',
           border: 'none', borderRadius: 999,
           padding: '11px 16px', fontSize: 13, fontWeight: 700,
@@ -81,7 +81,7 @@ export default function RecommendationCarousel({ items, userLocation, onCardTap,
 
   return (
     <div style={{
-      position: 'fixed', bottom: bottomOffset, right: 16, zIndex: 50,
+      position: 'absolute', bottom: bottomOffset, right: 16, zIndex: 50,
       width: 290, background: 'white', borderRadius: 16,
       boxShadow: '0 8px 28px rgba(0,0,0,0.2)',
       overflow: 'hidden',

@@ -165,6 +165,9 @@ export default function RestaurantsMap() {
       gestureHandling: 'greedy',
       disableDefaultUI: true,
       zoomControl: true,
+      zoomControlOptions: {
+        position: window.google.maps.ControlPosition.RIGHT_TOP,
+      },
     })
     infoWindowRef.current = new window.google.maps.InfoWindow({
       pixelOffset: new window.google.maps.Size(0, -8),

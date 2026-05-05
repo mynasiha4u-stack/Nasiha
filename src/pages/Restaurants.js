@@ -59,6 +59,14 @@ function tierLabel(t) {
   return ''
 }
 
+function cityFromAddress(addr) {
+  if (!addr) return null
+  // US-style: "123 Main St, City, ST 94538, USA" — second comma-separated part is the city
+  const parts = addr.split(',').map(p => p.trim()).filter(Boolean)
+  if (parts.length >= 2) return parts[1]
+  return null
+}
+
 function RestaurantCard({ item, onTap, userLocation }) {
   const dist = userLocation && item.display_lat && item.display_lng
     ? distanceMiles(userLocation.lat, userLocation.lng, item.display_lat, item.display_lng)
@@ -69,14 +77,14 @@ function RestaurantCard({ item, onTap, userLocation }) {
     ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(item.location_address)}`
     : null
   const tc = tierColors[item.halal_tier] || tierColors.unknown
-  const cityFromAddr = item.location_address ? item.location_address.split(',')[0] : null
+  const city = cityFromAddress(item.location_address)
   return (
     <div onClick={() => onTap(item)} style={{ ...card, padding: 16, cursor: 'pointer' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
         <div style={{ flex: 1, paddingRight: 8 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary, marginBottom: 3, lineHeight: 1.3 }}>{item.name}</div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <div style={{ fontSize: 12, color: '#4a5a6a', fontWeight: 500 }}>📍 {cityFromAddr || item.location_area || 'Bay Area'}</div>
+            {city && <div style={{ fontSize: 12, color: '#4a5a6a', fontWeight: 500 }}>📍 {city}</div>}
             {dist !== null && (
               <div style={{ fontSize: 12, color: colors.brand, fontWeight: 700 }}>{dist.toFixed(1)} mi</div>
             )}
@@ -246,7 +254,7 @@ export default function Restaurants() {
   })
 
   return (
-    <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
+    <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80, position: 'relative' }}>
       <div style={{ background: headerGradient, padding: '48px 20px 20px' }}>
         <button onClick={() => navigate('/')} style={{ fontSize: 13, fontWeight: 700, color: colors.deep, marginBottom: 14, display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: '#FFFFFF', marginBottom: 2 }}>🍽️ Restaurants</h1>

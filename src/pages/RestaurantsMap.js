@@ -113,6 +113,7 @@ export default function RestaurantsMap() {
       const { data: attrs } = await supabase.from('attributes')
         .select('content_id, attribute_name, attribute_value')
         .in('content_id', ids)
+        .limit(10000)
       const byId = new Map()
       ;(attrs || []).forEach(a => {
         if (!byId.has(a.content_id)) byId.set(a.content_id, { types: [] })

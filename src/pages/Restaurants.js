@@ -160,10 +160,13 @@ export default function Restaurants() {
       if (!contentRows) { setLoading(false); return }
 
       // Bulk-fetch attributes for all of them
+      // NOTE: Supabase default row limit is 1000. We have ~397 restaurants × ~7 attrs = ~2,800 rows.
+      // Set explicit higher limit to avoid silent truncation.
       const ids = contentRows.map(r => r.id)
       const { data: attrs } = await supabase.from('attributes')
         .select('content_id, attribute_name, attribute_value')
         .in('content_id', ids)
+        .limit(10000)
 
       // Index attributes by content_id
       const byId = new Map()

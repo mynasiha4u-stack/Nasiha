@@ -4,6 +4,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import BottomNav from '../components/BottomNav'
 import ListingDetail from '../components/ListingDetail'
+import RecommendationCarousel from '../components/RecommendationCarousel'
 
 const card = { background: 'white', borderRadius: 14, marginBottom: 10, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }
 
@@ -121,23 +122,37 @@ export default function Restaurants() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState(searchParams.get('q') || '')
-  const [tierFilter, setTierFilter] = useState(searchParams.get('tier') || 'all')
-  const [typeFilter, setTypeFilter] = useState(searchParams.get('type') || 'all')
-  const [cuisineFilter, setCuisineFilter] = useState(searchParams.get('cuisine') || 'all')
+  // Multi-select: each filter is a Set. Empty Set means "All" (no filter).
+  const parseSet = (key) => {
+    const v = searchParams.get(key)
+    return new Set(v ? v.split(',') : [])
+  }
+  const [tierFilter, setTierFilter] = useState(parseSet('tier'))
+  const [typeFilter, setTypeFilter] = useState(parseSet('type'))
+  const [cuisineFilter, setCuisineFilter] = useState(parseSet('cuisine'))
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'nearest')
   const [userLocation, setUserLocation] = useState(null)
   const [locationDenied, setLocationDenied] = useState(false)
 
-  // Sync filter state to URL params (for sharing + map handoff)
+  // Sync filter state -> URL (Sets serialized as comma-separated)
   useEffect(() => {
     const params = {}
     if (search) params.q = search
-    if (tierFilter !== 'all') params.tier = tierFilter
-    if (typeFilter !== 'all') params.type = typeFilter
-    if (cuisineFilter !== 'all') params.cuisine = cuisineFilter
+    if (tierFilter.size > 0) params.tier = [...tierFilter].join(',')
+    if (typeFilter.size > 0) params.type = [...typeFilter].join(',')
+    if (cuisineFilter.size > 0) params.cuisine = [...cuisineFilter].join(',')
     if (sortBy !== 'nearest') params.sort = sortBy
     setSearchParams(params, { replace: true })
   }, [search, tierFilter, typeFilter, cuisineFilter, sortBy, setSearchParams])
+
+  // Toggle a value in a Set-based filter; "all" key clears it
+  const toggleSetFilter = (setter, currentSet, key) => {
+    if (key === 'all') { setter(new Set()); return }
+    const next = new Set(currentSet)
+    if (next.has(key)) next.delete(key)
+    else next.add(key)
+    setter(next)
+  }
 
   useEffect(() => {
     if (!navigator.geolocation) { setLocationDenied(true); setSortBy('popular'); return }
@@ -201,9 +216,9 @@ export default function Restaurants() {
   })
 
   const filtered = items.filter(item => {
-    if (tierFilter !== 'all' && item.halal_tier !== tierFilter) return false
-    if (typeFilter !== 'all' && !(item.types || []).includes(typeFilter)) return false
-    if (cuisineFilter !== 'all' && item.cuisine_clean !== cuisineFilter) return false
+    if (tierFilter.size > 0 && !tierFilter.has(item.halal_tier)) return false
+    if (typeFilter.size > 0 && !(item.types || []).some(t => typeFilter.has(t))) return false
+    if (cuisineFilter.size > 0 && !cuisineFilter.has(item.cuisine_clean)) return false
     if (search) {
       const s = search.toLowerCase()
       return item.name.toLowerCase().includes(s) ||
@@ -246,40 +261,49 @@ export default function Restaurants() {
             style={{ flex: 1, border: 'none', outline: 'none', fontSize: 15 }} />
         </div>
 
-        {/* Halal tier filter */}
+        {/* Halal tier filter (multi-select) */}
         <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 8, paddingBottom: 2, scrollbarWidth: 'none' }}>
-          {HALAL_TIERS.map(t => (
-            <button key={t.key} onClick={() => setTierFilter(t.key)} style={{
-              padding: '6px 12px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
-              background: tierFilter === t.key ? colors.brand : 'white',
-              color: tierFilter === t.key ? 'white' : colors.textSecondary,
-              border: '1px solid rgba(0,0,0,0.1)',
-            }}>{t.label}</button>
-          ))}
+          {HALAL_TIERS.map(t => {
+            const active = t.key === 'all' ? tierFilter.size === 0 : tierFilter.has(t.key)
+            return (
+              <button key={t.key} onClick={() => toggleSetFilter(setTierFilter, tierFilter, t.key)} style={{
+                padding: '6px 12px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
+                background: active ? colors.brand : 'white',
+                color: active ? 'white' : colors.textSecondary,
+                border: '1px solid rgba(0,0,0,0.1)',
+              }}>{t.label}</button>
+            )
+          })}
         </div>
 
-        {/* Type filter */}
+        {/* Type filter (multi-select) */}
         <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 8, paddingBottom: 2, scrollbarWidth: 'none' }}>
-          {TYPES.map(t => (
-            <button key={t.key} onClick={() => setTypeFilter(t.key)} style={{
-              padding: '6px 12px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
-              background: typeFilter === t.key ? colors.deep : 'white',
-              color: typeFilter === t.key ? 'white' : colors.textSecondary,
-              border: '1px solid rgba(0,0,0,0.1)',
-            }}>{t.label}</button>
-          ))}
+          {TYPES.map(t => {
+            const active = t.key === 'all' ? typeFilter.size === 0 : typeFilter.has(t.key)
+            return (
+              <button key={t.key} onClick={() => toggleSetFilter(setTypeFilter, typeFilter, t.key)} style={{
+                padding: '6px 12px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
+                background: active ? colors.deep : 'white',
+                color: active ? 'white' : colors.textSecondary,
+                border: '1px solid rgba(0,0,0,0.1)',
+              }}>{t.label}</button>
+            )
+          })}
         </div>
 
-        {/* Cuisine filter */}
+        {/* Cuisine filter (multi-select) */}
         <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 10, paddingBottom: 2, scrollbarWidth: 'none' }}>
-          {cuisines.map(c => (
-            <button key={c} onClick={() => setCuisineFilter(c)} style={{
-              padding: '6px 12px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
-              background: cuisineFilter === c ? '#1C2B3A' : 'white',
-              color: cuisineFilter === c ? 'white' : '#3A4A5A',
-              border: '1px solid rgba(0,0,0,0.1)',
-            }}>{c === 'all' ? 'All Cuisines' : c}</button>
-          ))}
+          {cuisines.map(c => {
+            const active = c === 'all' ? cuisineFilter.size === 0 : cuisineFilter.has(c)
+            return (
+              <button key={c} onClick={() => toggleSetFilter(setCuisineFilter, cuisineFilter, c)} style={{
+                padding: '6px 12px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
+                background: active ? '#1C2B3A' : 'white',
+                color: active ? 'white' : '#3A4A5A',
+                border: '1px solid rgba(0,0,0,0.1)',
+              }}>{c === 'all' ? 'All Cuisines' : c}</button>
+            )
+          })}
         </div>
 
         {/* Sort + List/Map */}
@@ -334,6 +358,12 @@ export default function Restaurants() {
           <RestaurantCard key={item.id} item={item} userLocation={userLocation} onTap={() => item.url_slug && navigate(`/restaurants/${item.url_slug}`)} />
         ))}
       </div>
+      <RecommendationCarousel
+        items={filtered}
+        userLocation={userLocation}
+        onCardTap={(r) => r.url_slug && navigate(`/restaurants/${r.url_slug}`)}
+        bottomOffset={80}
+      />
       <BottomNav />
     </div>
   )

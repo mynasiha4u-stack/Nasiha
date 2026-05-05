@@ -1,6 +1,6 @@
 import { colors, headerGradient } from '../theme'
 import React, { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import BottomNav from '../components/BottomNav'
 import ListingDetail from '../components/ListingDetail'
@@ -117,15 +117,27 @@ function RestaurantCard({ item, onTap, userLocation }) {
 
 export default function Restaurants() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [tierFilter, setTierFilter] = useState('all')
-  const [typeFilter, setTypeFilter] = useState('all')
-  const [cuisineFilter, setCuisineFilter] = useState('all')
-  const [sortBy, setSortBy] = useState('nearest')
+  const [search, setSearch] = useState(searchParams.get('q') || '')
+  const [tierFilter, setTierFilter] = useState(searchParams.get('tier') || 'all')
+  const [typeFilter, setTypeFilter] = useState(searchParams.get('type') || 'all')
+  const [cuisineFilter, setCuisineFilter] = useState(searchParams.get('cuisine') || 'all')
+  const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'nearest')
   const [userLocation, setUserLocation] = useState(null)
   const [locationDenied, setLocationDenied] = useState(false)
+
+  // Sync filter state to URL params (for sharing + map handoff)
+  useEffect(() => {
+    const params = {}
+    if (search) params.q = search
+    if (tierFilter !== 'all') params.tier = tierFilter
+    if (typeFilter !== 'all') params.type = typeFilter
+    if (cuisineFilter !== 'all') params.cuisine = cuisineFilter
+    if (sortBy !== 'nearest') params.sort = sortBy
+    setSearchParams(params, { replace: true })
+  }, [search, tierFilter, typeFilter, cuisineFilter, sortBy, setSearchParams])
 
   useEffect(() => {
     if (!navigator.geolocation) { setLocationDenied(true); setSortBy('popular'); return }
@@ -286,7 +298,10 @@ export default function Restaurants() {
           </div>
           <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, border: `1px solid ${colors.border}` }}>
             <button style={{ padding: '8px 10px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: colors.deep, color: 'white', whiteSpace: 'nowrap' }}>☰ List</button>
-            <button onClick={() => navigate('/restaurants/map')} style={{ padding: '8px 10px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#3A4A5A', whiteSpace: 'nowrap' }}>🗺️ Map</button>
+            <button onClick={() => {
+              const qs = searchParams.toString()
+              navigate(qs ? `/restaurants/map?${qs}` : '/restaurants/map')
+            }} style={{ padding: '8px 10px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#3A4A5A', whiteSpace: 'nowrap' }}>🗺️ Map</button>
           </div>
         </div>
 

@@ -1,6 +1,6 @@
 import { colors, mapHeaderGradient } from '../theme'
 import React, { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import BottomNav from '../components/BottomNav'
 
@@ -12,12 +12,20 @@ function distanceMiles(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
 }
 
-const TIER_COLORS = {
-  hfsaa_zabihah: '#0288D1',
-  fully_halal: '#0F9D58',
-  partially_halal: '#F4B400',
-  unknown: '#9CA3AF',
-}
+const HALAL_TIERS = [
+  { key: 'all', label: 'All' },
+  { key: 'hfsaa_zabihah', label: 'HFSAA Zabihah' },
+  { key: 'fully_halal', label: 'Fully Halal' },
+  { key: 'partially_halal', label: 'Partially' },
+]
+
+const TYPES = [
+  { key: 'all', label: 'All' },
+  { key: 'restaurant', label: 'Restaurant' },
+  { key: 'cafe', label: 'Cafe' },
+  { key: 'grocery', label: 'Grocery & Meat' },
+  { key: 'dessert', label: 'Dessert' },
+]
 
 function tierBadge(t) {
   if (t === 'hfsaa_zabihah') return { bg: '#E3F2FD', color: '#0288D1', label: 'HFSAA Zabihah' }
@@ -35,7 +43,6 @@ function buildInfoHtml(r, userLocation) {
   const safeName = (r.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const tier = tierBadge(r.halal_tier)
 
-  let chipsHtml = ''
   const chips = []
   if (tier) chips.push(`<span style="background:${tier.bg};color:${tier.color};font-size:10px;font-weight:700;padding:3px 7px;border-radius:5px;">${tier.label}</span>`)
   if (r.cuisine_clean) chips.push(`<span style="background:#F7F3EE;color:#3A4A5A;font-size:10px;font-weight:600;padding:3px 7px;border-radius:5px;">${r.cuisine_clean}</span>`)
@@ -43,7 +50,7 @@ function buildInfoHtml(r, userLocation) {
     const label = t === 'grocery' ? 'Grocery & Meat' : t.charAt(0).toUpperCase() + t.slice(1)
     chips.push(`<span style="background:#FFF0E8;color:#C2410C;font-size:10px;font-weight:700;padding:3px 7px;border-radius:5px;">${label}</span>`)
   })
-  if (chips.length) chipsHtml = `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;">${chips.join('')}</div>`
+  const chipsHtml = chips.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;">${chips.join('')}</div>` : ''
 
   return `
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-width:220px;max-width:260px;padding:4px 2px;">
@@ -62,6 +69,7 @@ function buildInfoHtml(r, userLocation) {
 
 export default function RestaurantsMap() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
   const infoWindowRef = useRef(null)
@@ -69,6 +77,18 @@ export default function RestaurantsMap() {
   const [items, setItems] = useState([])
   const [mapReady, setMapReady] = useState(false)
   const [userLocation, setUserLocation] = useState(null)
+
+  const [tierFilter, setTierFilter] = useState(searchParams.get('tier') || 'all')
+  const [typeFilter, setTypeFilter] = useState(searchParams.get('type') || 'all')
+  const [cuisineFilter, setCuisineFilter] = useState(searchParams.get('cuisine') || 'all')
+
+  useEffect(() => {
+    const params = {}
+    if (tierFilter !== 'all') params.tier = tierFilter
+    if (typeFilter !== 'all') params.type = typeFilter
+    if (cuisineFilter !== 'all') params.cuisine = cuisineFilter
+    setSearchParams(params, { replace: true })
+  }, [tierFilter, typeFilter, cuisineFilter, setSearchParams])
 
   useEffect(() => {
     if (!navigator.geolocation) return
@@ -89,7 +109,6 @@ export default function RestaurantsMap() {
         .eq('location_area', 'Bay Area')
         .not('display_lat', 'is', null)
       if (!contentRows) return
-
       const ids = contentRows.map(r => r.id)
       const { data: attrs } = await supabase.from('attributes')
         .select('content_id, attribute_name, attribute_value')
@@ -140,7 +159,6 @@ export default function RestaurantsMap() {
     })
   }, [mapReady])
 
-  // User location dot
   useEffect(() => {
     if (!mapInstanceRef.current || !window.google || !userLocation) return
     if (userMarkerRef.current) userMarkerRef.current.setMap(null)
@@ -160,24 +178,37 @@ export default function RestaurantsMap() {
     })
   }, [userLocation, mapReady])
 
-  // Drop pins, color-coded by halal tier
+  const cuisines = ['all', ...new Set(items.map(i => i.cuisine_clean).filter(Boolean))].sort((a, b) => {
+    if (a === 'all') return -1
+    if (b === 'all') return 1
+    return a.localeCompare(b)
+  })
+
+  const filtered = items.filter(item => {
+    if (tierFilter !== 'all' && item.halal_tier !== tierFilter) return false
+    if (typeFilter !== 'all' && !(item.types || []).includes(typeFilter)) return false
+    if (cuisineFilter !== 'all' && item.cuisine_clean !== cuisineFilter) return false
+    return true
+  })
+
+  // Re-render pins whenever filtered set changes — single brand-orange color
   useEffect(() => {
-    if (!mapInstanceRef.current || !window.google || !items.length) return
+    if (!mapInstanceRef.current || !window.google) return
     if (mapInstanceRef.current._markers) {
       mapInstanceRef.current._markers.forEach(m => m.setMap(null))
     }
     mapInstanceRef.current._markers = []
+    if (infoWindowRef.current) infoWindowRef.current.close()
 
-    items.forEach(r => {
+    filtered.forEach(r => {
       if (!r.display_lat || !r.display_lng) return
-      const fillColor = TIER_COLORS[r.halal_tier] || TIER_COLORS.unknown
       const marker = new window.google.maps.Marker({
         position: { lat: r.display_lat, lng: r.display_lng },
         map: mapInstanceRef.current,
         title: r.name,
         icon: {
           path: 'M12 0C7.6 0 4 3.6 4 8c0 6.4 8 16 8 16s8-9.6 8-16C20 3.6 16.4 0 12 0z',
-          fillColor,
+          fillColor: colors.brand,
           fillOpacity: 1,
           strokeColor: 'white',
           strokeWeight: 1.2,
@@ -200,7 +231,7 @@ export default function RestaurantsMap() {
       })
       mapInstanceRef.current._markers.push(marker)
     })
-  }, [items, mapReady, userLocation, navigate])
+  }, [filtered, mapReady, userLocation, navigate])
 
   const recenterToUser = () => {
     if (!mapInstanceRef.current || !userLocation) return
@@ -208,17 +239,54 @@ export default function RestaurantsMap() {
     mapInstanceRef.current.setZoom(13)
   }
 
+  const goBackToList = () => {
+    const qs = searchParams.toString()
+    navigate(qs ? `/restaurants?${qs}` : '/restaurants')
+  }
+
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ background: mapHeaderGradient, padding: '48px 16px 14px', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-          <button onClick={() => navigate('/restaurants')} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
+      <div style={{ background: mapHeaderGradient, padding: '48px 16px 12px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+          <button onClick={goBackToList} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
           <h1 style={{ fontSize: 20, fontWeight: 800, color: '#1C2B3A', margin: 0 }}>🍽️ Restaurants</h1>
-          <div style={{ marginLeft: 'auto', fontSize: 12, color: '#3A4A5A', fontWeight: 600 }}>{items.length} spots</div>
+          <div style={{ marginLeft: 'auto', fontSize: 12, color: '#3A4A5A', fontWeight: 600 }}>{filtered.length} of {items.length}</div>
         </div>
+
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 6, paddingBottom: 2, scrollbarWidth: 'none' }}>
+          {HALAL_TIERS.map(t => (
+            <button key={t.key} onClick={() => setTierFilter(t.key)} style={{
+              padding: '5px 10px', borderRadius: 16, whiteSpace: 'nowrap', fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
+              background: tierFilter === t.key ? colors.brand : 'white',
+              color: tierFilter === t.key ? 'white' : '#3A4A5A',
+              border: '1px solid rgba(0,0,0,0.1)',
+            }}>{t.label}</button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 6, paddingBottom: 2, scrollbarWidth: 'none' }}>
+          {TYPES.map(t => (
+            <button key={t.key} onClick={() => setTypeFilter(t.key)} style={{
+              padding: '5px 10px', borderRadius: 16, whiteSpace: 'nowrap', fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
+              background: typeFilter === t.key ? '#1C2B3A' : 'white',
+              color: typeFilter === t.key ? 'white' : '#3A4A5A',
+              border: '1px solid rgba(0,0,0,0.1)',
+            }}>{t.label}</button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 8, paddingBottom: 2, scrollbarWidth: 'none' }}>
+          {cuisines.map(c => (
+            <button key={c} onClick={() => setCuisineFilter(c)} style={{
+              padding: '5px 10px', borderRadius: 16, whiteSpace: 'nowrap', fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
+              background: cuisineFilter === c ? '#1C2B3A' : 'white',
+              color: cuisineFilter === c ? 'white' : '#3A4A5A',
+              border: '1px solid rgba(0,0,0,0.1)',
+            }}>{c === 'all' ? 'All Cuisines' : c}</button>
+          ))}
+        </div>
+
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <div style={{ display: 'inline-flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
-            <button onClick={() => navigate('/restaurants')} style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#3A4A5A', whiteSpace: 'nowrap' }}>☰ List</button>
+            <button onClick={goBackToList} style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#3A4A5A', whiteSpace: 'nowrap' }}>☰ List</button>
             <button style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: '#1C2B3A', color: 'white', whiteSpace: 'nowrap' }}>🗺️ Map</button>
           </div>
         </div>
@@ -234,18 +302,6 @@ export default function RestaurantsMap() {
             cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
           }}>Recenter</button>
         )}
-        {/* Tier legend */}
-        <div style={{ position: 'absolute', top: 12, left: 12, background: 'white', borderRadius: 10, padding: '8px 10px', fontSize: 11, fontWeight: 600, color: '#1C2B3A', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-            <div style={{ width: 10, height: 10, borderRadius: 5, background: TIER_COLORS.hfsaa_zabihah }} />HFSAA Zabihah
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-            <div style={{ width: 10, height: 10, borderRadius: 5, background: TIER_COLORS.fully_halal }} />Fully Halal
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 10, height: 10, borderRadius: 5, background: TIER_COLORS.partially_halal }} />Partially Halal
-          </div>
-        </div>
       </div>
 
       <BottomNav />

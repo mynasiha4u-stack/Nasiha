@@ -49,13 +49,24 @@ export default function RecommendationCarousel({ items, userLocation, onCardTap,
 
   if (recs.length === 0) return null
 
+  // Position: fixed (anchored to viewport bottom) but constrained horizontally
+  // to the 430px app frame using calc() — works on both phone and desktop.
+  // 215 = 430/2 (half-width of the frame). On desktop the frame is centered, so
+  // the pill stays at the right edge of the frame (not the right edge of the screen).
+  const pillPositionStyle = {
+    position: 'fixed',
+    bottom: bottomOffset,
+    right: 'max(16px, calc(50vw - 215px + 16px))',
+    zIndex: 50,
+  }
+
   // Collapsed pill
   if (!expanded) {
     return (
       <button
         onClick={() => setExpanded(true)}
         style={{
-          position: 'absolute', bottom: bottomOffset, right: 16, zIndex: 50,
+          ...pillPositionStyle,
           background: colors.brand, color: 'white',
           border: 'none', borderRadius: 999,
           padding: '11px 16px', fontSize: 13, fontWeight: 700,
@@ -81,7 +92,7 @@ export default function RecommendationCarousel({ items, userLocation, onCardTap,
 
   return (
     <div style={{
-      position: 'absolute', bottom: bottomOffset, right: 16, zIndex: 50,
+      ...pillPositionStyle,
       width: 290, background: 'white', borderRadius: 16,
       boxShadow: '0 8px 28px rgba(0,0,0,0.2)',
       overflow: 'hidden',

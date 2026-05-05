@@ -254,7 +254,7 @@ export default function Restaurants() {
   })
 
   return (
-    <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80, position: 'relative' }}>
+    <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
       <div style={{ background: headerGradient, padding: '48px 20px 20px' }}>
         <button onClick={() => navigate('/')} style={{ fontSize: 13, fontWeight: 700, color: colors.deep, marginBottom: 14, display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: '#FFFFFF', marginBottom: 2 }}>🍽️ Restaurants</h1>
@@ -370,7 +370,7 @@ export default function Restaurants() {
         items={filtered}
         userLocation={userLocation}
         onCardTap={(r) => r.url_slug && navigate(`/restaurants/${r.url_slug}`)}
-        bottomOffset={80}
+        bottomOffset={100}
       />
       <BottomNav />
     </div>

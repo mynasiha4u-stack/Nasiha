@@ -12,7 +12,7 @@ const CATEGORIES = [
   { icon: '📅', label: 'Events',          path: '/events' },
   { icon: '🏫', label: 'Schools',         path: '/directory?cat=islamic-schools' },
   { icon: '⚖️', label: 'Lawyers',         path: '/directory?cat=lawyers' },
-  { icon: '🍽️', label: 'Restaurants',     path: '/directory?cat=restaurants' },
+  { icon: '🍽️', label: 'Restaurants',     path: '/restaurants' },
 ]
 
 const SUGGESTIONS = ['Halal food near me', 'Jummah times', 'Events this weekend', 'Islamic schools']

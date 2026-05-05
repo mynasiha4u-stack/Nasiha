@@ -11,6 +11,8 @@ import EventsMap from './pages/EventsMap'
 import Childcare, { ChildcareDetail } from './pages/Childcare'
 import ChildcareMap from './pages/ChildcareMap'
 import JummahMap from './pages/JummahMap'
+import Restaurants, { RestaurantDetail } from './pages/Restaurants'
+import RestaurantsMap from './pages/RestaurantsMap'
 
 export default function App() {
   return (
@@ -28,6 +30,9 @@ export default function App() {
         <Route path="/map" element={<MapPage />} />
         <Route path="/jummah/map" element={<JummahMap />} />
         <Route path="/jummah/:slug" element={<MosqueDetail />} />
+        <Route path="/restaurants" element={<Restaurants />} />
+        <Route path="/restaurants/map" element={<RestaurantsMap />} />
+        <Route path="/restaurants/:slug" element={<RestaurantDetail />} />
       </Routes>
     </BrowserRouter>
   )

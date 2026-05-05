@@ -159,13 +159,13 @@ export default function Restaurants() {
         .eq('location_area', 'Bay Area')
       if (!contentRows) { setLoading(false); return }
 
-      // Bulk-fetch attributes for all of them
-      // NOTE: Supabase default row limit is 1000. We have ~397 restaurants × ~7 attrs = ~2,800 rows.
-      // Set explicit higher limit to avoid silent truncation.
+      // Only fetch the attribute types we actually need (halal_tier, cuisine_clean, type)
+      // This avoids hitting Supabase's row limits with all attribute types
       const ids = contentRows.map(r => r.id)
       const { data: attrs } = await supabase.from('attributes')
         .select('content_id, attribute_name, attribute_value')
         .in('content_id', ids)
+        .in('attribute_name', ['halal_tier', 'cuisine_clean', 'type'])
         .limit(10000)
 
       // Index attributes by content_id

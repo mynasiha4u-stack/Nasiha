@@ -1,4 +1,4 @@
-import { colors } from '../theme'
+import { colors, mapHeaderGradient } from '../theme'
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -288,16 +288,14 @@ export default function RestaurantsMap() {
       {/* Map fills full background */}
       <div ref={mapRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
 
-      {/* Translucent header overlaying the map */}
+      {/* Header — warm gradient, rounded bottom corners + shadow give a 'lip' effect over the map */}
       <div style={{
         position: 'relative', zIndex: 4,
-        background: 'linear-gradient(180deg, rgba(255,247,237,0.95) 0%, rgba(255,247,237,0.85) 70%, rgba(255,247,237,0) 100%)',
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
+        background: mapHeaderGradient,
         padding: '48px 16px 18px',
-        borderBottomLeftRadius: 16,
-        borderBottomRightRadius: 16,
-        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+        borderBottomLeftRadius: 18,
+        borderBottomRightRadius: 18,
+        boxShadow: '0 6px 16px rgba(0,0,0,0.12)',
         flexShrink: 0,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>

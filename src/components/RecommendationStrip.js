@@ -74,7 +74,7 @@ export default function RecommendationStrip({ items, userLocation, onCardTap, on
   const next = () => setIndex(i => (i + 1) % recs.length)
   const prev = () => setIndex(i => (i - 1 + recs.length) % recs.length)
 
-  // Touch handlers for swipe
+  // Touch handlers for swipe (mobile)
   const onTouchStart = (e) => { startX.current = e.touches[0].clientX }
   const onTouchEnd = (e) => {
     if (startX.current === null) return
@@ -82,6 +82,16 @@ export default function RecommendationStrip({ items, userLocation, onCardTap, on
     if (Math.abs(dx) > 40) { dx < 0 ? next() : prev() }
     startX.current = null
   }
+
+  // Mouse drag (desktop) — allows "swipe" on laptop trackpad/mouse
+  const onMouseDown = (e) => { startX.current = e.clientX; e.preventDefault() }
+  const onMouseUp = (e) => {
+    if (startX.current === null) return
+    const dx = e.clientX - startX.current
+    if (Math.abs(dx) > 40) { dx < 0 ? next() : prev() }
+    startX.current = null
+  }
+  const onMouseLeave = () => { startX.current = null }
 
   const containerStyle = variant === 'map'
     ? {
@@ -97,17 +107,18 @@ export default function RecommendationStrip({ items, userLocation, onCardTap, on
 
   return (
     <div style={containerStyle}>
-      {/* Header strip */}
+      {/* Header strip — small pill so it's readable over both light bg (list) and translucent map */}
       <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '0 4px', marginBottom: 6,
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        padding: '4px 10px', marginBottom: 6, marginLeft: 2,
+        background: variant === 'map' ? 'rgba(255,255,255,0.95)' : 'transparent',
+        borderRadius: 999,
+        boxShadow: variant === 'map' ? '0 2px 6px rgba(0,0,0,0.15)' : 'none',
       }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: variant === 'map' ? 'white' : '#3A4A5A', textShadow: variant === 'map' ? '0 1px 3px rgba(0,0,0,0.5)' : 'none' }}>
-          💡 Recommendations · {index + 1} of {recs.length}
+        <span style={{ fontSize: 11, fontWeight: 700, color: '#1C2B3A' }}>
+          💡 Recommendations
         </span>
-        <span style={{ fontSize: 10, color: variant === 'map' ? 'rgba(255,255,255,0.85)' : '#8A99A8', textShadow: variant === 'map' ? '0 1px 3px rgba(0,0,0,0.5)' : 'none' }}>
-          swipe →
-        </span>
+        <span style={{ fontSize: 10, color: '#6A7A8A' }}>· {index + 1} of {recs.length}</span>
       </div>
 
       {/* The card */}
@@ -115,12 +126,17 @@ export default function RecommendationStrip({ items, userLocation, onCardTap, on
         ref={containerRef}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
+        onMouseDown={onMouseDown}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseLeave}
         style={{
           background: 'white', borderRadius: 14,
           boxShadow: variant === 'map' ? '0 6px 24px rgba(0,0,0,0.25)' : '0 1px 4px rgba(0,0,0,0.08)',
           overflow: 'hidden',
           display: 'flex',
           alignItems: 'stretch',
+          cursor: 'grab',
+          userSelect: 'none',
         }}
       >
         {/* Photo placeholder strip on the left */}
@@ -152,19 +168,6 @@ export default function RecommendationStrip({ items, userLocation, onCardTap, on
               return <span key={t} style={{ background: '#FFF0E8', color: '#C2410C', fontSize: 8, fontWeight: 700, padding: '2px 5px', borderRadius: 3 }}>{lab}</span>
             })}
           </div>
-        </div>
-
-        {/* Navigation buttons stacked on the right */}
-        <div style={{ display: 'flex', flexDirection: 'column', borderLeft: '1px solid rgba(0,0,0,0.06)' }}>
-          <button onClick={prev} aria-label="Previous" style={{
-            flex: 1, width: 32, background: 'white', border: 'none',
-            fontSize: 14, fontWeight: 700, color: '#1C2B3A', cursor: 'pointer',
-            borderBottom: '1px solid rgba(0,0,0,0.06)',
-          }}>‹</button>
-          <button onClick={next} aria-label="Next" style={{
-            flex: 1, width: 32, background: 'white', border: 'none',
-            fontSize: 14, fontWeight: 700, color: '#1C2B3A', cursor: 'pointer',
-          }}>›</button>
         </div>
       </div>
 

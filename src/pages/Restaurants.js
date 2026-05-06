@@ -4,7 +4,8 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import BottomNav from '../components/BottomNav'
 import ListingDetail from '../components/ListingDetail'
-import RecommendationCarousel from '../components/RecommendationCarousel'
+import RecommendationStrip from '../components/RecommendationStrip'
+import FilterDropdown from '../components/FilterDropdown'
 
 const card = { background: 'white', borderRadius: 14, marginBottom: 10, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }
 
@@ -269,49 +270,29 @@ export default function Restaurants() {
             style={{ flex: 1, border: 'none', outline: 'none', fontSize: 15 }} />
         </div>
 
-        {/* Halal tier filter (multi-select) */}
-        <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 8, paddingBottom: 2, scrollbarWidth: 'none' }}>
-          {HALAL_TIERS.map(t => {
-            const active = t.key === 'all' ? tierFilter.size === 0 : tierFilter.has(t.key)
-            return (
-              <button key={t.key} onClick={() => toggleSetFilter(setTierFilter, tierFilter, t.key)} style={{
-                padding: '6px 12px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
-                background: active ? colors.brand : 'white',
-                color: active ? 'white' : colors.textSecondary,
-                border: '1px solid rgba(0,0,0,0.1)',
-              }}>{t.label}</button>
-            )
-          })}
-        </div>
-
-        {/* Type filter (multi-select) */}
-        <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 8, paddingBottom: 2, scrollbarWidth: 'none' }}>
-          {TYPES.map(t => {
-            const active = t.key === 'all' ? typeFilter.size === 0 : typeFilter.has(t.key)
-            return (
-              <button key={t.key} onClick={() => toggleSetFilter(setTypeFilter, typeFilter, t.key)} style={{
-                padding: '6px 12px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
-                background: active ? colors.deep : 'white',
-                color: active ? 'white' : colors.textSecondary,
-                border: '1px solid rgba(0,0,0,0.1)',
-              }}>{t.label}</button>
-            )
-          })}
-        </div>
-
-        {/* Cuisine filter (multi-select) */}
-        <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 10, paddingBottom: 2, scrollbarWidth: 'none' }}>
-          {cuisines.map(c => {
-            const active = c === 'all' ? cuisineFilter.size === 0 : cuisineFilter.has(c)
-            return (
-              <button key={c} onClick={() => toggleSetFilter(setCuisineFilter, cuisineFilter, c)} style={{
-                padding: '6px 12px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
-                background: active ? '#1C2B3A' : 'white',
-                color: active ? 'white' : '#3A4A5A',
-                border: '1px solid rgba(0,0,0,0.1)',
-              }}>{c === 'all' ? 'All Cuisines' : c}</button>
-            )
-          })}
+        {/* 3 inline filter dropdowns */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+          <FilterDropdown
+            label="Halal Type"
+            options={HALAL_TIERS.filter(t => t.key !== 'all')}
+            selected={tierFilter}
+            onChange={setTierFilter}
+            accentColor={colors.brand}
+          />
+          <FilterDropdown
+            label="Category"
+            options={TYPES.filter(t => t.key !== 'all')}
+            selected={typeFilter}
+            onChange={setTypeFilter}
+            accentColor={colors.deep}
+          />
+          <FilterDropdown
+            label="Cuisine"
+            options={cuisines.filter(c => c !== 'all').map(c => ({ key: c, label: c }))}
+            selected={cuisineFilter}
+            onChange={setCuisineFilter}
+            accentColor="#1C2B3A"
+          />
         </div>
 
         {/* Sort + List/Map */}
@@ -350,6 +331,14 @@ export default function Restaurants() {
           </div>
         )}
 
+        {/* Top recommendation strip — small, swipeable, scrolls away naturally */}
+        <RecommendationStrip
+          items={filtered}
+          userLocation={userLocation}
+          onCardTap={(r) => r.url_slug && navigate(`/restaurants/${r.url_slug}`)}
+          variant="list"
+        />
+
         <div style={{ fontSize: 12, color: '#6A7A8A', marginBottom: 8, fontWeight: 500 }}>
           {sorted.length} {sorted.length === 1 ? 'result' : 'results'}
         </div>
@@ -366,12 +355,6 @@ export default function Restaurants() {
           <RestaurantCard key={item.id} item={item} userLocation={userLocation} onTap={() => item.url_slug && navigate(`/restaurants/${item.url_slug}`)} />
         ))}
       </div>
-      <RecommendationCarousel
-        items={filtered}
-        userLocation={userLocation}
-        onCardTap={(r) => r.url_slug && navigate(`/restaurants/${r.url_slug}`)}
-        bottomOffset={100}
-      />
       <BottomNav />
     </div>
   )

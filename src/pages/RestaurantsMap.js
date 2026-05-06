@@ -1,9 +1,10 @@
-import { colors, mapHeaderGradient } from '../theme'
-import React, { useState, useEffect, useRef } from 'react'
+import { colors } from '../theme'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import BottomNav from '../components/BottomNav'
-import RecommendationCarousel from '../components/RecommendationCarousel'
+import RecommendationStrip from '../components/RecommendationStrip'
+import FilterDropdown from '../components/FilterDropdown'
 
 function distanceMiles(lat1, lng1, lat2, lng2) {
   const R = 3958.8
@@ -78,6 +79,8 @@ export default function RestaurantsMap() {
   const [items, setItems] = useState([])
   const [mapReady, setMapReady] = useState(false)
   const [userLocation, setUserLocation] = useState(null)
+  // Currently-highlighted restaurant from the recommendation strip (changes pin color)
+  const [activeRecId, setActiveRecId] = useState(null)
 
   const parseSet = (key) => {
     const v = searchParams.get(key)
@@ -216,23 +219,26 @@ export default function RestaurantsMap() {
       mapInstanceRef.current._markers.forEach(m => m.setMap(null))
     }
     mapInstanceRef.current._markers = []
+    mapInstanceRef.current._markersById = new Map()
     if (infoWindowRef.current) infoWindowRef.current.close()
 
     filtered.forEach(r => {
       if (!r.display_lat || !r.display_lng) return
+      const isActive = r.id === activeRecId
       const marker = new window.google.maps.Marker({
         position: { lat: r.display_lat, lng: r.display_lng },
         map: mapInstanceRef.current,
         title: r.name,
         icon: {
           path: 'M12 0C7.6 0 4 3.6 4 8c0 6.4 8 16 8 16s8-9.6 8-16C20 3.6 16.4 0 12 0z',
-          fillColor: colors.brand,
+          fillColor: isActive ? '#0288D1' : colors.brand,
           fillOpacity: 1,
           strokeColor: 'white',
-          strokeWeight: 1.2,
-          scale: 1,
+          strokeWeight: isActive ? 2 : 1.2,
+          scale: isActive ? 1.4 : 1,
           anchor: new window.google.maps.Point(12, 24),
         },
+        zIndex: isActive ? 9000 : 1,
       })
       marker.addListener('click', () => {
         if (!infoWindowRef.current) return
@@ -248,8 +254,23 @@ export default function RestaurantsMap() {
         }, 0)
       })
       mapInstanceRef.current._markers.push(marker)
+      mapInstanceRef.current._markersById.set(r.id, { marker, item: r })
     })
-  }, [filtered, mapReady, userLocation, navigate])
+  }, [filtered, mapReady, userLocation, navigate, activeRecId])
+
+  // When the active recommendation changes, pan the map to it
+  useEffect(() => {
+    if (!mapInstanceRef.current || !activeRecId) return
+    const entry = mapInstanceRef.current._markersById?.get(activeRecId)
+    if (entry?.item?.display_lat && entry?.item?.display_lng) {
+      mapInstanceRef.current.panTo({ lat: entry.item.display_lat, lng: entry.item.display_lng })
+    }
+  }, [activeRecId])
+
+  // Stable callback for the strip's onActiveChange — prevents re-render loops
+  const handleActiveRec = useCallback((r) => {
+    setActiveRecId(r?.id || null)
+  }, [])
 
   const recenterToUser = () => {
     if (!mapInstanceRef.current || !userLocation) return
@@ -263,52 +284,50 @@ export default function RestaurantsMap() {
   }
 
   return (
-    <div style={{ maxWidth: 430, margin: '0 auto', height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ background: mapHeaderGradient, padding: '48px 16px 12px', flexShrink: 0 }}>
+    <div style={{ maxWidth: 430, margin: '0 auto', height: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      {/* Map fills full background */}
+      <div ref={mapRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
+
+      {/* Translucent header overlaying the map */}
+      <div style={{
+        position: 'relative', zIndex: 4,
+        background: 'linear-gradient(180deg, rgba(255,247,237,0.95) 0%, rgba(255,247,237,0.85) 70%, rgba(255,247,237,0) 100%)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        padding: '48px 16px 18px',
+        borderBottomLeftRadius: 16,
+        borderBottomRightRadius: 16,
+        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+        flexShrink: 0,
+      }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-          <button onClick={goBackToList} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
+          <button onClick={goBackToList} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', background: 'rgba(255,255,255,0.9)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
           <h1 style={{ fontSize: 20, fontWeight: 800, color: '#1C2B3A', margin: 0 }}>🍽️ Restaurants</h1>
           <div style={{ marginLeft: 'auto', fontSize: 12, color: '#3A4A5A', fontWeight: 600 }}>{filtered.length} of {items.length}</div>
         </div>
 
-        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 6, paddingBottom: 2, scrollbarWidth: 'none' }}>
-          {HALAL_TIERS.map(t => {
-            const active = t.key === 'all' ? tierFilter.size === 0 : tierFilter.has(t.key)
-            return (
-              <button key={t.key} onClick={() => toggleSetFilter(setTierFilter, tierFilter, t.key)} style={{
-                padding: '5px 10px', borderRadius: 16, whiteSpace: 'nowrap', fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
-                background: active ? colors.brand : 'white',
-                color: active ? 'white' : '#3A4A5A',
-                border: '1px solid rgba(0,0,0,0.1)',
-              }}>{t.label}</button>
-            )
-          })}
-        </div>
-        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 6, paddingBottom: 2, scrollbarWidth: 'none' }}>
-          {TYPES.map(t => {
-            const active = t.key === 'all' ? typeFilter.size === 0 : typeFilter.has(t.key)
-            return (
-              <button key={t.key} onClick={() => toggleSetFilter(setTypeFilter, typeFilter, t.key)} style={{
-                padding: '5px 10px', borderRadius: 16, whiteSpace: 'nowrap', fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
-                background: active ? '#1C2B3A' : 'white',
-                color: active ? 'white' : '#3A4A5A',
-                border: '1px solid rgba(0,0,0,0.1)',
-              }}>{t.label}</button>
-            )
-          })}
-        </div>
-        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 8, paddingBottom: 2, scrollbarWidth: 'none' }}>
-          {cuisines.map(c => {
-            const active = c === 'all' ? cuisineFilter.size === 0 : cuisineFilter.has(c)
-            return (
-              <button key={c} onClick={() => toggleSetFilter(setCuisineFilter, cuisineFilter, c)} style={{
-                padding: '5px 10px', borderRadius: 16, whiteSpace: 'nowrap', fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
-                background: active ? '#1C2B3A' : 'white',
-                color: active ? 'white' : '#3A4A5A',
-                border: '1px solid rgba(0,0,0,0.1)',
-              }}>{c === 'all' ? 'All Cuisines' : c}</button>
-            )
-          })}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+          <FilterDropdown
+            label="Halal Type"
+            options={HALAL_TIERS.filter(t => t.key !== 'all')}
+            selected={tierFilter}
+            onChange={setTierFilter}
+            accentColor={colors.brand}
+          />
+          <FilterDropdown
+            label="Category"
+            options={TYPES.filter(t => t.key !== 'all')}
+            selected={typeFilter}
+            onChange={setTypeFilter}
+            accentColor={colors.deep}
+          />
+          <FilterDropdown
+            label="Cuisine"
+            options={cuisines.filter(c => c !== 'all').map(c => ({ key: c, label: c }))}
+            selected={cuisineFilter}
+            onChange={setCuisineFilter}
+            accentColor="#1C2B3A"
+          />
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -319,21 +338,24 @@ export default function RestaurantsMap() {
         </div>
       </div>
 
-      <div style={{ flex: 1, position: 'relative' }}>
-        <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
-        {userLocation && (
-          <button onClick={recenterToUser} style={{
-            position: 'absolute', bottom: 20, left: 16, zIndex: 5,
-            background: 'white', border: '1px solid rgba(0,0,0,0.15)', borderRadius: 999,
-            padding: '10px 14px', fontSize: 13, fontWeight: 700, color: '#1C2B3A',
-            cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-          }}>Recenter</button>
-        )}
-        <RecommendationCarousel
+      {/* Recenter button — bottom-left, above bottom nav */}
+      {userLocation && (
+        <button onClick={recenterToUser} style={{
+          position: 'absolute', bottom: 180, left: 16, zIndex: 5,
+          background: 'white', border: '1px solid rgba(0,0,0,0.15)', borderRadius: 999,
+          padding: '10px 14px', fontSize: 13, fontWeight: 700, color: '#1C2B3A',
+          cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+        }}>Recenter</button>
+      )}
+
+      {/* Recommendation strip — overlay at bottom, above bottom nav */}
+      <div style={{ position: 'absolute', bottom: 80, left: 0, right: 0, zIndex: 5 }}>
+        <RecommendationStrip
           items={filtered}
           userLocation={userLocation}
           onCardTap={(r) => r.url_slug && navigate(`/restaurants/${r.url_slug}`)}
-          bottomOffset={20}
+          onActiveChange={handleActiveRec}
+          variant="map"
         />
       </div>
 

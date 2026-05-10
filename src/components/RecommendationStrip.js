@@ -171,6 +171,33 @@ export default function RecommendationStrip({ items, userLocation, onCardTap, on
         </div>
       </div>
 
+      {/* Page dots — visual indicator of multiple cards. Tappable to jump to that index. */}
+      {recs.length > 1 && (
+        <div style={{
+          display: 'flex', justifyContent: 'center', gap: 5,
+          marginTop: 7,
+        }}>
+          {recs.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setIndex(i)}
+              aria-label={`Recommendation ${i + 1}`}
+              style={{
+                width: i === index ? 18 : 6, height: 6, borderRadius: 999,
+                background: i === index
+                  ? (variant === 'map' ? 'white' : colors.brand)
+                  : (variant === 'map' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.18)'),
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
+                transition: 'width 0.2s, background 0.2s',
+                boxShadow: variant === 'map' ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
+              }}
+            />
+          ))}
+        </div>
+      )}
+
       {/* Directions row below the card */}
       {directionsUrl && (
         <a href={directionsUrl} target="_blank" rel="noreferrer" style={{

@@ -1,4 +1,4 @@
-import { colors, mapHeaderGradient } from '../theme'
+import { colors, headerGradient } from '../theme'
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -222,14 +222,27 @@ export default function JummahMap() {
   }, [mosques, mapReady, season, userLocation, navigate])
 
   return (
-    <div style={{ maxWidth: 430, margin: '0 auto', height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ background: mapHeaderGradient, padding: '48px 16px 14px', flexShrink: 0 }}>
+    <div style={{ maxWidth: 430, margin: '0 auto', height: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      {/* Map fills full background */}
+      <div ref={mapRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
+
+      {/* Header — sunset gradient, translucent, rounded lip */}
+      <div style={{
+        position: 'relative', zIndex: 4,
+        background: headerGradient,
+        opacity: 0.97,
+        padding: '48px 16px 18px',
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20,
+        boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
+        flexShrink: 0,
+      }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-          <button onClick={() => navigate('/jummah')} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
+          <button onClick={() => navigate('/jummah')} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', background: 'rgba(255,255,255,0.85)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
           <h1 style={{ fontSize: 20, fontWeight: 800, color: '#1C2B3A', margin: 0 }}>🕌 Jummah</h1>
           <div style={{ marginLeft: 'auto', fontSize: 12, color: '#3A4A5A', fontWeight: 600 }}>{mosques.length} mosques</div>
         </div>
-        {/* Small pill toggle pinned right (matches Jummah list page position) */}
+        {/* Small pill toggle pinned right */}
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <div style={{ display: 'inline-flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
             <button onClick={() => navigate('/jummah')} style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#3A4A5A', whiteSpace: 'nowrap' }}>☰ List</button>
@@ -239,7 +252,6 @@ export default function JummahMap() {
       </div>
 
       <div style={{ flex: 1, position: 'relative' }}>
-        <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
         {userLocation && (
           <button onClick={recenterToUser} style={{
             position: 'absolute', bottom: 20, right: 16, zIndex: 5,

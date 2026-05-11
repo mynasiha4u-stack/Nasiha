@@ -294,16 +294,20 @@ export default function RestaurantsMap() {
     })
     mapInstanceRef.current._markers = markers
 
-    // Wrap in a clusterer — automatically groups nearby pins into numbered bubbles
-    // when zoomed out. The library is loaded via CDN; if not yet available, retry once after 500ms.
+    // Wrap in a clusterer — clusters only show when zoomed OUT (zoom < 9).
+    // At zoom >= 9 (city / metro level), all pins render individually.
+    // This means Bay Area at default zoom 10 shows individual pins; only zoomed-out views (countrywide) cluster.
     const attachClusterer = () => {
       if (window.markerClusterer) {
         mapInstanceRef.current._clusterer = new window.markerClusterer.MarkerClusterer({
           map: mapInstanceRef.current,
           markers,
+          algorithm: new window.markerClusterer.SuperClusterAlgorithm({
+            maxZoom: 8,    // Above zoom 8, no clustering — show every pin
+            radius: 60,    // Cluster radius in pixels at lower zoom levels
+          }),
         })
       } else {
-        // Fallback: attach markers directly to map without clustering (still works, just slower at low zoom)
         markers.forEach(m => m.setMap(mapInstanceRef.current))
       }
     }

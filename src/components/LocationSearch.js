@@ -73,25 +73,35 @@ export default function LocationSearch({ onSelect, onClear, placeholder = 'Searc
     }
   }, [])
 
-  // Attach autocomplete to the input
+  // Attach autocomplete to the input. Re-runs whenever the input element changes
+  // (e.g., user clears the search and we go from pill back to input).
   useEffect(() => {
-    if (!ready || !inputRef.current || autocompleteRef.current) return
-    autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
+    if (!ready) return
+    if (!inputRef.current) {
+      // Input not rendered (we're in pill mode) — tear down any prior autocomplete
+      autocompleteRef.current = null
+      return
+    }
+    // If we already have an autocomplete bound to THIS input, keep it
+    if (autocompleteRef.current && autocompleteRef.current._inputEl === inputRef.current) return
+
+    const ac = new window.google.maps.places.Autocomplete(inputRef.current, {
       types: ['geocode', 'establishment'],
       fields: ['geometry', 'name', 'formatted_address'],
     })
-    autocompleteRef.current.addListener('place_changed', () => {
-      const place = autocompleteRef.current.getPlace()
+    ac._inputEl = inputRef.current  // track which input this is bound to
+    ac.addListener('place_changed', () => {
+      const place = ac.getPlace()
       if (!place.geometry?.location) return
       const lat = place.geometry.location.lat()
       const lng = place.geometry.location.lng()
       const name = place.name || place.formatted_address || 'Selected location'
       onSelect && onSelect({ lat, lng, name })
       setText('')
-      // Blur to dismiss any open dropdown
-      inputRef.current.blur()
+      if (inputRef.current) inputRef.current.blur()
     })
-  }, [ready, onSelect])
+    autocompleteRef.current = ac
+  }, [ready, currentLabel, onSelect])  // re-run when currentLabel changes (pill ↔ input toggle)
 
   const handleClear = (e) => {
     e.preventDefault()

@@ -293,19 +293,19 @@ export default function RestaurantsMap() {
     }
     if (!nearbyLocation) return
 
-    // Build wrapper with pulse halo + solid center
+    // Build wrapper with pulse halo + solid center — sized large for visibility
     const wrap = document.createElement('div')
-    wrap.style.cssText = 'position: relative; width: 30px; height: 30px; pointer-events: none;'
+    wrap.style.cssText = 'position: relative; width: 48px; height: 48px; pointer-events: none;'
     wrap.innerHTML = `
       <div style="
         position: absolute; inset: 0; border-radius: 50%;
-        background: rgba(20, 184, 166, 0.35);
+        background: rgba(20, 184, 166, 0.4);
         animation: nasiha-pulse 1.6s ease-out infinite;
       "></div>
       <div style="
-        position: absolute; top: 8px; left: 8px; width: 14px; height: 14px; border-radius: 50%;
-        background: #14b8a6; border: 2.5px solid white;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+        position: absolute; top: 12px; left: 12px; width: 24px; height: 24px; border-radius: 50%;
+        background: #14b8a6; border: 3px solid white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.4);
       "></div>
     `
 

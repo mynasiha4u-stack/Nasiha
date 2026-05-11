@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import BottomNav from '../components/BottomNav'
 import RecommendationStrip from '../components/RecommendationStrip'
 import FilterDropdown from '../components/FilterDropdown'
+import LocationSearch from '../components/LocationSearch'
 
 function distanceMiles(lat1, lng1, lat2, lng2) {
   const R = 3958.8
@@ -81,6 +82,8 @@ export default function RestaurantsMap() {
   const [userLocation, setUserLocation] = useState(null)
   // Currently-highlighted restaurant from the recommendation strip (changes pin color)
   const [activeRecId, setActiveRecId] = useState(null)
+  // "Search nearby" location — if set, map centers there
+  const [nearbyLocation, setNearbyLocation] = useState(null)
 
   const parseSet = (key) => {
     const v = searchParams.get(key)
@@ -97,6 +100,18 @@ export default function RestaurantsMap() {
     if (cuisineFilter.size > 0) params.cuisine = [...cuisineFilter].join(',')
     setSearchParams(params, { replace: true })
   }, [tierFilter, typeFilter, cuisineFilter, setSearchParams])
+
+  // When user picks a location from search, pan + zoom map to it (~5 mi radius)
+  const handleNearbySelect = useCallback(({ lat, lng, name }) => {
+    setNearbyLocation({ lat, lng, name })
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.panTo({ lat, lng })
+      mapInstanceRef.current.setZoom(12)
+    }
+  }, [])
+  const handleNearbyClear = useCallback(() => {
+    setNearbyLocation(null)
+  }, [])
 
   const toggleSetFilter = (setter, currentSet, key) => {
     if (key === 'all') { setter(new Set()); return }
@@ -180,7 +195,7 @@ export default function RestaurantsMap() {
       if (existing) existing.addEventListener('load', () => setMapReady(true))
       else {
         const script = document.createElement('script')
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&libraries=marker&v=weekly`
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&libraries=marker,places&v=weekly`
         script.async = true
         script.onload = () => setMapReady(true)
         document.head.appendChild(script)
@@ -431,6 +446,16 @@ export default function RestaurantsMap() {
             selected={cuisineFilter}
             onChange={setCuisineFilter}
             accentColor="#1C2B3A"
+          />
+        </div>
+
+        <div style={{ marginBottom: 8 }}>
+          <LocationSearch
+            variant="map"
+            placeholder="Search nearby address, city, place..."
+            currentLabel={nearbyLocation?.name}
+            onSelect={handleNearbySelect}
+            onClear={handleNearbyClear}
           />
         </div>
 

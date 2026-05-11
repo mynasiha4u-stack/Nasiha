@@ -6,6 +6,7 @@ import BottomNav from '../components/BottomNav'
 import ListingDetail from '../components/ListingDetail'
 import RecommendationStrip from '../components/RecommendationStrip'
 import FilterDropdown from '../components/FilterDropdown'
+import LocationSearch from '../components/LocationSearch'
 
 const card = { background: 'white', borderRadius: 14, marginBottom: 10, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }
 
@@ -142,6 +143,8 @@ export default function Restaurants() {
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'nearest')
   const [userLocation, setUserLocation] = useState(null)
   const [locationDenied, setLocationDenied] = useState(false)
+  // Search-nearby location (overrides Bay Area filter when set)
+  const [nearbyLocation, setNearbyLocation] = useState(null)
 
   // Sync filter state -> URL (Sets serialized as comma-separated)
   useEffect(() => {
@@ -173,14 +176,32 @@ export default function Restaurants() {
 
   useEffect(() => {
     async function load() {
+      setLoading(true)
       const { data: cat } = await supabase.from('categories').select('id').eq('slug', 'restaurants').single()
       if (!cat) { setLoading(false); return }
-      // Fetch restaurants in Bay Area only for v1 (defer national rollout)
-      const { data: contentRows } = await supabase.from('content')
+
+      // Build query: either bounding box around nearbyLocation, or Bay Area
+      let query = supabase.from('content')
         .select('id, name, url_slug, description, phone, email, website, instagram, facebook, address, metro, display_lat, display_lng')
         .eq('category_id', cat.id)
         .eq('status', 'published')
-        .eq('metro', 'Bay Area')
+        .not('display_lat', 'is', null)
+
+      if (nearbyLocation) {
+        // ~30 miles ≈ 0.43° lat. Adjust lng by latitude.
+        const latRange = 0.43
+        const lngRange = latRange / Math.cos(nearbyLocation.lat * Math.PI / 180)
+        query = query
+          .gte('display_lat', nearbyLocation.lat - latRange)
+          .lte('display_lat', nearbyLocation.lat + latRange)
+          .gte('display_lng', nearbyLocation.lng - lngRange)
+          .lte('display_lng', nearbyLocation.lng + lngRange)
+          .limit(500)
+      } else {
+        query = query.eq('metro', 'Bay Area')
+      }
+
+      const { data: contentRows } = await query
       if (!contentRows) { setLoading(false); return }
 
       // Chunk by content_ids: Supabase caps each query at 1000 rows server-side regardless of .limit/.range.
@@ -219,7 +240,7 @@ export default function Restaurants() {
       setLoading(false)
     }
     load()
-  }, [])
+  }, [nearbyLocation])
 
   // Build cuisine filter options dynamically from data
   const cuisines = ['all', ...new Set(items.map(i => i.cuisine_clean).filter(Boolean))].sort((a, b) => {
@@ -241,16 +262,20 @@ export default function Restaurants() {
     return true
   })
 
+  // Distance anchor: when "search nearby" is set, sort by distance to that point.
+  // Otherwise sort by distance to the user's current location.
+  const anchor = nearbyLocation || userLocation
+
   const sorted = [...filtered].sort((a, b) => {
     if (sortBy === 'az') return a.name.localeCompare(b.name)
-    if (sortBy === 'nearest' && userLocation) {
+    if ((sortBy === 'nearest' || nearbyLocation) && anchor) {
       const aHas = a.display_lat && a.display_lng
       const bHas = b.display_lat && b.display_lng
       if (!aHas && !bHas) return a.name.localeCompare(b.name)
       if (!aHas) return 1
       if (!bHas) return -1
-      return distanceMiles(userLocation.lat, userLocation.lng, a.display_lat, a.display_lng)
-           - distanceMiles(userLocation.lat, userLocation.lng, b.display_lat, b.display_lng)
+      return distanceMiles(anchor.lat, anchor.lng, a.display_lat, a.display_lng)
+           - distanceMiles(anchor.lat, anchor.lng, b.display_lat, b.display_lng)
     }
     const ar = popularRank(a)
     const br = popularRank(b)
@@ -263,10 +288,25 @@ export default function Restaurants() {
       <div style={{ background: headerGradient, padding: '48px 20px 22px' }}>
         <button onClick={() => navigate('/')} style={{ fontSize: 13, fontWeight: 700, color: colors.deep, marginBottom: 14, display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1C2B3A', marginBottom: 2 }}>🍽️ Restaurants</h1>
-        <p style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)' }}>{items.length} halal spots in the Bay Area</p>
+        <p style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)' }}>
+          {nearbyLocation
+            ? `${items.length} halal spots near ${nearbyLocation.name}`
+            : `${items.length} halal spots in the Bay Area`}
+        </p>
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
+        {/* Nearby location search */}
+        <div style={{ marginBottom: 10 }}>
+          <LocationSearch
+            variant="list"
+            placeholder="📍 Search nearby city, address, place..."
+            currentLabel={nearbyLocation?.name}
+            onSelect={(loc) => setNearbyLocation(loc)}
+            onClear={() => setNearbyLocation(null)}
+          />
+        </div>
+
         {/* Search */}
         <div style={{ background: 'white', borderRadius: 12, border: '1px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', marginBottom: 10 }}>
           <span style={{ fontSize: 16 }}>🔍</span>
@@ -338,7 +378,7 @@ export default function Restaurants() {
         {/* Top recommendation strip — small, swipeable, scrolls away naturally */}
         <RecommendationStrip
           items={filtered}
-          userLocation={userLocation}
+          userLocation={anchor}
           onCardTap={(r) => r.url_slug && navigate(`/restaurants/${r.url_slug}`)}
           variant="list"
         />
@@ -356,7 +396,7 @@ export default function Restaurants() {
             <div style={{ fontSize: 32, marginBottom: 8 }}>🍽️</div>No restaurants match your filters
           </div>
         ) : sorted.map(item => (
-          <RestaurantCard key={item.id} item={item} userLocation={userLocation} onTap={() => item.url_slug && navigate(`/restaurants/${item.url_slug}`)} />
+          <RestaurantCard key={item.id} item={item} userLocation={anchor} onTap={() => item.url_slug && navigate(`/restaurants/${item.url_slug}`)} />
         ))}
       </div>
       <BottomNav />

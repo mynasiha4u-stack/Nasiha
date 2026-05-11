@@ -176,6 +176,18 @@ export default function RestaurantsMap() {
     } else {
       setMapReady(true)
     }
+
+    // Load MarkerClusterer (official Google library) for clustering pins at low zoom levels.
+    // Without this, rendering 7,000 individual markers tanks browser performance.
+    if (!window.markerClusterer) {
+      const existingCluster = document.querySelector('script[src*="markerclusterer"]')
+      if (!existingCluster) {
+        const script = document.createElement('script')
+        script.src = 'https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js'
+        script.async = true
+        document.head.appendChild(script)
+      }
+    }
   }, [])
 
   useEffect(() => {
@@ -187,7 +199,8 @@ export default function RestaurantsMap() {
       disableDefaultUI: true,
       zoomControl: true,
       zoomControlOptions: {
-        position: window.google.maps.ControlPosition.RIGHT_TOP,
+        // RIGHT_CENTER avoids overlap with header (top) and recommendation strip (bottom).
+        position: window.google.maps.ControlPosition.RIGHT_CENTER,
       },
     })
     infoWindowRef.current = new window.google.maps.InfoWindow({
@@ -230,9 +243,14 @@ export default function RestaurantsMap() {
     return true
   })
 
-  // Re-render pins whenever filtered set changes — single brand-orange color
+  // Re-render pins (clustered) whenever filtered set changes
   useEffect(() => {
     if (!mapInstanceRef.current || !window.google) return
+
+    // Clear existing markers + clusterer
+    if (mapInstanceRef.current._clusterer) {
+      mapInstanceRef.current._clusterer.clearMarkers()
+    }
     if (mapInstanceRef.current._markers) {
       mapInstanceRef.current._markers.forEach(m => m.setMap(null))
     }
@@ -240,12 +258,12 @@ export default function RestaurantsMap() {
     mapInstanceRef.current._markersById = new Map()
     if (infoWindowRef.current) infoWindowRef.current.close()
 
+    const markers = []
     filtered.forEach(r => {
       if (!r.display_lat || !r.display_lng) return
       const isActive = r.id === activeRecId
       const marker = new window.google.maps.Marker({
         position: { lat: r.display_lat, lng: r.display_lng },
-        map: mapInstanceRef.current,
         title: r.name,
         icon: {
           path: 'M12 0C7.6 0 4 3.6 4 8c0 6.4 8 16 8 16s8-9.6 8-16C20 3.6 16.4 0 12 0z',
@@ -271,9 +289,29 @@ export default function RestaurantsMap() {
           })
         }, 0)
       })
-      mapInstanceRef.current._markers.push(marker)
+      markers.push(marker)
       mapInstanceRef.current._markersById.set(r.id, { marker, item: r })
     })
+    mapInstanceRef.current._markers = markers
+
+    // Wrap in a clusterer — automatically groups nearby pins into numbered bubbles
+    // when zoomed out. The library is loaded via CDN; if not yet available, retry once after 500ms.
+    const attachClusterer = () => {
+      if (window.markerClusterer) {
+        mapInstanceRef.current._clusterer = new window.markerClusterer.MarkerClusterer({
+          map: mapInstanceRef.current,
+          markers,
+        })
+      } else {
+        // Fallback: attach markers directly to map without clustering (still works, just slower at low zoom)
+        markers.forEach(m => m.setMap(mapInstanceRef.current))
+      }
+    }
+    if (window.markerClusterer) {
+      attachClusterer()
+    } else {
+      setTimeout(attachClusterer, 800)
+    }
   }, [filtered, mapReady, userLocation, navigate, activeRecId])
 
   // When the active recommendation changes, pan the map to it

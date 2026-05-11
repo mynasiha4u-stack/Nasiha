@@ -522,10 +522,16 @@ export default function RestaurantsMap() {
 
         // In route mode: fetch precise detour time via Directions API with waypoint
         if (routeMode && routeOrigin && routeDestination && routeData?.duration_min) {
+          console.log('[detour] firing waypoint request', { origin: routeOrigin, dest: routeDestination, waypoint: { lat: current.display_lat, lng: current.display_lng }, baseTime: routeData.duration_min })
           getRouteWithWaypoint(routeOrigin, routeDestination, { lat: current.display_lat, lng: current.display_lng })
             .then(res => {
-              if (!res?.total_min) return
+              console.log('[detour] response:', res)
+              if (!res?.total_min) {
+                console.warn('[detour] no total_min in response')
+                return
+              }
               const detourMin = res.total_min - routeData.duration_min
+              console.log('[detour] computed detour minutes:', detourMin)
               const updated = buildInfoHtml(current, userLocation, current.detour_miles, detourMin)
               infoWindowRef.current.setContent(updated)
               setTimeout(() => {
@@ -537,6 +543,9 @@ export default function RestaurantsMap() {
                 })
               }, 0)
             })
+            .catch(err => console.error('[detour] error:', err))
+        } else {
+          console.log('[detour] skipped:', { routeMode, hasOrigin: !!routeOrigin, hasDest: !!routeDestination, baseTime: routeData?.duration_min })
         }
       })
       store.set(r.id, { marker, item: r, pin })

@@ -114,54 +114,66 @@ export default function RestaurantsMap() {
     )
   }, [])
 
-  useEffect(() => {
-    async function load() {
-      const { data: cat } = await supabase.from('categories').select('id').eq('slug', 'restaurants').single()
-      if (!cat) return
-      // Load ALL restaurants nationally — paginate because Supabase caps each query at 1000 rows.
-      let contentRows = []
-      const PAGE = 1000
-      for (let offset = 0; ; offset += PAGE) {
-        const { data: page } = await supabase.from('content')
-          .select('id, name, url_slug, address, metro, display_lat, display_lng')
-          .eq('category_id', cat.id)
-          .eq('status', 'published')
-          .not('display_lat', 'is', null)
-          .order('id')
-          .range(offset, offset + PAGE - 1)
-        if (!page || page.length === 0) break
-        contentRows = contentRows.concat(page)
-        if (page.length < PAGE) break
-      }
-      if (contentRows.length === 0) return
-      const ids = contentRows.map(r => r.id)
+  // Cache: which content IDs we've already loaded so bounds-driven fetches don't duplicate
+  const loadedIdsRef = useRef(new Set())
 
-      // Chunk by content_ids: Supabase caps each query at 1000 rows server-side regardless of .limit/.range.
-      // Each restaurant has ~3 attribute rows. Querying 200 IDs at a time yields ~600 rows per call — safely under cap.
-      const CHUNK = 200
-      let allAttrs = []
-      for (let i = 0; i < ids.length; i += CHUNK) {
-        const slice = ids.slice(i, i + CHUNK)
-        const { data: page } = await supabase.from('attributes')
-          .select('content_id, attribute_name, attribute_value')
-          .in('content_id', slice)
-          .in('attribute_name', ['halal_tier', 'cuisine_clean', 'type'])
-        if (page) allAttrs = allAttrs.concat(page)
-      }
+  // Loader for restaurants within a bounding box. Used for initial load and on every map pan/zoom.
+  const loadRestaurantsInBounds = useCallback(async (bounds) => {
+    const { data: cat } = await supabase.from('categories').select('id').eq('slug', 'restaurants').single()
+    if (!cat) return
 
-      const byId = new Map()
-      allAttrs.forEach(a => {
-        if (!byId.has(a.content_id)) byId.set(a.content_id, { types: [] })
-        const b = byId.get(a.content_id)
-        if (a.attribute_name === 'type') b.types.push(a.attribute_value)
-        else b[a.attribute_name] = a.attribute_value
-      })
-      setItems(contentRows.map(r => {
-        const a = byId.get(r.id) || { types: [] }
-        return { ...r, halal_tier: a.halal_tier || 'unknown', cuisine_clean: a.cuisine_clean || null, types: a.types || [] }
-      }))
+    // Fetch content in the bounding box. Single viewport rarely has >1000 restaurants.
+    const { data: contentRows } = await supabase.from('content')
+      .select('id, name, url_slug, address, metro, display_lat, display_lng')
+      .eq('category_id', cat.id)
+      .eq('status', 'published')
+      .gte('display_lat', bounds.south)
+      .lte('display_lat', bounds.north)
+      .gte('display_lng', bounds.west)
+      .lte('display_lng', bounds.east)
+      .limit(2000)
+    if (!contentRows || contentRows.length === 0) return
+
+    // Filter out IDs we already loaded
+    const newRows = contentRows.filter(r => !loadedIdsRef.current.has(r.id))
+    if (newRows.length === 0) return
+    newRows.forEach(r => loadedIdsRef.current.add(r.id))
+
+    // Fetch attributes for just the new IDs, chunked
+    const newIds = newRows.map(r => r.id)
+    const CHUNK = 200
+    let allAttrs = []
+    for (let i = 0; i < newIds.length; i += CHUNK) {
+      const slice = newIds.slice(i, i + CHUNK)
+      const { data: page } = await supabase.from('attributes')
+        .select('content_id, attribute_name, attribute_value')
+        .in('content_id', slice)
+        .in('attribute_name', ['halal_tier', 'cuisine_clean', 'type'])
+      if (page) allAttrs = allAttrs.concat(page)
     }
-    load()
+
+    const byId = new Map()
+    allAttrs.forEach(a => {
+      if (!byId.has(a.content_id)) byId.set(a.content_id, { types: [] })
+      const b = byId.get(a.content_id)
+      if (a.attribute_name === 'type') b.types.push(a.attribute_value)
+      else b[a.attribute_name] = a.attribute_value
+    })
+
+    const enriched = newRows.map(r => {
+      const a = byId.get(r.id) || { types: [] }
+      return { ...r, halal_tier: a.halal_tier || 'unknown', cuisine_clean: a.cuisine_clean || null, types: a.types || [] }
+    })
+
+    setItems(prev => prev.concat(enriched))
+  }, [])
+
+  useEffect(() => {
+    // Initial load: just Bay Area bounding box
+    loadRestaurantsInBounds({
+      south: 37.2, north: 38.0,
+      west: -122.6, east: -121.6,
+    })
 
     if (!window.google) {
       const existing = document.querySelector('script[src*="maps.googleapis.com"]')
@@ -176,19 +188,7 @@ export default function RestaurantsMap() {
     } else {
       setMapReady(true)
     }
-
-    // Load MarkerClusterer (official Google library) for clustering pins at low zoom levels.
-    // Without this, rendering 7,000 individual markers tanks browser performance.
-    if (!window.markerClusterer) {
-      const existingCluster = document.querySelector('script[src*="markerclusterer"]')
-      if (!existingCluster) {
-        const script = document.createElement('script')
-        script.src = 'https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js'
-        script.async = true
-        document.head.appendChild(script)
-      }
-    }
-  }, [])
+  }, [loadRestaurantsInBounds])
 
   useEffect(() => {
     if (!mapReady || !mapRef.current || mapInstanceRef.current) return
@@ -209,7 +209,27 @@ export default function RestaurantsMap() {
     mapInstanceRef.current.addListener('click', () => {
       if (infoWindowRef.current) infoWindowRef.current.close()
     })
-  }, [mapReady])
+
+    // Viewport-based loading: whenever the user finishes panning/zooming,
+    // fetch any restaurants in the new visible area we haven't already loaded.
+    // Debounce by 400ms so we don't fire mid-pan.
+    let debounceTimer = null
+    mapInstanceRef.current.addListener('idle', () => {
+      if (debounceTimer) clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(() => {
+        const b = mapInstanceRef.current.getBounds()
+        if (!b) return
+        const ne = b.getNorthEast()
+        const sw = b.getSouthWest()
+        loadRestaurantsInBounds({
+          south: sw.lat(),
+          west: sw.lng(),
+          north: ne.lat(),
+          east: ne.lng(),
+        })
+      }, 400)
+    })
+  }, [mapReady, loadRestaurantsInBounds])
 
   useEffect(() => {
     if (!mapInstanceRef.current || !window.google || !userLocation) return
@@ -243,14 +263,10 @@ export default function RestaurantsMap() {
     return true
   })
 
-  // Re-render pins (clustered) whenever filtered set changes
+  // Re-render pins whenever filtered set changes — plain markers (no clustering needed with viewport loading)
   useEffect(() => {
     if (!mapInstanceRef.current || !window.google) return
 
-    // Clear existing markers + clusterer
-    if (mapInstanceRef.current._clusterer) {
-      mapInstanceRef.current._clusterer.clearMarkers()
-    }
     if (mapInstanceRef.current._markers) {
       mapInstanceRef.current._markers.forEach(m => m.setMap(null))
     }
@@ -258,12 +274,12 @@ export default function RestaurantsMap() {
     mapInstanceRef.current._markersById = new Map()
     if (infoWindowRef.current) infoWindowRef.current.close()
 
-    const markers = []
     filtered.forEach(r => {
       if (!r.display_lat || !r.display_lng) return
       const isActive = r.id === activeRecId
       const marker = new window.google.maps.Marker({
         position: { lat: r.display_lat, lng: r.display_lng },
+        map: mapInstanceRef.current,
         title: r.name,
         icon: {
           path: 'M12 0C7.6 0 4 3.6 4 8c0 6.4 8 16 8 16s8-9.6 8-16C20 3.6 16.4 0 12 0z',
@@ -289,33 +305,9 @@ export default function RestaurantsMap() {
           })
         }, 0)
       })
-      markers.push(marker)
+      mapInstanceRef.current._markers.push(marker)
       mapInstanceRef.current._markersById.set(r.id, { marker, item: r })
     })
-    mapInstanceRef.current._markers = markers
-
-    // Wrap in a clusterer — clusters only show when zoomed OUT (zoom < 9).
-    // At zoom >= 9 (city / metro level), all pins render individually.
-    // This means Bay Area at default zoom 10 shows individual pins; only zoomed-out views (countrywide) cluster.
-    const attachClusterer = () => {
-      if (window.markerClusterer) {
-        mapInstanceRef.current._clusterer = new window.markerClusterer.MarkerClusterer({
-          map: mapInstanceRef.current,
-          markers,
-          algorithm: new window.markerClusterer.SuperClusterAlgorithm({
-            maxZoom: 8,    // Above zoom 8, no clustering — show every pin
-            radius: 60,    // Cluster radius in pixels at lower zoom levels
-          }),
-        })
-      } else {
-        markers.forEach(m => m.setMap(mapInstanceRef.current))
-      }
-    }
-    if (window.markerClusterer) {
-      attachClusterer()
-    } else {
-      setTimeout(attachClusterer, 800)
-    }
   }, [filtered, mapReady, userLocation, navigate, activeRecId])
 
   // When the active recommendation changes, pan the map to it

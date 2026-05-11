@@ -7,7 +7,6 @@ import RecommendationStrip from '../components/RecommendationStrip'
 import FilterDropdown from '../components/FilterDropdown'
 import LocationSearch from '../components/LocationSearch'
 import RoutePlannerPanel from '../components/RoutePlannerPanel'
-import { getHome } from '../utils/home'
 import { getRoute, getRouteWithWaypoint, filterRestaurantsAlongRoute } from '../utils/route'
 
 function distanceMiles(lat1, lng1, lat2, lng2) {

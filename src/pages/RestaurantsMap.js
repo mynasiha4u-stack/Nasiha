@@ -9,7 +9,7 @@ import LocationSearch from '../components/LocationSearch'
 import LocationPicker from '../components/LocationPicker'
 import RoutePlannerPanel from '../components/RoutePlannerPanel'
 import { getHome } from '../utils/home'
-import { getRoute, filterRestaurantsAlongRoute } from '../utils/route'
+import { getRoute, getRouteWithWaypoint, filterRestaurantsAlongRoute } from '../utils/route'
 
 function distanceMiles(lat1, lng1, lat2, lng2) {
   const R = 3958.8
@@ -41,7 +41,7 @@ function tierBadge(t) {
   return null
 }
 
-function buildInfoHtml(r, userLocation, detourMiles) {
+function buildInfoHtml(r, userLocation, detourMiles, detourMinutes) {
   const dist = userLocation && r.display_lat && r.display_lng
     ? distanceMiles(userLocation.lat, userLocation.lng, r.display_lat, r.display_lng)
     : null
@@ -59,10 +59,18 @@ function buildInfoHtml(r, userLocation, detourMiles) {
   })
   const chipsHtml = chips.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;">${chips.join('')}</div>` : ''
 
-  // Off-route chip — shown when in route mode
-  const detourHtml = (typeof detourMiles === 'number')
-    ? `<div style="display:inline-flex;align-items:center;gap:4px;background:#E6FAF7;color:#0F766E;font-size:11px;font-weight:700;padding:4px 8px;border-radius:6px;margin-bottom:8px;">🚗 ${detourMiles.toFixed(1)} mi off route</div>`
-    : ''
+  // Detour chip — shown in route mode. Distance shows immediately; time shows after API returns.
+  let detourHtml = ''
+  if (typeof detourMiles === 'number') {
+    let label = `🚗 ${detourMiles.toFixed(1)} mi off route`
+    if (typeof detourMinutes === 'number') {
+      const sign = detourMinutes > 0 ? '+' : ''
+      label += ` · ${sign}${Math.round(detourMinutes)} min`
+    } else {
+      label += ' · calculating time…'
+    }
+    detourHtml = `<div style="display:inline-flex;align-items:center;gap:4px;background:#E6FAF7;color:#0F766E;font-size:11px;font-weight:700;padding:4px 8px;border-radius:6px;margin-bottom:8px;">${label}</div>`
+  }
 
   return `
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-width:220px;max-width:260px;padding:4px 2px;">
@@ -105,6 +113,9 @@ export default function RestaurantsMap() {
   const [routeData, setRouteData] = useState(null)  // { path, duration_min, distance_mi }
   const [routeLoading, setRouteLoading] = useState(false)
   const [routePanelOpen, setRoutePanelOpen] = useState(false)
+  // Origin + destination kept around so we can compute detour time per pin click
+  const [routeOrigin, setRouteOrigin] = useState(null)
+  const [routeDestination, setRouteDestination] = useState(null)
 
   const parseSet = (key) => {
     const v = searchParams.get(key)
@@ -218,6 +229,8 @@ export default function RestaurantsMap() {
       return
     }
     setRouteData(route)
+    setRouteOrigin(origin)
+    setRouteDestination(destination)
     setRouteMode(true)
   }, [])
 
@@ -495,7 +508,8 @@ export default function RestaurantsMap() {
         if (!infoWindowRef.current) return
         // Read current item from store so it reflects latest detour_miles
         const current = store.get(r.id)?.item || r
-        infoWindowRef.current.setContent(buildInfoHtml(current, userLocation, current.detour_miles))
+        const initialHtml = buildInfoHtml(current, userLocation, current.detour_miles, null /* loading time */)
+        infoWindowRef.current.setContent(initialHtml)
         infoWindowRef.current.open({ anchor: marker, map: mapInstanceRef.current })
         setTimeout(() => {
           document.querySelectorAll('[data-rest-detail]').forEach(link => {
@@ -505,6 +519,25 @@ export default function RestaurantsMap() {
             }
           })
         }, 0)
+
+        // In route mode: fetch precise detour time via Directions API with waypoint
+        if (routeMode && routeOrigin && routeDestination && routeData?.duration_min) {
+          getRouteWithWaypoint(routeOrigin, routeDestination, { lat: current.display_lat, lng: current.display_lng })
+            .then(res => {
+              if (!res?.total_min) return
+              const detourMin = res.total_min - routeData.duration_min
+              const updated = buildInfoHtml(current, userLocation, current.detour_miles, detourMin)
+              infoWindowRef.current.setContent(updated)
+              setTimeout(() => {
+                document.querySelectorAll('[data-rest-detail]').forEach(link => {
+                  link.onclick = (e) => {
+                    e.preventDefault()
+                    navigate(link.getAttribute('data-rest-detail'))
+                  }
+                })
+              }, 0)
+            })
+        }
       })
       store.set(r.id, { marker, item: r, pin })
     })
@@ -515,6 +548,23 @@ export default function RestaurantsMap() {
   useEffect(() => {
     if (!mapInstanceRef.current?._markersById) return
     const store = mapInstanceRef.current._markersById
+
+    // In route mode, don't highlight the active rec pin in blue — keep all pins uniform orange.
+    // Also reset any previously-highlighted pin back to default.
+    if (routeMode) {
+      if (prevActiveIdRef.current) {
+        const prev = store.get(prevActiveIdRef.current)
+        if (prev?.pin) {
+          prev.pin.style.background = colors.brand
+          prev.pin.style.width = '14px'
+          prev.pin.style.height = '14px'
+          prev.pin.style.borderWidth = '1.5px'
+          prev.marker.zIndex = 1
+        }
+      }
+      prevActiveIdRef.current = null
+      return
+    }
 
     // Restore the previous active pin to default style
     if (prevActiveIdRef.current && prevActiveIdRef.current !== activeRecId) {
@@ -540,7 +590,7 @@ export default function RestaurantsMap() {
       }
     }
     prevActiveIdRef.current = activeRecId
-  }, [activeRecId])
+  }, [activeRecId, routeMode])
 
   // When the active recommendation changes, pan the map to it
   useEffect(() => {

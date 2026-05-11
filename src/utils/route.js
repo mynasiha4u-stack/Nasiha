@@ -87,3 +87,31 @@ export function getRoute(origin, destination) {
     )
   })
 }
+
+/**
+ * Get total route duration when adding a stop at `waypoint`.
+ * Returns total duration in minutes (origin → waypoint → destination), or null on failure.
+ */
+export function getRouteWithWaypoint(origin, destination, waypoint) {
+  return new Promise((resolve) => {
+    if (!window.google?.maps?.DirectionsService) return resolve(null)
+    const service = new window.google.maps.DirectionsService()
+    service.route(
+      {
+        origin: { lat: origin.lat, lng: origin.lng },
+        destination: { lat: destination.lat, lng: destination.lng },
+        waypoints: [{ location: { lat: waypoint.lat, lng: waypoint.lng }, stopover: true }],
+        travelMode: 'DRIVING',
+      },
+      (result, status) => {
+        if (status !== 'OK' || !result.routes?.length) {
+          console.warn('[getRouteWithWaypoint] failed:', status)
+          return resolve(null)
+        }
+        // Sum all legs (there will be 2: origin→waypoint, waypoint→destination)
+        const totalSec = (result.routes[0].legs || []).reduce((s, leg) => s + leg.duration.value, 0)
+        resolve({ total_min: Math.round(totalSec / 60) })
+      }
+    )
+  })
+}

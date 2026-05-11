@@ -180,7 +180,7 @@ export default function RestaurantsMap() {
       if (existing) existing.addEventListener('load', () => setMapReady(true))
       else {
         const script = document.createElement('script')
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&libraries=marker&v=weekly`
         script.async = true
         script.onload = () => setMapReady(true)
         document.head.appendChild(script)
@@ -202,6 +202,8 @@ export default function RestaurantsMap() {
         // RIGHT_CENTER avoids overlap with header (top) and recommendation strip (bottom).
         position: window.google.maps.ControlPosition.RIGHT_CENTER,
       },
+      // mapId is required for AdvancedMarkerElement. 'DEMO_MAP_ID' uses Google's default style.
+      mapId: 'DEMO_MAP_ID',
     })
     infoWindowRef.current = new window.google.maps.InfoWindow({
       pixelOffset: new window.google.maps.Size(0, -8),
@@ -233,18 +235,19 @@ export default function RestaurantsMap() {
 
   useEffect(() => {
     if (!mapInstanceRef.current || !window.google || !userLocation) return
-    if (userMarkerRef.current) userMarkerRef.current.setMap(null)
-    userMarkerRef.current = new window.google.maps.Marker({
+    if (userMarkerRef.current) userMarkerRef.current.map = null
+
+    const dot = document.createElement('div')
+    dot.style.cssText = `
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #1E88E5;
+      border: 3px solid white;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    `
+    userMarkerRef.current = new window.google.maps.marker.AdvancedMarkerElement({
       position: { lat: userLocation.lat, lng: userLocation.lng },
       map: mapInstanceRef.current,
-      icon: {
-        path: window.google.maps.SymbolPath.CIRCLE,
-        fillColor: '#1E88E5',
-        fillOpacity: 1,
-        strokeColor: 'white',
-        strokeWeight: 3,
-        scale: 9,
-      },
+      content: dot,
       zIndex: 9999,
       title: 'Your location',
     })
@@ -283,7 +286,7 @@ export default function RestaurantsMap() {
     // 1. Remove markers no longer in the filtered set
     for (const [id, entry] of store) {
       if (!wantedIds.has(id)) {
-        entry.marker.setMap(null)
+        entry.marker.map = null
         store.delete(id)
       }
     }
@@ -293,19 +296,22 @@ export default function RestaurantsMap() {
       if (!r.display_lat || !r.display_lng) return
       if (store.has(r.id)) return  // already exists — skip
 
-      const marker = new window.google.maps.Marker({
+      // Build pin as a styled div. AdvancedMarker renders HTML elements (fast) vs SVG paths (slow).
+      const pin = document.createElement('div')
+      pin.style.cssText = `
+        width: 14px; height: 14px; border-radius: 50% 50% 50% 0;
+        background: ${colors.brand};
+        border: 1.5px solid white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        transform: rotate(-45deg);
+        cursor: pointer;
+      `
+
+      const marker = new window.google.maps.marker.AdvancedMarkerElement({
         position: { lat: r.display_lat, lng: r.display_lng },
         map: mapInstanceRef.current,
         title: r.name,
-        icon: {
-          path: 'M12 0C7.6 0 4 3.6 4 8c0 6.4 8 16 8 16s8-9.6 8-16C20 3.6 16.4 0 12 0z',
-          fillColor: colors.brand,
-          fillOpacity: 1,
-          strokeColor: 'white',
-          strokeWeight: 1.2,
-          scale: 1,
-          anchor: new window.google.maps.Point(12, 24),
-        },
+        content: pin,
         zIndex: 1,
       })
       marker.addListener('click', () => {
@@ -321,41 +327,37 @@ export default function RestaurantsMap() {
           })
         }, 0)
       })
-      store.set(r.id, { marker, item: r })
+      store.set(r.id, { marker, item: r, pin })
     })
   }, [filtered, mapReady, userLocation, navigate])
 
-  // Active recommendation highlight — only modify the 1-2 affected markers, not all of them
+  // Active recommendation highlight — only mutates the affected pin elements directly (no marker recreation)
   const prevActiveIdRef = useRef(null)
   useEffect(() => {
     if (!mapInstanceRef.current?._markersById) return
     const store = mapInstanceRef.current._markersById
 
-    // Restore the previous active marker to default style
+    // Restore the previous active pin to default style
     if (prevActiveIdRef.current && prevActiveIdRef.current !== activeRecId) {
       const prev = store.get(prevActiveIdRef.current)
-      if (prev) {
-        prev.marker.setIcon({
-          path: 'M12 0C7.6 0 4 3.6 4 8c0 6.4 8 16 8 16s8-9.6 8-16C20 3.6 16.4 0 12 0z',
-          fillColor: colors.brand, fillOpacity: 1,
-          strokeColor: 'white', strokeWeight: 1.2,
-          scale: 1, anchor: new window.google.maps.Point(12, 24),
-        })
-        prev.marker.setZIndex(1)
+      if (prev?.pin) {
+        prev.pin.style.background = colors.brand
+        prev.pin.style.width = '14px'
+        prev.pin.style.height = '14px'
+        prev.pin.style.borderWidth = '1.5px'
+        prev.marker.zIndex = 1
       }
     }
 
-    // Highlight the new active marker
+    // Highlight the new active pin
     if (activeRecId) {
       const curr = store.get(activeRecId)
-      if (curr) {
-        curr.marker.setIcon({
-          path: 'M12 0C7.6 0 4 3.6 4 8c0 6.4 8 16 8 16s8-9.6 8-16C20 3.6 16.4 0 12 0z',
-          fillColor: '#0288D1', fillOpacity: 1,
-          strokeColor: 'white', strokeWeight: 2,
-          scale: 1.4, anchor: new window.google.maps.Point(12, 24),
-        })
-        curr.marker.setZIndex(9000)
+      if (curr?.pin) {
+        curr.pin.style.background = '#0288D1'
+        curr.pin.style.width = '20px'
+        curr.pin.style.height = '20px'
+        curr.pin.style.borderWidth = '2.5px'
+        curr.marker.zIndex = 9000
       }
     }
     prevActiveIdRef.current = activeRecId

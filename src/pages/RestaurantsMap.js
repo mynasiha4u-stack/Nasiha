@@ -6,7 +6,6 @@ import BottomNav from '../components/BottomNav'
 import RecommendationStrip from '../components/RecommendationStrip'
 import FilterDropdown from '../components/FilterDropdown'
 import LocationSearch from '../components/LocationSearch'
-import LocationPicker from '../components/LocationPicker'
 import RoutePlannerPanel from '../components/RoutePlannerPanel'
 import { getHome } from '../utils/home'
 import { getRoute, getRouteWithWaypoint, filterRestaurantsAlongRoute } from '../utils/route'
@@ -106,8 +105,6 @@ export default function RestaurantsMap() {
   const [activeRecId, setActiveRecId] = useState(null)
   // "Search nearby" location — if set, map centers there
   const [nearbyLocation, setNearbyLocation] = useState(null)
-  // LocationPicker value (current location of interest): { lat, lng, name, kind }
-  const [pickerValue, setPickerValue] = useState(null)
   // "On the way home" mode — when active, fetch route and filter restaurants to corridor
   const [routeMode, setRouteMode] = useState(false)
   const [routeData, setRouteData] = useState(null)  // { path, duration_min, distance_mi }
@@ -689,20 +686,8 @@ export default function RestaurantsMap() {
           />
         </div>
 
-        {/* Location picker + "On the way" toggle */}
+        {/* "On the way" toggle */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <LocationPicker
-            variant="map"
-            value={pickerValue || (userLocation ? { lat: userLocation.lat, lng: userLocation.lng, kind: 'gps' } : null)}
-            userLocation={userLocation}
-            onChange={(loc) => {
-              setPickerValue(loc)
-              if (loc.kind !== 'gps' && mapInstanceRef.current) {
-                mapInstanceRef.current.panTo({ lat: loc.lat, lng: loc.lng })
-                mapInstanceRef.current.setZoom(13)
-              }
-            }}
-          />
           <button
             onClick={handleRouteButton}
             disabled={routeLoading}
@@ -739,7 +724,7 @@ export default function RestaurantsMap() {
         }}>
           <RoutePlannerPanel
             userLocation={userLocation}
-            initialOrigin={pickerValue && pickerValue.kind !== 'gps' ? pickerValue : null}
+            initialOrigin={nearbyLocation ? { ...nearbyLocation, kind: 'search' } : null}
             corridorMiles={corridorMiles}
             onCorridorChange={setCorridorMiles}
             onPlan={handleRoutePlan}

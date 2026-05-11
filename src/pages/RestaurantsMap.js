@@ -113,9 +113,22 @@ export default function RestaurantsMap() {
   const [routeData, setRouteData] = useState(null)  // { path, duration_min, distance_mi }
   const [routeLoading, setRouteLoading] = useState(false)
   const [routePanelOpen, setRoutePanelOpen] = useState(false)
+  // How far off-route to include restaurants (miles)
+  const [corridorMiles, setCorridorMiles] = useState(2)
   // Origin + destination kept around so we can compute detour time per pin click
   const [routeOrigin, setRouteOrigin] = useState(null)
   const [routeDestination, setRouteDestination] = useState(null)
+
+  // Mirror route state into a ref so click handlers (captured at marker creation time) see latest values
+  const routeStateRef = useRef({ active: false, origin: null, destination: null, baseTime: null })
+  useEffect(() => {
+    routeStateRef.current = {
+      active: routeMode,
+      origin: routeOrigin,
+      destination: routeDestination,
+      baseTime: routeData?.duration_min || null,
+    }
+  }, [routeMode, routeOrigin, routeDestination, routeData])
 
   const parseSet = (key) => {
     const v = searchParams.get(key)
@@ -447,10 +460,10 @@ export default function RestaurantsMap() {
     })
     // Then narrow by route corridor if in "on the way" mode
     if (routeMode && routeData?.path) {
-      base = filterRestaurantsAlongRoute(base, routeData.path, 2)  // 2 mile corridor
+      base = filterRestaurantsAlongRoute(base, routeData.path, corridorMiles)
     }
     return base
-  }, [items, tierFilter, typeFilter, cuisineFilter, routeMode, routeData])
+  }, [items, tierFilter, typeFilter, cuisineFilter, routeMode, routeData, corridorMiles])
 
   // Diff-based marker rendering: only create new markers, only remove markers no longer needed.
   // Crucial for performance — destroying + recreating hundreds of markers on every pan is what was causing the jank.
@@ -520,18 +533,14 @@ export default function RestaurantsMap() {
           })
         }, 0)
 
-        // In route mode: fetch precise detour time via Directions API with waypoint
-        if (routeMode && routeOrigin && routeDestination && routeData?.duration_min) {
-          console.log('[detour] firing waypoint request', { origin: routeOrigin, dest: routeDestination, waypoint: { lat: current.display_lat, lng: current.display_lng }, baseTime: routeData.duration_min })
-          getRouteWithWaypoint(routeOrigin, routeDestination, { lat: current.display_lat, lng: current.display_lng })
+        // In route mode: fetch precise detour time via Directions API with waypoint.
+        // Read state from a ref so we get the LATEST values (closures capture stale state).
+        const rs = routeStateRef.current
+        if (rs.active && rs.origin && rs.destination && rs.baseTime) {
+          getRouteWithWaypoint(rs.origin, rs.destination, { lat: current.display_lat, lng: current.display_lng })
             .then(res => {
-              console.log('[detour] response:', res)
-              if (!res?.total_min) {
-                console.warn('[detour] no total_min in response')
-                return
-              }
-              const detourMin = res.total_min - routeData.duration_min
-              console.log('[detour] computed detour minutes:', detourMin)
+              if (!res?.total_min) return
+              const detourMin = res.total_min - rs.baseTime
               const updated = buildInfoHtml(current, userLocation, current.detour_miles, detourMin)
               infoWindowRef.current.setContent(updated)
               setTimeout(() => {
@@ -544,8 +553,6 @@ export default function RestaurantsMap() {
               }, 0)
             })
             .catch(err => console.error('[detour] error:', err))
-        } else {
-          console.log('[detour] skipped:', { routeMode, hasOrigin: !!routeOrigin, hasDest: !!routeDestination, baseTime: routeData?.duration_min })
         }
       })
       store.set(r.id, { marker, item: r, pin })
@@ -733,6 +740,8 @@ export default function RestaurantsMap() {
           <RoutePlannerPanel
             userLocation={userLocation}
             initialOrigin={pickerValue && pickerValue.kind !== 'gps' ? pickerValue : null}
+            corridorMiles={corridorMiles}
+            onCorridorChange={setCorridorMiles}
             onPlan={handleRoutePlan}
             onClose={() => setRoutePanelOpen(false)}
           />

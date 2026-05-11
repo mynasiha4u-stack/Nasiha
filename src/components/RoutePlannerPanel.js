@@ -20,7 +20,7 @@ import { getHome, setHome as saveHomeUtil } from '../utils/home'
  *   - Autocomplete-only search input
  *   - "Save as Home" checkbox underneath
  */
-export default function RoutePlannerPanel({ userLocation, initialOrigin, onPlan, onClose }) {
+export default function RoutePlannerPanel({ userLocation, initialOrigin, corridorMiles = 2, onCorridorChange, onPlan, onClose }) {
   const home = getHome()
   const [origin, setOrigin] = useState(initialOrigin || (userLocation ? { ...userLocation, name: 'My Location', kind: 'gps' } : null))
   const [destination, setDestination] = useState(null)
@@ -158,6 +158,23 @@ export default function RoutePlannerPanel({ userLocation, initialOrigin, onPlan,
             Save as Home (for quick access later)
           </label>
         )}
+      </div>
+
+      {/* Corridor width slider */}
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: '#6A7A8A', letterSpacing: 0.5 }}>DETOUR UP TO</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: colors.brand }}>{corridorMiles} mi</span>
+        </div>
+        <input
+          type="range"
+          min="1"
+          max="10"
+          step="0.5"
+          value={corridorMiles}
+          onChange={(e) => onCorridorChange?.(parseFloat(e.target.value))}
+          style={{ width: '100%', accentColor: colors.brand }}
+        />
       </div>
 
       {/* Find button */}

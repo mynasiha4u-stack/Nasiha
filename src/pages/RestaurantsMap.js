@@ -7,6 +7,7 @@ import RecommendationStrip from '../components/RecommendationStrip'
 import FilterDropdown from '../components/FilterDropdown'
 import LocationSearch from '../components/LocationSearch'
 import LocationPicker from '../components/LocationPicker'
+import RoutePlannerPanel from '../components/RoutePlannerPanel'
 import { getHome } from '../utils/home'
 import { getRoute, filterRestaurantsAlongRoute } from '../utils/route'
 
@@ -95,6 +96,7 @@ export default function RestaurantsMap() {
   const [routeMode, setRouteMode] = useState(false)
   const [routeData, setRouteData] = useState(null)  // { path, duration_min, distance_mi }
   const [routeLoading, setRouteLoading] = useState(false)
+  const [routePanelOpen, setRoutePanelOpen] = useState(false)
 
   const parseSet = (key) => {
     const v = searchParams.get(key)
@@ -176,10 +178,9 @@ export default function RestaurantsMap() {
     setNearbyLocation(null)
   }, [])
 
-  // Toggle "On the way home" mode. Fetches route from pickerValue (or GPS) to Home.
-  const toggleRouteMode = useCallback(async () => {
+  // "On the way" button: if route is active, clear it. Otherwise open the planner panel.
+  const handleRouteButton = useCallback(() => {
     if (routeMode) {
-      // Turning off — clear everything
       setRouteMode(false)
       setRouteData(null)
       if (routePolylineRef.current) {
@@ -188,22 +189,16 @@ export default function RestaurantsMap() {
       }
       return
     }
-    const home = getHome()
-    if (!home) {
-      alert('Set your Home address first. Tap the location dropdown → Home → enter your address.')
-      return
-    }
-    const origin = pickerValue?.kind === 'gps'
-      ? userLocation
-      : (pickerValue || userLocation)
-    if (!origin) {
-      alert('Need a current location to plan the route. Allow location access or pick a place.')
-      return
-    }
+    setRoutePanelOpen(true)
+  }, [routeMode])
+
+  // Called by RoutePlannerPanel when user picks origin + destination + clicks Find
+  const handleRoutePlan = useCallback(async ({ origin, destination }) => {
+    setRoutePanelOpen(false)
     setRouteLoading(true)
     const route = await getRoute(
       { lat: origin.lat, lng: origin.lng },
-      { lat: home.lat, lng: home.lng }
+      { lat: destination.lat, lng: destination.lng }
     )
     setRouteLoading(false)
     if (!route) {
@@ -212,7 +207,7 @@ export default function RestaurantsMap() {
     }
     setRouteData(route)
     setRouteMode(true)
-  }, [routeMode, userLocation, pickerValue])
+  }, [])
 
   // When routeData becomes available, draw the polyline on the map AND load restaurants along the route
   useEffect(() => {
@@ -612,7 +607,7 @@ export default function RestaurantsMap() {
             }}
           />
           <button
-            onClick={toggleRouteMode}
+            onClick={handleRouteButton}
             disabled={routeLoading}
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
@@ -638,6 +633,21 @@ export default function RestaurantsMap() {
           </div>
         </div>
       </div>
+
+      {/* Route planner panel — overlay below the header when open */}
+      {routePanelOpen && (
+        <div style={{
+          position: 'absolute', top: 200, left: 16, right: 16, zIndex: 10,
+          maxWidth: 400, margin: '0 auto',
+        }}>
+          <RoutePlannerPanel
+            userLocation={userLocation}
+            initialOrigin={pickerValue && pickerValue.kind !== 'gps' ? pickerValue : null}
+            onPlan={handleRoutePlan}
+            onClose={() => setRoutePanelOpen(false)}
+          />
+        </div>
+      )}
 
       {/* Recenter button — bottom-left, above bottom nav */}
       {userLocation && (

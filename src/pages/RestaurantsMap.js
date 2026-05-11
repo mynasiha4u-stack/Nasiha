@@ -1,5 +1,5 @@
 import { colors, headerGradient } from '../theme'
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import BottomNav from '../components/BottomNav'
@@ -256,41 +256,57 @@ export default function RestaurantsMap() {
     return a.localeCompare(b)
   })
 
-  const filtered = items.filter(item => {
+  const filtered = useMemo(() => items.filter(item => {
     if (tierFilter.size > 0 && !tierFilter.has(item.halal_tier)) return false
     if (typeFilter.size > 0 && !(item.types || []).some(t => typeFilter.has(t))) return false
     if (cuisineFilter.size > 0 && !cuisineFilter.has(item.cuisine_clean)) return false
     return true
-  })
+  }), [items, tierFilter, typeFilter, cuisineFilter])
 
-  // Re-render pins whenever filtered set changes — plain markers (no clustering needed with viewport loading)
+  // Diff-based marker rendering: only create new markers, only remove markers no longer needed.
+  // Crucial for performance — destroying + recreating hundreds of markers on every pan is what was causing the jank.
   useEffect(() => {
     if (!mapInstanceRef.current || !window.google) return
 
-    if (mapInstanceRef.current._markers) {
-      mapInstanceRef.current._markers.forEach(m => m.setMap(null))
+    // Initialize the marker store on first run
+    if (!mapInstanceRef.current._markersById) {
+      mapInstanceRef.current._markersById = new Map()
     }
-    mapInstanceRef.current._markers = []
-    mapInstanceRef.current._markersById = new Map()
-    if (infoWindowRef.current) infoWindowRef.current.close()
+    const store = mapInstanceRef.current._markersById
 
+    // Build a set of IDs that should be visible now
+    const wantedIds = new Set()
+    filtered.forEach(r => {
+      if (r.display_lat && r.display_lng) wantedIds.add(r.id)
+    })
+
+    // 1. Remove markers no longer in the filtered set
+    for (const [id, entry] of store) {
+      if (!wantedIds.has(id)) {
+        entry.marker.setMap(null)
+        store.delete(id)
+      }
+    }
+
+    // 2. Add markers for new IDs only
     filtered.forEach(r => {
       if (!r.display_lat || !r.display_lng) return
-      const isActive = r.id === activeRecId
+      if (store.has(r.id)) return  // already exists — skip
+
       const marker = new window.google.maps.Marker({
         position: { lat: r.display_lat, lng: r.display_lng },
         map: mapInstanceRef.current,
         title: r.name,
         icon: {
           path: 'M12 0C7.6 0 4 3.6 4 8c0 6.4 8 16 8 16s8-9.6 8-16C20 3.6 16.4 0 12 0z',
-          fillColor: isActive ? '#0288D1' : colors.brand,
+          fillColor: colors.brand,
           fillOpacity: 1,
           strokeColor: 'white',
-          strokeWeight: isActive ? 2 : 1.2,
-          scale: isActive ? 1.4 : 1,
+          strokeWeight: 1.2,
+          scale: 1,
           anchor: new window.google.maps.Point(12, 24),
         },
-        zIndex: isActive ? 9000 : 1,
+        zIndex: 1,
       })
       marker.addListener('click', () => {
         if (!infoWindowRef.current) return
@@ -305,10 +321,45 @@ export default function RestaurantsMap() {
           })
         }, 0)
       })
-      mapInstanceRef.current._markers.push(marker)
-      mapInstanceRef.current._markersById.set(r.id, { marker, item: r })
+      store.set(r.id, { marker, item: r })
     })
-  }, [filtered, mapReady, userLocation, navigate, activeRecId])
+  }, [filtered, mapReady, userLocation, navigate])
+
+  // Active recommendation highlight — only modify the 1-2 affected markers, not all of them
+  const prevActiveIdRef = useRef(null)
+  useEffect(() => {
+    if (!mapInstanceRef.current?._markersById) return
+    const store = mapInstanceRef.current._markersById
+
+    // Restore the previous active marker to default style
+    if (prevActiveIdRef.current && prevActiveIdRef.current !== activeRecId) {
+      const prev = store.get(prevActiveIdRef.current)
+      if (prev) {
+        prev.marker.setIcon({
+          path: 'M12 0C7.6 0 4 3.6 4 8c0 6.4 8 16 8 16s8-9.6 8-16C20 3.6 16.4 0 12 0z',
+          fillColor: colors.brand, fillOpacity: 1,
+          strokeColor: 'white', strokeWeight: 1.2,
+          scale: 1, anchor: new window.google.maps.Point(12, 24),
+        })
+        prev.marker.setZIndex(1)
+      }
+    }
+
+    // Highlight the new active marker
+    if (activeRecId) {
+      const curr = store.get(activeRecId)
+      if (curr) {
+        curr.marker.setIcon({
+          path: 'M12 0C7.6 0 4 3.6 4 8c0 6.4 8 16 8 16s8-9.6 8-16C20 3.6 16.4 0 12 0z',
+          fillColor: '#0288D1', fillOpacity: 1,
+          strokeColor: 'white', strokeWeight: 2,
+          scale: 1.4, anchor: new window.google.maps.Point(12, 24),
+        })
+        curr.marker.setZIndex(9000)
+      }
+    }
+    prevActiveIdRef.current = activeRecId
+  }, [activeRecId])
 
   // When the active recommendation changes, pan the map to it
   useEffect(() => {

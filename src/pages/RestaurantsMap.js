@@ -112,6 +112,58 @@ export default function RestaurantsMap() {
     setSearchParams(params, { replace: true })
   }, [tierFilter, typeFilter, cuisineFilter, setSearchParams])
 
+  // Cache: which content IDs we've already loaded so bounds-driven fetches don't duplicate
+  const loadedIdsRef = useRef(new Set())
+
+  // Loader for restaurants within a bounding box. Used for initial load and on every map pan/zoom.
+  // Declared early so the route-mode effect below can reference it.
+  const loadRestaurantsInBounds = useCallback(async (bounds) => {
+    const { data: cat } = await supabase.from('categories').select('id').eq('slug', 'restaurants').single()
+    if (!cat) return
+
+    const { data: contentRows } = await supabase.from('content')
+      .select('id, name, url_slug, address, metro, display_lat, display_lng')
+      .eq('category_id', cat.id)
+      .eq('status', 'published')
+      .gte('display_lat', bounds.south)
+      .lte('display_lat', bounds.north)
+      .gte('display_lng', bounds.west)
+      .lte('display_lng', bounds.east)
+      .limit(2000)
+    if (!contentRows || contentRows.length === 0) return
+
+    const newRows = contentRows.filter(r => !loadedIdsRef.current.has(r.id))
+    if (newRows.length === 0) return
+    newRows.forEach(r => loadedIdsRef.current.add(r.id))
+
+    const newIds = newRows.map(r => r.id)
+    const CHUNK = 200
+    let allAttrs = []
+    for (let i = 0; i < newIds.length; i += CHUNK) {
+      const slice = newIds.slice(i, i + CHUNK)
+      const { data: page } = await supabase.from('attributes')
+        .select('content_id, attribute_name, attribute_value')
+        .in('content_id', slice)
+        .in('attribute_name', ['halal_tier', 'cuisine_clean', 'type'])
+      if (page) allAttrs = allAttrs.concat(page)
+    }
+
+    const byId = new Map()
+    allAttrs.forEach(a => {
+      if (!byId.has(a.content_id)) byId.set(a.content_id, { types: [] })
+      const b = byId.get(a.content_id)
+      if (a.attribute_name === 'type') b.types.push(a.attribute_value)
+      else b[a.attribute_name] = a.attribute_value
+    })
+
+    const enriched = newRows.map(r => {
+      const a = byId.get(r.id) || { types: [] }
+      return { ...r, halal_tier: a.halal_tier || 'unknown', cuisine_clean: a.cuisine_clean || null, types: a.types || [] }
+    })
+
+    setItems(prev => prev.concat(enriched))
+  }, [])
+
   // When user picks a location from search, pan + zoom map to it (~3 mi radius)
   const handleNearbySelect = useCallback(({ lat, lng, name }) => {
     setNearbyLocation({ lat, lng, name })
@@ -210,60 +262,6 @@ export default function RestaurantsMap() {
       pos => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       () => {}
     )
-  }, [])
-
-  // Cache: which content IDs we've already loaded so bounds-driven fetches don't duplicate
-  const loadedIdsRef = useRef(new Set())
-
-  // Loader for restaurants within a bounding box. Used for initial load and on every map pan/zoom.
-  const loadRestaurantsInBounds = useCallback(async (bounds) => {
-    const { data: cat } = await supabase.from('categories').select('id').eq('slug', 'restaurants').single()
-    if (!cat) return
-
-    // Fetch content in the bounding box. Single viewport rarely has >1000 restaurants.
-    const { data: contentRows } = await supabase.from('content')
-      .select('id, name, url_slug, address, metro, display_lat, display_lng')
-      .eq('category_id', cat.id)
-      .eq('status', 'published')
-      .gte('display_lat', bounds.south)
-      .lte('display_lat', bounds.north)
-      .gte('display_lng', bounds.west)
-      .lte('display_lng', bounds.east)
-      .limit(2000)
-    if (!contentRows || contentRows.length === 0) return
-
-    // Filter out IDs we already loaded
-    const newRows = contentRows.filter(r => !loadedIdsRef.current.has(r.id))
-    if (newRows.length === 0) return
-    newRows.forEach(r => loadedIdsRef.current.add(r.id))
-
-    // Fetch attributes for just the new IDs, chunked
-    const newIds = newRows.map(r => r.id)
-    const CHUNK = 200
-    let allAttrs = []
-    for (let i = 0; i < newIds.length; i += CHUNK) {
-      const slice = newIds.slice(i, i + CHUNK)
-      const { data: page } = await supabase.from('attributes')
-        .select('content_id, attribute_name, attribute_value')
-        .in('content_id', slice)
-        .in('attribute_name', ['halal_tier', 'cuisine_clean', 'type'])
-      if (page) allAttrs = allAttrs.concat(page)
-    }
-
-    const byId = new Map()
-    allAttrs.forEach(a => {
-      if (!byId.has(a.content_id)) byId.set(a.content_id, { types: [] })
-      const b = byId.get(a.content_id)
-      if (a.attribute_name === 'type') b.types.push(a.attribute_value)
-      else b[a.attribute_name] = a.attribute_value
-    })
-
-    const enriched = newRows.map(r => {
-      const a = byId.get(r.id) || { types: [] }
-      return { ...r, halal_tier: a.halal_tier || 'unknown', cuisine_clean: a.cuisine_clean || null, types: a.types || [] }
-    })
-
-    setItems(prev => prev.concat(enriched))
   }, [])
 
   useEffect(() => {

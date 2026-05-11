@@ -347,15 +347,18 @@ export default function RestaurantsMap() {
         }}>Recenter</button>
       )}
 
-      {/* Recommendation strip — overlay at bottom, above bottom nav */}
-      <div style={{ position: 'absolute', bottom: 80, left: 0, right: 0, zIndex: 5 }}>
-        <RecommendationStrip
-          items={filtered}
-          userLocation={userLocation}
-          onCardTap={(r) => r.url_slug && navigate(`/restaurants/${r.url_slug}`)}
-          onActiveChange={handleActiveRec}
-          variant="map"
-        />
+      {/* Recommendation strip — overlay at bottom, above bottom nav.
+          Wrapper is pointer-events:none so it doesn't block map drag; child re-enables. */}
+      <div style={{ position: 'absolute', bottom: 80, left: 0, right: 0, zIndex: 5, pointerEvents: 'none' }}>
+        <div style={{ pointerEvents: 'auto' }}>
+          <RecommendationStrip
+            items={filtered}
+            userLocation={userLocation}
+            onCardTap={(r) => r.url_slug && navigate(`/restaurants/${r.url_slug}`)}
+            onActiveChange={handleActiveRec}
+            variant="map"
+          />
+        </div>
       </div>
 
       <BottomNav />

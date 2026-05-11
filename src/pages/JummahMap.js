@@ -251,13 +251,14 @@ export default function JummahMap() {
         </div>
       </div>
 
-      <div style={{ flex: 1, position: 'relative' }}>
+      <div style={{ flex: 1, position: 'relative', pointerEvents: 'none' }}>
         {userLocation && (
           <button onClick={recenterToUser} style={{
             position: 'absolute', bottom: 20, right: 16, zIndex: 5,
             background: 'white', border: '1px solid rgba(0,0,0,0.15)', borderRadius: 999,
             padding: '10px 14px', fontSize: 13, fontWeight: 700, color: '#1C2B3A',
             cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            pointerEvents: 'auto',
           }}>Recenter</button>
         )}
       </div>

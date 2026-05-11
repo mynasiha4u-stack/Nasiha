@@ -171,20 +171,21 @@ export default function ChildcareMap() {
         </div>
       </div>
 
-      <div style={{ flex: 1, position: 'relative' }}>
+      <div style={{ flex: 1, position: 'relative', pointerEvents: 'none' }}>
         {userLocation && !selected && (
           <button onClick={recenterToUser} style={{
             position: 'absolute', bottom: 20, right: 16, zIndex: 5,
             background: 'white', border: '1px solid rgba(0,0,0,0.15)', borderRadius: 999,
             padding: '10px 14px', fontSize: 13, fontWeight: 700, color: '#1C2B3A',
             cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            pointerEvents: 'auto',
           }}>Recenter</button>
         )}
 
         {selected && (
           <>
             {/* Backdrop */}
-            <div onClick={() => setSelected(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)' }} />
+            <div onClick={() => setSelected(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', pointerEvents: 'auto' }} />
             {/* Bottom sheet card — auto-fits content */}
             <div style={{
               position: 'absolute', bottom: 0, left: 0, right: 0,
@@ -192,6 +193,7 @@ export default function ChildcareMap() {
               padding: '0 0 24px',
               boxShadow: '0 -4px 30px rgba(0,0,0,0.15)',
               maxHeight: '75vh', overflowY: 'auto',
+              pointerEvents: 'auto',
             }}>
               {/* Drag handle */}
               <div style={{ width: 36, height: 4, background: 'rgba(0,0,0,0.12)', borderRadius: 2, margin: '12px auto 16px' }} />

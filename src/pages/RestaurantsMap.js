@@ -6,6 +6,9 @@ import BottomNav from '../components/BottomNav'
 import RecommendationStrip from '../components/RecommendationStrip'
 import FilterDropdown from '../components/FilterDropdown'
 import LocationSearch from '../components/LocationSearch'
+import LocationPicker from '../components/LocationPicker'
+import { getHome } from '../utils/home'
+import { getRoute, filterRestaurantsAlongRoute } from '../utils/route'
 
 function distanceMiles(lat1, lng1, lat2, lng2) {
   const R = 3958.8
@@ -78,6 +81,7 @@ export default function RestaurantsMap() {
   const infoWindowRef = useRef(null)
   const userMarkerRef = useRef(null)
   const nearbyMarkerRef = useRef(null)
+  const routePolylineRef = useRef(null)
   const [items, setItems] = useState([])
   const [mapReady, setMapReady] = useState(false)
   const [userLocation, setUserLocation] = useState(null)
@@ -85,6 +89,12 @@ export default function RestaurantsMap() {
   const [activeRecId, setActiveRecId] = useState(null)
   // "Search nearby" location — if set, map centers there
   const [nearbyLocation, setNearbyLocation] = useState(null)
+  // LocationPicker value (current location of interest): { lat, lng, name, kind }
+  const [pickerValue, setPickerValue] = useState(null)
+  // "On the way home" mode — when active, fetch route and filter restaurants to corridor
+  const [routeMode, setRouteMode] = useState(false)
+  const [routeData, setRouteData] = useState(null)  // { path, duration_min, distance_mi }
+  const [routeLoading, setRouteLoading] = useState(false)
 
   const parseSet = (key) => {
     const v = searchParams.get(key)
@@ -113,6 +123,78 @@ export default function RestaurantsMap() {
   const handleNearbyClear = useCallback(() => {
     setNearbyLocation(null)
   }, [])
+
+  // Toggle "On the way home" mode. Fetches route from pickerValue (or GPS) to Home.
+  const toggleRouteMode = useCallback(async () => {
+    if (routeMode) {
+      // Turning off — clear everything
+      setRouteMode(false)
+      setRouteData(null)
+      if (routePolylineRef.current) {
+        routePolylineRef.current.setMap(null)
+        routePolylineRef.current = null
+      }
+      return
+    }
+    const home = getHome()
+    if (!home) {
+      alert('Set your Home address first. Tap the location dropdown → Home → enter your address.')
+      return
+    }
+    const origin = pickerValue?.kind === 'gps'
+      ? userLocation
+      : (pickerValue || userLocation)
+    if (!origin) {
+      alert('Need a current location to plan the route. Allow location access or pick a place.')
+      return
+    }
+    setRouteLoading(true)
+    const route = await getRoute(
+      { lat: origin.lat, lng: origin.lng },
+      { lat: home.lat, lng: home.lng }
+    )
+    setRouteLoading(false)
+    if (!route) {
+      alert('Could not load route. Please try again.')
+      return
+    }
+    setRouteData(route)
+    setRouteMode(true)
+  }, [routeMode, userLocation, pickerValue])
+
+  // When routeData becomes available, draw the polyline on the map AND load restaurants along the route
+  useEffect(() => {
+    if (!mapInstanceRef.current || !window.google) return
+    // Remove old polyline
+    if (routePolylineRef.current) {
+      routePolylineRef.current.setMap(null)
+      routePolylineRef.current = null
+    }
+    if (!routeData?.path) return
+
+    routePolylineRef.current = new window.google.maps.Polyline({
+      path: routeData.path,
+      strokeColor: '#0EA5A0',
+      strokeOpacity: 0.85,
+      strokeWeight: 5,
+      map: mapInstanceRef.current,
+    })
+
+    // Fit the map to the route bounds
+    const bounds = new window.google.maps.LatLngBounds()
+    routeData.path.forEach(p => bounds.extend(p))
+    mapInstanceRef.current.fitBounds(bounds, { top: 200, right: 40, bottom: 200, left: 40 })
+
+    // Load restaurants along the entire route bounding box (+ 0.05° padding for the corridor edge)
+    const sw = bounds.getSouthWest()
+    const ne = bounds.getNorthEast()
+    loadRestaurantsInBounds({
+      south: sw.lat() - 0.05,
+      north: ne.lat() + 0.05,
+      west: sw.lng() - 0.05,
+      east: ne.lng() + 0.05,
+    })
+  }, [routeData, loadRestaurantsInBounds])
 
   const toggleSetFilter = (setter, currentSet, key) => {
     if (key === 'all') { setter(new Set()); return }
@@ -324,12 +406,20 @@ export default function RestaurantsMap() {
     return a.localeCompare(b)
   })
 
-  const filtered = useMemo(() => items.filter(item => {
-    if (tierFilter.size > 0 && !tierFilter.has(item.halal_tier)) return false
-    if (typeFilter.size > 0 && !(item.types || []).some(t => typeFilter.has(t))) return false
-    if (cuisineFilter.size > 0 && !cuisineFilter.has(item.cuisine_clean)) return false
-    return true
-  }), [items, tierFilter, typeFilter, cuisineFilter])
+  const filtered = useMemo(() => {
+    // Apply chip filters first
+    let base = items.filter(item => {
+      if (tierFilter.size > 0 && !tierFilter.has(item.halal_tier)) return false
+      if (typeFilter.size > 0 && !(item.types || []).some(t => typeFilter.has(t))) return false
+      if (cuisineFilter.size > 0 && !cuisineFilter.has(item.cuisine_clean)) return false
+      return true
+    })
+    // Then narrow by route corridor if in "on the way" mode
+    if (routeMode && routeData?.path) {
+      base = filterRestaurantsAlongRoute(base, routeData.path, 2)  // 2 mile corridor
+    }
+    return base
+  }, [items, tierFilter, typeFilter, cuisineFilter, routeMode, routeData])
 
   // Diff-based marker rendering: only create new markers, only remove markers no longer needed.
   // Crucial for performance — destroying + recreating hundreds of markers on every pan is what was causing the jank.
@@ -507,6 +597,40 @@ export default function RestaurantsMap() {
             onSelect={handleNearbySelect}
             onClear={handleNearbyClear}
           />
+        </div>
+
+        {/* Location picker + "On the way" toggle */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <LocationPicker
+            variant="map"
+            value={pickerValue || (userLocation ? { lat: userLocation.lat, lng: userLocation.lng, kind: 'gps' } : null)}
+            userLocation={userLocation}
+            onChange={(loc) => {
+              setPickerValue(loc)
+              if (loc.kind !== 'gps' && mapInstanceRef.current) {
+                mapInstanceRef.current.panTo({ lat: loc.lat, lng: loc.lng })
+                mapInstanceRef.current.setZoom(13)
+              }
+            }}
+          />
+          <button
+            onClick={toggleRouteMode}
+            disabled={routeLoading}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: routeMode ? '#0EA5A0' : 'white',
+              color: routeMode ? 'white' : '#1C2B3A',
+              border: routeMode ? 'none' : '1px solid rgba(0,0,0,0.12)',
+              borderRadius: 999, padding: '7px 12px',
+              fontSize: 12, fontWeight: 700,
+              cursor: routeLoading ? 'wait' : 'pointer',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
+              whiteSpace: 'nowrap',
+              opacity: routeLoading ? 0.7 : 1,
+            }}
+          >
+            🚗 {routeLoading ? 'Loading…' : routeMode ? `On the way (${routeData?.duration_min || '?'} min)` : 'On the way'}
+          </button>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>

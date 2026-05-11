@@ -533,7 +533,7 @@ export default function RestaurantsMap() {
         <div style={{ pointerEvents: 'auto' }}>
           <RecommendationStrip
             items={filtered}
-            userLocation={userLocation}
+            userLocation={nearbyLocation || userLocation}
             onCardTap={(r) => r.url_slug && navigate(`/restaurants/${r.url_slug}`)}
             onActiveChange={handleActiveRec}
             variant="map"

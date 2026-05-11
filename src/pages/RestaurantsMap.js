@@ -118,30 +118,35 @@ export default function RestaurantsMap() {
     async function load() {
       const { data: cat } = await supabase.from('categories').select('id').eq('slug', 'restaurants').single()
       if (!cat) return
-      // Load ALL restaurants nationally (not just Bay Area) so pins exist
-      // when user zooms out. Default view still centers on Bay Area.
-      const { data: contentRows } = await supabase.from('content')
-        .select('id, name, url_slug, address, metro, display_lat, display_lng')
-        .eq('category_id', cat.id)
-        .eq('status', 'published')
-        .not('display_lat', 'is', null)
-        .limit(10000)
-      if (!contentRows) return
-      const ids = contentRows.map(r => r.id)
-
-      // Paginate attributes: Supabase enforces a hard 1000-row server cap regardless of .limit().
-      // Loop in pages of 1000 until we have everything.
+      // Load ALL restaurants nationally — paginate because Supabase caps each query at 1000 rows.
+      let contentRows = []
       const PAGE = 1000
-      let allAttrs = []
       for (let offset = 0; ; offset += PAGE) {
-        const { data: page } = await supabase.from('attributes')
-          .select('content_id, attribute_name, attribute_value')
-          .in('content_id', ids)
-          .in('attribute_name', ['halal_tier', 'cuisine_clean', 'type'])
+        const { data: page } = await supabase.from('content')
+          .select('id, name, url_slug, address, metro, display_lat, display_lng')
+          .eq('category_id', cat.id)
+          .eq('status', 'published')
+          .not('display_lat', 'is', null)
+          .order('id')
           .range(offset, offset + PAGE - 1)
         if (!page || page.length === 0) break
-        allAttrs = allAttrs.concat(page)
+        contentRows = contentRows.concat(page)
         if (page.length < PAGE) break
+      }
+      if (contentRows.length === 0) return
+      const ids = contentRows.map(r => r.id)
+
+      // Chunk by content_ids: Supabase caps each query at 1000 rows server-side regardless of .limit/.range.
+      // Each restaurant has ~3 attribute rows. Querying 200 IDs at a time yields ~600 rows per call — safely under cap.
+      const CHUNK = 200
+      let allAttrs = []
+      for (let i = 0; i < ids.length; i += CHUNK) {
+        const slice = ids.slice(i, i + CHUNK)
+        const { data: page } = await supabase.from('attributes')
+          .select('content_id, attribute_name, attribute_value')
+          .in('content_id', slice)
+          .in('attribute_name', ['halal_tier', 'cuisine_clean', 'type'])
+        if (page) allAttrs = allAttrs.concat(page)
       }
 
       const byId = new Map()

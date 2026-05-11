@@ -183,20 +183,17 @@ export default function Restaurants() {
         .eq('metro', 'Bay Area')
       if (!contentRows) { setLoading(false); return }
 
-      // Paginate attributes: Supabase enforces a hard 1000-row server cap regardless of .limit().
-      // Loop in pages of 1000 until we have everything.
+      // Chunk by content_ids: Supabase caps each query at 1000 rows server-side regardless of .limit/.range.
       const ids = contentRows.map(r => r.id)
-      const PAGE = 1000
+      const CHUNK = 200
       let attrs = []
-      for (let offset = 0; ; offset += PAGE) {
+      for (let i = 0; i < ids.length; i += CHUNK) {
+        const slice = ids.slice(i, i + CHUNK)
         const { data: page } = await supabase.from('attributes')
           .select('content_id, attribute_name, attribute_value')
-          .in('content_id', ids)
+          .in('content_id', slice)
           .in('attribute_name', ['halal_tier', 'cuisine_clean', 'type'])
-          .range(offset, offset + PAGE - 1)
-        if (!page || page.length === 0) break
-        attrs = attrs.concat(page)
-        if (page.length < PAGE) break
+        if (page) attrs = attrs.concat(page)
       }
 
       // Index attributes by content_id

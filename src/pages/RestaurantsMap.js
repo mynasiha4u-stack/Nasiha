@@ -118,19 +118,21 @@ export default function RestaurantsMap() {
     async function load() {
       const { data: cat } = await supabase.from('categories').select('id').eq('slug', 'restaurants').single()
       if (!cat) return
+      // Load ALL restaurants nationally (not just Bay Area) so pins exist
+      // when user zooms out. Default view still centers on Bay Area.
       const { data: contentRows } = await supabase.from('content')
         .select('id, name, url_slug, address, metro, display_lat, display_lng')
         .eq('category_id', cat.id)
         .eq('status', 'published')
-        .eq('metro', 'Bay Area')
         .not('display_lat', 'is', null)
+        .limit(10000)
       if (!contentRows) return
       const ids = contentRows.map(r => r.id)
       const { data: attrs } = await supabase.from('attributes')
         .select('content_id, attribute_name, attribute_value')
         .in('content_id', ids)
         .in('attribute_name', ['halal_tier', 'cuisine_clean', 'type'])
-        .limit(10000)
+        .limit(50000)
       const byId = new Map()
       ;(attrs || []).forEach(a => {
         if (!byId.has(a.content_id)) byId.set(a.content_id, { types: [] })

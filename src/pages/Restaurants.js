@@ -183,18 +183,25 @@ export default function Restaurants() {
         .eq('metro', 'Bay Area')
       if (!contentRows) { setLoading(false); return }
 
-      // Only fetch the attribute types we actually need (halal_tier, cuisine_clean, type)
-      // This avoids hitting Supabase's row limits with all attribute types
+      // Paginate attributes: Supabase enforces a hard 1000-row server cap regardless of .limit().
+      // Loop in pages of 1000 until we have everything.
       const ids = contentRows.map(r => r.id)
-      const { data: attrs } = await supabase.from('attributes')
-        .select('content_id, attribute_name, attribute_value')
-        .in('content_id', ids)
-        .in('attribute_name', ['halal_tier', 'cuisine_clean', 'type'])
-        .limit(10000)
+      const PAGE = 1000
+      let attrs = []
+      for (let offset = 0; ; offset += PAGE) {
+        const { data: page } = await supabase.from('attributes')
+          .select('content_id, attribute_name, attribute_value')
+          .in('content_id', ids)
+          .in('attribute_name', ['halal_tier', 'cuisine_clean', 'type'])
+          .range(offset, offset + PAGE - 1)
+        if (!page || page.length === 0) break
+        attrs = attrs.concat(page)
+        if (page.length < PAGE) break
+      }
 
       // Index attributes by content_id
       const byId = new Map()
-      ;(attrs || []).forEach(a => {
+      attrs.forEach(a => {
         if (!byId.has(a.content_id)) byId.set(a.content_id, { types: [] })
         const bucket = byId.get(a.content_id)
         if (a.attribute_name === 'type') bucket.types.push(a.attribute_value)

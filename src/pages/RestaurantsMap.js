@@ -128,13 +128,24 @@ export default function RestaurantsMap() {
         .limit(10000)
       if (!contentRows) return
       const ids = contentRows.map(r => r.id)
-      const { data: attrs } = await supabase.from('attributes')
-        .select('content_id, attribute_name, attribute_value')
-        .in('content_id', ids)
-        .in('attribute_name', ['halal_tier', 'cuisine_clean', 'type'])
-        .limit(50000)
+
+      // Paginate attributes: Supabase enforces a hard 1000-row server cap regardless of .limit().
+      // Loop in pages of 1000 until we have everything.
+      const PAGE = 1000
+      let allAttrs = []
+      for (let offset = 0; ; offset += PAGE) {
+        const { data: page } = await supabase.from('attributes')
+          .select('content_id, attribute_name, attribute_value')
+          .in('content_id', ids)
+          .in('attribute_name', ['halal_tier', 'cuisine_clean', 'type'])
+          .range(offset, offset + PAGE - 1)
+        if (!page || page.length === 0) break
+        allAttrs = allAttrs.concat(page)
+        if (page.length < PAGE) break
+      }
+
       const byId = new Map()
-      ;(attrs || []).forEach(a => {
+      allAttrs.forEach(a => {
         if (!byId.has(a.content_id)) byId.set(a.content_id, { types: [] })
         const b = byId.get(a.content_id)
         if (a.attribute_name === 'type') b.types.push(a.attribute_value)

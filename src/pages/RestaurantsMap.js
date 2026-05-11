@@ -77,6 +77,7 @@ export default function RestaurantsMap() {
   const mapInstanceRef = useRef(null)
   const infoWindowRef = useRef(null)
   const userMarkerRef = useRef(null)
+  const nearbyMarkerRef = useRef(null)
   const [items, setItems] = useState([])
   const [mapReady, setMapReady] = useState(false)
   const [userLocation, setUserLocation] = useState(null)
@@ -101,12 +102,12 @@ export default function RestaurantsMap() {
     setSearchParams(params, { replace: true })
   }, [tierFilter, typeFilter, cuisineFilter, setSearchParams])
 
-  // When user picks a location from search, pan + zoom map to it (~5 mi radius)
+  // When user picks a location from search, pan + zoom map to it (~3 mi radius)
   const handleNearbySelect = useCallback(({ lat, lng, name }) => {
     setNearbyLocation({ lat, lng, name })
     if (mapInstanceRef.current) {
       mapInstanceRef.current.panTo({ lat, lng })
-      mapInstanceRef.current.setZoom(12)
+      mapInstanceRef.current.setZoom(13)
     }
   }, [])
   const handleNearbyClear = useCallback(() => {
@@ -267,6 +268,55 @@ export default function RestaurantsMap() {
       title: 'Your location',
     })
   }, [userLocation, mapReady])
+
+  // Nearby search pin — distinct teal pulsing marker so user sees WHERE they searched
+  useEffect(() => {
+    if (!mapInstanceRef.current || !window.google) return
+
+    // Inject pulse keyframe once
+    if (!document.getElementById('nasiha-pulse-style')) {
+      const style = document.createElement('style')
+      style.id = 'nasiha-pulse-style'
+      style.textContent = `
+        @keyframes nasiha-pulse {
+          0% { transform: scale(0.6); opacity: 0.9; }
+          100% { transform: scale(1.6); opacity: 0; }
+        }
+      `
+      document.head.appendChild(style)
+    }
+
+    // Remove old pin if it exists
+    if (nearbyMarkerRef.current) {
+      nearbyMarkerRef.current.map = null
+      nearbyMarkerRef.current = null
+    }
+    if (!nearbyLocation) return
+
+    // Build wrapper with pulse halo + solid center
+    const wrap = document.createElement('div')
+    wrap.style.cssText = 'position: relative; width: 30px; height: 30px; pointer-events: none;'
+    wrap.innerHTML = `
+      <div style="
+        position: absolute; inset: 0; border-radius: 50%;
+        background: rgba(20, 184, 166, 0.35);
+        animation: nasiha-pulse 1.6s ease-out infinite;
+      "></div>
+      <div style="
+        position: absolute; top: 8px; left: 8px; width: 14px; height: 14px; border-radius: 50%;
+        background: #14b8a6; border: 2.5px solid white;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+      "></div>
+    `
+
+    nearbyMarkerRef.current = new window.google.maps.marker.AdvancedMarkerElement({
+      position: { lat: nearbyLocation.lat, lng: nearbyLocation.lng },
+      map: mapInstanceRef.current,
+      content: wrap,
+      zIndex: 9998,
+      title: nearbyLocation.name || 'Searched location',
+    })
+  }, [nearbyLocation, mapReady])
 
   const cuisines = ['all', ...new Set(items.map(i => i.cuisine_clean).filter(Boolean))].sort((a, b) => {
     if (a === 'all') return -1

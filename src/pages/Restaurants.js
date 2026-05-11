@@ -16,7 +16,7 @@ const POPULAR_CITIES = [
 ]
 
 function popularRank(item) {
-  const hay = `${item.location_address || ''} ${item.name || ''}`.toLowerCase()
+  const hay = `${item.address || ''} ${item.name || ''}`.toLowerCase()
   for (let i = 0; i < POPULAR_CITIES.length; i++) {
     if (hay.includes(POPULAR_CITIES[i].toLowerCase())) return i
   }
@@ -74,11 +74,11 @@ function RestaurantCard({ item, onTap, userLocation }) {
     : null
   const directionsUrl = item.display_lat && item.display_lng
     ? `https://www.google.com/maps/dir/?api=1&destination=${item.display_lat},${item.display_lng}`
-    : item.location_address
-    ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(item.location_address)}`
+    : item.address
+    ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(item.address)}`
     : null
   const tc = tierColors[item.halal_tier] || tierColors.unknown
-  const city = cityFromAddress(item.location_address)
+  const city = cityFromAddress(item.address)
   return (
     <div onClick={() => onTap(item)} style={{ ...card, padding: 16, cursor: 'pointer' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
@@ -177,10 +177,10 @@ export default function Restaurants() {
       if (!cat) { setLoading(false); return }
       // Fetch restaurants in Bay Area only for v1 (defer national rollout)
       const { data: contentRows } = await supabase.from('content')
-        .select('id, name, url_slug, description, phone, email, website, instagram, facebook, location_address, location_area, display_lat, display_lng')
+        .select('id, name, url_slug, description, phone, email, website, instagram, facebook, address, metro, display_lat, display_lng')
         .eq('category_id', cat.id)
         .eq('status', 'published')
-        .eq('location_area', 'Bay Area')
+        .eq('metro', 'Bay Area')
       if (!contentRows) { setLoading(false); return }
 
       // Only fetch the attribute types we actually need (halal_tier, cuisine_clean, type)
@@ -232,7 +232,7 @@ export default function Restaurants() {
       const s = search.toLowerCase()
       return item.name.toLowerCase().includes(s) ||
         (item.cuisine_clean || '').toLowerCase().includes(s) ||
-        (item.location_address || '').toLowerCase().includes(s)
+        (item.address || '').toLowerCase().includes(s)
     }
     return true
   })

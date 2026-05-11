@@ -87,7 +87,7 @@ function EventCard({ event, onTap }) {
         {imageUrl
           ? <img src={imageUrl} alt={event.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, fontWeight: 800, color: 'rgba(26,42,58,0.1)', letterSpacing: 3 }}>
-              {event.location_area?.split(' ').map(w => w[0]).join('').substring(0, 3)}
+              {event.metro?.split(' ').map(w => w[0]).join('').substring(0, 3)}
             </div>
         }
         {/* Mosque name top-left */}
@@ -115,7 +115,7 @@ function EventCard({ event, onTap }) {
           {(event.event_host || event.internal_notes) && (
             <span style={{ fontSize: 11, fontWeight: 700, color: colors.textPrimary, background: '#f0f0f0', padding: '2px 7px', borderRadius: 5 }}>{event.event_host || event.internal_notes}</span>
           )}
-          <span style={{ fontSize: 11, color: '#6A7A8A' }}>{event.location_area}</span>
+          <span style={{ fontSize: 11, color: '#6A7A8A' }}>{event.metro}</span>
         </div>
       </div>
     </div>
@@ -285,7 +285,7 @@ export function EventDetailPage() {
           {audiences.filter(a => a !== 'General Public').map(a => <AudienceBadge key={a} audience={a} />)}
         </div>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1C2B3A', lineHeight: 1.3, marginBottom: 4 }}>{event.name}</h1>
-        <div style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)' }}>{event.location_area}</div>
+        <div style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)' }}>{event.metro}</div>
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
@@ -295,7 +295,7 @@ export function EventDetailPage() {
           {[
             { icon: '📅', label: 'Date', value: formatDate(event.event_date) },
             { icon: '🕐', label: 'Time', value: `${formatTime(event.event_time)}${event.event_end_time ? ` – ${formatTime(event.event_end_time)}` : ''}` },
-            { icon: '📍', label: 'Location', value: event.location_address || event.location_area },
+            { icon: '📍', label: 'Location', value: event.address || event.metro },
           ].map(row => (
             <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
               <span style={{ fontSize: 18, width: 24, textAlign: 'center' }}>{row.icon}</span>
@@ -308,10 +308,10 @@ export function EventDetailPage() {
         </div>
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-          {(event.display_lat || event.location_address) && (
+          {(event.display_lat || event.address) && (
             <a href={event.display_lat && event.display_lng
                 ? `https://www.google.com/maps/dir/?api=1&destination=${event.display_lat},${event.display_lng}`
-                : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(event.location_address)}`}
+                : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(event.address)}`}
               target="_blank" rel="noreferrer"
               style={{ flex: 1, background: '#E8860A', border: 'none', borderRadius: 12, padding: '13px 0', color: 'white', fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
               Directions

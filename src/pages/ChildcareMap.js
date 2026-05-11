@@ -59,7 +59,7 @@ export default function ChildcareMap() {
     async function load() {
       const { data: cat } = await supabase.from('categories').select('id').eq('slug', 'childcare').single()
       if (!cat) return
-      const { data } = await supabase.from('content').select('id,name,phone,website,email,whatsapp,instagram,facebook,location_address,location_area,display_lat,display_lng,url_slug,description')
+      const { data } = await supabase.from('content').select('id,name,phone,website,email,whatsapp,instagram,facebook,address,metro,display_lat,display_lng,url_slug,description')
         .eq('category_id', cat.id)
         .eq('status', 'published')
         .not('display_lat', 'is', null)
@@ -203,8 +203,8 @@ export default function ChildcareMap() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                   <div style={{ flex: 1, paddingRight: 8 }}>
                     <div style={{ fontSize: 17, fontWeight: 800, color: colors.textPrimary, marginBottom: 3, lineHeight: 1.3 }}>{selected.name}</div>
-                    {selected.location_address && <div style={{ fontSize: 12, color: '#3A4A5A' }}>📍 {selected.location_address}</div>}
-                    {!selected.location_address && selected.location_area && <div style={{ fontSize: 12, color: '#3A4A5A' }}>📍 {selected.location_area}</div>}
+                    {selected.address && <div style={{ fontSize: 12, color: '#3A4A5A' }}>📍 {selected.address}</div>}
+                    {!selected.address && selected.metro && <div style={{ fontSize: 12, color: '#3A4A5A' }}>📍 {selected.metro}</div>}
                   </div>
                   <button onClick={() => setSelected(null)} style={{ background: '#F7F3EE', border: 'none', borderRadius: 20, width: 28, height: 28, fontSize: 14, color: '#6A7A8A', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>×</button>
                 </div>
@@ -220,11 +220,11 @@ export default function ChildcareMap() {
 
                 {/* Primary action row: Directions + Call */}
                 <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                  {(selected.display_lat || selected.location_address) && (
+                  {(selected.display_lat || selected.address) && (
                     <a
                       href={selected.display_lat && selected.display_lng
                         ? `https://www.google.com/maps/dir/?api=1&destination=${selected.display_lat},${selected.display_lng}`
-                        : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(selected.location_address)}`}
+                        : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(selected.address)}`}
                       target="_blank" rel="noreferrer"
                       style={{ flex: 1, background: colors.brand, color: 'white', borderRadius: 12, padding: '12px 0', fontSize: 13, fontWeight: 700, textDecoration: 'none', textAlign: 'center' }}>
                       Directions

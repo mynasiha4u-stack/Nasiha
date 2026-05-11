@@ -84,7 +84,7 @@ function makeSlug(title, date) {
 // --- Add Event Form ---
 function AddEventForm({ onSuccess }) {
   const [form, setForm] = useState({
-    name: '', description: '', location_address: '', location_area: 'East Bay',
+    name: '', description: '', address: '', metro: 'East Bay',
     event_date: '', event_time: '', event_end_time: '', website: '', image_url: '',
     event_type: 'Community', event_audience: ['General Public'],
   })
@@ -108,7 +108,7 @@ function AddEventForm({ onSuccess }) {
     setSaving(false)
     if (error) { setMsg(`Error: ${error.message}`); return }
     setMsg('✅ Event added!')
-    setForm({ name: '', description: '', location_address: '', location_area: 'East Bay', event_date: '', event_time: '', event_end_time: '', website: '', image_url: '', event_type: 'Community', event_audience: ['General Public'] })
+    setForm({ name: '', description: '', address: '', metro: 'East Bay', event_date: '', event_time: '', event_end_time: '', website: '', image_url: '', event_type: 'Community', event_audience: ['General Public'] })
     onSuccess()
   }
 
@@ -120,8 +120,8 @@ function AddEventForm({ onSuccess }) {
         <div style={{ flex: 1 }}><Field label="Start Time"><Input value={form.event_time} onChange={set('event_time')} type="time" /></Field></div>
         <div style={{ flex: 1 }}><Field label="End Time"><Input value={form.event_end_time} onChange={set('event_end_time')} type="time" /></Field></div>
       </div>
-      <Field label="Location / Address"><Input value={form.location_address} onChange={set('location_address')} placeholder="e.g. 5724 W Las Positas Blvd, Pleasanton" /></Field>
-      <Field label="Area"><Select value={form.location_area} onChange={set('location_area')} options={AREAS} /></Field>
+      <Field label="Location / Address"><Input value={form.address} onChange={set('address')} placeholder="e.g. 5724 W Las Positas Blvd, Pleasanton" /></Field>
+      <Field label="Area"><Select value={form.metro} onChange={set('metro')} options={AREAS} /></Field>
       <Field label="Event Type"><Select value={form.event_type} onChange={set('event_type')} options={EVENT_TYPES} /></Field>
       <Field label="Audience"><MultiSelect values={form.event_audience} onChange={set('event_audience')} options={AUDIENCES} /></Field>
       <Field label="Website / RSVP Link"><Input value={form.website} onChange={set('website')} placeholder="https://..." /></Field>
@@ -138,7 +138,7 @@ function AddEventForm({ onSuccess }) {
 // --- Add Mosque Form ---
 function AddMosqueForm({ onSuccess }) {
   const [form, setForm] = useState({
-    name: '', location_address: '', location_area: 'East Bay',
+    name: '', address: '', metro: 'East Bay',
     website: '', phone: '', email: '', instagram: '', facebook: '',
     description: '',
   })
@@ -162,15 +162,15 @@ function AddMosqueForm({ onSuccess }) {
     setSaving(false)
     if (error) { setMsg(`Error: ${error.message}`); return }
     setMsg('✅ Mosque added! Remember to add Jummah times and coordinates in Supabase.')
-    setForm({ name: '', location_address: '', location_area: 'East Bay', website: '', phone: '', email: '', instagram: '', facebook: '', description: '' })
+    setForm({ name: '', address: '', metro: 'East Bay', website: '', phone: '', email: '', instagram: '', facebook: '', description: '' })
     onSuccess()
   }
 
   return (
     <div>
       <Field label="Mosque Name *"><Input value={form.name} onChange={set('name')} placeholder="e.g. Masjid Al-Noor (Richmond)" /></Field>
-      <Field label="Address"><Input value={form.location_address} onChange={set('location_address')} placeholder="e.g. 1234 Main St, Richmond, CA" /></Field>
-      <Field label="Area"><Select value={form.location_area} onChange={set('location_area')} options={AREAS} /></Field>
+      <Field label="Address"><Input value={form.address} onChange={set('address')} placeholder="e.g. 1234 Main St, Richmond, CA" /></Field>
+      <Field label="Area"><Select value={form.metro} onChange={set('metro')} options={AREAS} /></Field>
       <Field label="Website"><Input value={form.website} onChange={set('website')} placeholder="https://..." /></Field>
       <Field label="Phone"><Input value={form.phone} onChange={set('phone')} placeholder="(510) 555-1234" /></Field>
       <Field label="Email"><Input value={form.email} onChange={set('email')} placeholder="info@mosque.org" /></Field>

@@ -145,8 +145,8 @@ function MosqueCard({ mosque, season, userLocation }) {
             )}
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 2, alignItems: 'center' }}>
-            {mosque.location_area && (
-              <div style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)' }}>📍 {mosque.location_area}</div>
+            {mosque.metro && (
+              <div style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)' }}>📍 {mosque.metro}</div>
             )}
             {dist !== null && (
               <div style={{ fontSize: 12, color: '#e8a040', fontWeight: 600 }}>{dist.toFixed(1)} mi</div>
@@ -224,11 +224,11 @@ export default function Jummah() {
       if (catData) {
         let q = supabase
           .from('content')
-          .select('id, name, jummah_times, location_area, display_lat, display_lng, website, phone, url_slug')
+          .select('id, name, jummah_times, metro, display_lat, display_lng, website, phone, url_slug')
           .eq('category_id', catData.id)
           .eq('status', 'published')
-        if (area !== 'All') q = q.eq('location_area', area)
-        if (search) q = q.or(`name.ilike.%${search}%,location_address.ilike.%${search}%,location_area.ilike.%${search}%`)
+        if (area !== 'All') q = q.eq('metro', area)
+        if (search) q = q.or(`name.ilike.%${search}%,address.ilike.%${search}%,metro.ilike.%${search}%`)
         const { data } = await q
         setMosques(data || [])
       }

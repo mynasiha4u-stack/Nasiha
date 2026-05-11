@@ -30,7 +30,7 @@ export default function EventsMap() {
   useEffect(() => {
     const today = new Date().toISOString().substring(0, 10)
     supabase.from('content')
-      .select('id, name, event_date, event_time, event_host, location_address, display_lat, display_lng, url_slug, event_type, image_url')
+      .select('id, name, event_date, event_time, event_host, address, display_lat, display_lng, url_slug, event_type, image_url')
       .eq('category_id', 'd916a550-c316-40a9-9582-35836417b6cb')
       .eq('status', 'published')
       .gte('event_date', today)
@@ -159,8 +159,8 @@ export default function EventsMap() {
                 <div style={{ fontSize: 12, color: '#3A4A5A' }}>
                   {formatDate(selectedEvent.event_date)}{selectedEvent.event_time ? ` · ${formatTime(selectedEvent.event_time)}` : ''}
                 </div>
-                {selectedEvent.location_address && (
-                  <div style={{ fontSize: 11, color: '#6A7A8A', marginTop: 2 }}>{selectedEvent.location_address}</div>
+                {selectedEvent.address && (
+                  <div style={{ fontSize: 11, color: '#6A7A8A', marginTop: 2 }}>{selectedEvent.address}</div>
                 )}
               </div>
               <button onClick={() => setSelectedEvent(null)} style={{ background: 'none', border: 'none', fontSize: 18, color: 'rgba(26,42,58,0.3)', cursor: 'pointer', padding: '0 0 0 8px' }}>×</button>
@@ -170,7 +170,7 @@ export default function EventsMap() {
                 flex: 1, background: colors.brand, color: 'white', border: 'none',
                 borderRadius: 10, padding: '9px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer',
               }}>View Event</button>
-              {selectedEvent.location_address && (
+              {selectedEvent.address && (
                 <a href={`https://www.google.com/maps/dir/?api=1&destination=${selectedEvent.display_lat},${selectedEvent.display_lng}`}
                   target="_blank" rel="noreferrer" style={{
                     flex: 1, background: '#E8860A', color: 'white', border: 'none',

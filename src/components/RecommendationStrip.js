@@ -69,7 +69,7 @@ export default function RecommendationStrip({ items, userLocation, onCardTap, on
   const directionsUrl = r.display_lat && r.display_lng
     ? `https://www.google.com/maps/dir/?api=1&destination=${r.display_lat},${r.display_lng}`
     : null
-  const city = cityFromAddress(r.location_address)
+  const city = cityFromAddress(r.address)
 
   const next = () => setIndex(i => (i + 1) % recs.length)
   const prev = () => setIndex(i => (i - 1 + recs.length) % recs.length)

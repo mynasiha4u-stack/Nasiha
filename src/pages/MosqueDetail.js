@@ -80,7 +80,7 @@ export default function MosqueDetail() {
 
   const directionsUrl = mosque.display_lat && mosque.display_lng
     ? `https://www.google.com/maps/dir/?api=1&destination=${mosque.display_lat},${mosque.display_lng}`
-    : `https://www.google.com/maps/search/${encodeURIComponent(mosque.location_address || mosque.name)}`
+    : `https://www.google.com/maps/search/${encodeURIComponent(mosque.address || mosque.name)}`
 
   const description = cleanDescription(mosque.description)
 
@@ -92,7 +92,7 @@ export default function MosqueDetail() {
         <button onClick={() => navigate(-1)} style={{ fontSize: 14, color: colors.textSecondary, marginBottom: 14, display: 'block', background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
         <div style={{ fontSize: 32, marginBottom: 8 }}>🕌</div>
         <h1 style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', lineHeight: 1.3, marginBottom: 4 }}>{mosque.name}</h1>
-        <div style={{ fontSize: 13, color: colors.textSecondary }}>📍 {mosque.location_area}{mosque.location_address ? ` · ${mosque.location_address}` : ''}</div>
+        <div style={{ fontSize: 13, color: colors.textSecondary }}>📍 {mosque.metro}{mosque.address ? ` · ${mosque.address}` : ''}</div>
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>

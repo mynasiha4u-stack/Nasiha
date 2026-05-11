@@ -42,7 +42,7 @@ export default function Home() {
       .then(({ data: cat }) => {
         if (!cat) return
         supabase.from('content')
-          .select('id, name, location_area, url_slug')
+          .select('id, name, metro, url_slug')
           .eq('category_id', cat.id)
           .eq('status', 'published')
           .eq('featured', true)
@@ -214,7 +214,7 @@ export default function Home() {
                   <div style={{ width: 40, height: 40, borderRadius: radius.sm, background: headerGradient, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>🕌</div>
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: colors.textPrimary }}>{m.name}</div>
-                    <div style={{ fontSize: 12, color: colors.textSecondary }}>{m.location_area}</div>
+                    <div style={{ fontSize: 12, color: colors.textSecondary }}>{m.metro}</div>
                   </div>
                 </div>
                 <span style={{ color: colors.textMuted, fontSize: 16 }}>›</span>

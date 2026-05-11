@@ -117,22 +117,22 @@ export default function ListingDetail({ item, typeBadge, typeColor, loading, not
         {item.image_url && <img src={item.image_url} alt={item.name} style={{ width: '100%', borderRadius: radius.md, marginBottom: 14, objectFit: 'cover', maxHeight: 200 }} />}
         {typeBadge && <span style={{ background: 'rgba(28,43,58,0.1)', color: '#1C2B3A', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: radius.full, marginBottom: 10, display: 'inline-block' }}>{typeBadge}</span>}
         <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1C2B3A', lineHeight: 1.3, marginBottom: 6 }}>{item.name}</h1>
-        <div style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)' }}>📍 {item.location_area}{item.location_address ? ` · ${item.location_address.split(',')[0]}` : ''}</div>
+        <div style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)' }}>📍 {item.metro}{item.address ? ` · ${item.address.split(',')[0]}` : ''}</div>
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
         <ActionButtons item={item} />
         <ContactRibbon item={item} />
-        {(item.display_lat || item.location_address) && (
+        {(item.display_lat || item.address) && (
           <div style={{ ...card, padding: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ flex: 1, paddingRight: 12 }}>
               <div style={{ fontSize: 10, color: colors.textMuted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Location</div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary }}>{item.location_address || item.location_area}</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary }}>{item.address || item.metro}</div>
             </div>
             <a
               href={item.display_lat && item.display_lng
                 ? `https://www.google.com/maps/dir/?api=1&destination=${item.display_lat},${item.display_lng}`
-                : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(item.location_address)}`}
+                : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(item.address)}`}
               target="_blank" rel="noreferrer"
               style={{ background: colors.brand, borderRadius: radius.sm, padding: '10px 14px', fontSize: 12, fontWeight: 700, color: 'white', textDecoration: 'none', flexShrink: 0, whiteSpace: 'nowrap' }}>
               Directions

@@ -65,7 +65,7 @@ export default function Map() {
         let allPins = []
         for (const c of cats) {
           const { data } = await supabase.from('content')
-            .select('id, name, location_area, display_lat, display_lng, url_slug, category_id, phone, website, email, instagram, facebook, whatsapp, description')
+            .select('id, name, metro, display_lat, display_lng, url_slug, category_id, phone, website, email, instagram, facebook, whatsapp, description')
             .eq('category_id', c.id)
             .eq('status', 'published')
             .not('display_lat', 'is', null)
@@ -78,7 +78,7 @@ export default function Map() {
         if (!catData) { setLoading(false); return }
 
         let query = supabase.from('content')
-          .select('id, name, location_area, display_lat, display_lng, url_slug, phone, website, email, instagram, facebook, whatsapp, description, jummah_times, event_date, event_time, event_host')
+          .select('id, name, metro, display_lat, display_lng, url_slug, phone, website, email, instagram, facebook, whatsapp, description, jummah_times, event_date, event_time, event_host')
           .eq('category_id', catData.id)
           .eq('status', 'published')
           .not('display_lat', 'is', null)
@@ -227,7 +227,7 @@ export default function Map() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                   <div style={{ flex: 1, paddingRight: 8 }}>
                     <div style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary, marginBottom: 4, lineHeight: 1.3 }}>{selected.name}</div>
-                    <div style={{ fontSize: 12, color: '#3A4A5A' }}>📍 {selected.location_area}</div>
+                    <div style={{ fontSize: 12, color: '#3A4A5A' }}>📍 {selected.metro}</div>
                     {selected.event_date && <div style={{ fontSize: 12, color: colors.brand, fontWeight: 600, marginTop: 3 }}>📅 {new Date(selected.event_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>}
                   </div>
                   <button onClick={() => setSelected(null)} style={{ background: '#f0f0f0', border: 'none', borderRadius: 20, width: 30, height: 30, fontSize: 15, color: '#6A7A8A', cursor: 'pointer', flexShrink: 0 }}>×</button>

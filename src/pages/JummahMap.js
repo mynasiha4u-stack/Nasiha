@@ -100,7 +100,7 @@ export default function JummahMap() {
       const { data: cat } = await supabase.from('categories').select('id').eq('slug', 'mosques').single()
       if (!cat) return
       const { data } = await supabase.from('content')
-        .select('id, name, jummah_times, location_area, display_lat, display_lng, url_slug')
+        .select('id, name, jummah_times, metro, display_lat, display_lng, url_slug')
         .eq('category_id', cat.id)
         .eq('status', 'published')
         .not('display_lat', 'is', null)

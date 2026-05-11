@@ -119,10 +119,10 @@ export default function RestaurantsMap() {
       const { data: cat } = await supabase.from('categories').select('id').eq('slug', 'restaurants').single()
       if (!cat) return
       const { data: contentRows } = await supabase.from('content')
-        .select('id, name, url_slug, location_address, location_area, display_lat, display_lng')
+        .select('id, name, url_slug, address, metro, display_lat, display_lng')
         .eq('category_id', cat.id)
         .eq('status', 'published')
-        .eq('location_area', 'Bay Area')
+        .eq('metro', 'Bay Area')
         .not('display_lat', 'is', null)
       if (!contentRows) return
       const ids = contentRows.map(r => r.id)

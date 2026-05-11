@@ -14,7 +14,7 @@ const POPULAR_CITIES = [
 ]
 
 function popularRank(item) {
-  const hay = `${item.location_address || ''} ${item.name || ''}`.toLowerCase()
+  const hay = `${item.address || ''} ${item.name || ''}`.toLowerCase()
   for (let i = 0; i < POPULAR_CITIES.length; i++) {
     if (hay.includes(POPULAR_CITIES[i].toLowerCase())) return i
   }
@@ -86,8 +86,8 @@ function ChildcareCard({ item, onTap, userLocation }) {
     : null
   const directionsUrl = item.display_lat && item.display_lng
     ? `https://www.google.com/maps/dir/?api=1&destination=${item.display_lat},${item.display_lng}`
-    : item.location_address
-    ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(item.location_address)}`
+    : item.address
+    ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(item.address)}`
     : null
   return (
     <div onClick={() => onTap(item)} style={{
@@ -97,7 +97,7 @@ function ChildcareCard({ item, onTap, userLocation }) {
         <div style={{ flex: 1, paddingRight: 8 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary, marginBottom: 3, lineHeight: 1.3 }}>{item.name}</div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <div style={{ fontSize: 12, color: '#4a5a6a', fontWeight: 500 }}>📍 {item.location_area}{item.location_address ? ` · ${item.location_address.split(',')[0]}` : ''}</div>
+            <div style={{ fontSize: 12, color: '#4a5a6a', fontWeight: 500 }}>📍 {item.metro}{item.address ? ` · ${item.address.split(',')[0]}` : ''}</div>
             {dist !== null && (
               <div style={{ fontSize: 12, color: colors.brand, fontWeight: 700 }}>{dist.toFixed(1)} mi</div>
             )}
@@ -184,13 +184,13 @@ export default function Childcare() {
   }, [])
 
   const filtered = items.filter(item => {
-    if (area !== 'All' && item.location_area !== area) return false
+    if (area !== 'All' && item.metro !== area) return false
     if (search) {
       const s = search.toLowerCase()
       return item.name.toLowerCase().includes(s) ||
         (item.description || '').toLowerCase().includes(s) ||
-        (item.location_area || '').toLowerCase().includes(s) ||
-        (item.location_address || '').toLowerCase().includes(s)
+        (item.metro || '').toLowerCase().includes(s) ||
+        (item.address || '').toLowerCase().includes(s)
     }
     return true
   })

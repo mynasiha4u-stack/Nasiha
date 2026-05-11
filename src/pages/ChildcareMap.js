@@ -147,11 +147,11 @@ export default function ChildcareMap() {
       {/* Map fills full background */}
       <div ref={mapRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
 
-      {/* Header — sunset gradient (matches home + category pages), translucent, rounded lip */}
+      {/* Header — sunset gradient, translucent (85%), rounded lip */}
       <div style={{
         position: 'relative', zIndex: 4,
         background: headerGradient,
-        opacity: 0.97,
+        opacity: 0.85,
         padding: '48px 16px 18px',
         borderBottomLeftRadius: 20,
         borderBottomRightRadius: 20,

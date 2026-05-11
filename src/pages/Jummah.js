@@ -261,10 +261,10 @@ export default function Jummah() {
 
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
-      <div style={{ background: headerGradient, padding: '52px 20px 24px' }}>
+      <div style={{ background: headerGradient, padding: '48px 20px 22px' }}>
         <button onClick={() => navigate('/')} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', marginBottom: 14, display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
-        <h1 style={{ fontSize: 26, fontWeight: 700, color: colors.textPrimary, marginBottom: 4 }}>🕌 Jummah Timings</h1>
-        <p style={{ fontSize: 14, color: '#3A4A5A', marginBottom: 4 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1C2B3A', marginBottom: 2 }}>🕌 Jummah Timings</h1>
+        <p style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)' }}>
           {new Date().getDay() === 5 ? '🟢 Today is Friday · ' : ''}{mosques.length} mosques in the Bay Area
         </p>
       </div>

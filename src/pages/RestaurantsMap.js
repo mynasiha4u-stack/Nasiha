@@ -41,7 +41,7 @@ function tierBadge(t) {
   return null
 }
 
-function buildInfoHtml(r, userLocation) {
+function buildInfoHtml(r, userLocation, detourMiles) {
   const dist = userLocation && r.display_lat && r.display_lng
     ? distanceMiles(userLocation.lat, userLocation.lng, r.display_lat, r.display_lng)
     : null
@@ -59,6 +59,11 @@ function buildInfoHtml(r, userLocation) {
   })
   const chipsHtml = chips.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;">${chips.join('')}</div>` : ''
 
+  // Off-route chip — shown when in route mode
+  const detourHtml = (typeof detourMiles === 'number')
+    ? `<div style="display:inline-flex;align-items:center;gap:4px;background:#E6FAF7;color:#0F766E;font-size:11px;font-weight:700;padding:4px 8px;border-radius:6px;margin-bottom:8px;">🚗 ${detourMiles.toFixed(1)} mi off route</div>`
+    : ''
+
   return `
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-width:220px;max-width:260px;padding:4px 2px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;">
@@ -69,6 +74,7 @@ function buildInfoHtml(r, userLocation) {
         ${dist !== null ? `<span style="font-size:11px;color:#C4500A;font-weight:700;white-space:nowrap;flex-shrink:0;">${dist.toFixed(1)} mi</span>` : ''}
       </div>
       ${chipsHtml}
+      ${detourHtml}
       <a href="${dirUrl}" target="_blank" rel="noreferrer" style="display:block;background:#C2410C;border-radius:8px;padding:8px 0;font-size:12px;font-weight:700;color:white;text-align:center;text-decoration:none;">Directions</a>
     </div>
   `
@@ -82,7 +88,9 @@ export default function RestaurantsMap() {
   const infoWindowRef = useRef(null)
   const userMarkerRef = useRef(null)
   const nearbyMarkerRef = useRef(null)
+  // Polyline refs for route display (shadow + main)
   const routePolylineRef = useRef(null)
+  const routeShadowRef = useRef(null)
   const [items, setItems] = useState([])
   const [mapReady, setMapReady] = useState(false)
   const [userLocation, setUserLocation] = useState(null)
@@ -187,6 +195,10 @@ export default function RestaurantsMap() {
         routePolylineRef.current.setMap(null)
         routePolylineRef.current = null
       }
+      if (routeShadowRef.current) {
+        routeShadowRef.current.setMap(null)
+        routeShadowRef.current = null
+      }
       return
     }
     setRoutePanelOpen(true)
@@ -217,12 +229,25 @@ export default function RestaurantsMap() {
       routePolylineRef.current.setMap(null)
       routePolylineRef.current = null
     }
+    if (routeShadowRef.current) {
+      routeShadowRef.current.setMap(null)
+      routeShadowRef.current = null
+    }
     if (!routeData?.path) return
 
+    // Shadow layer (slightly thicker, dark, semi-transparent) — gives the route depth
+    routeShadowRef.current = new window.google.maps.Polyline({
+      path: routeData.path,
+      strokeColor: '#0F2C2A',
+      strokeOpacity: 0.4,
+      strokeWeight: 8,
+      map: mapInstanceRef.current,
+    })
+    // Main teal line on top — slightly thinner, fully opaque, rounded caps
     routePolylineRef.current = new window.google.maps.Polyline({
       path: routeData.path,
-      strokeColor: '#0EA5A0',
-      strokeOpacity: 0.85,
+      strokeColor: '#14B8A6',
+      strokeOpacity: 1,
       strokeWeight: 5,
       map: mapInstanceRef.current,
     })
@@ -439,10 +464,14 @@ export default function RestaurantsMap() {
       }
     }
 
-    // 2. Add markers for new IDs only
+    // 2. Add markers for new IDs only; update item ref for existing ones (so detour_miles refreshes on route toggle)
     filtered.forEach(r => {
       if (!r.display_lat || !r.display_lng) return
-      if (store.has(r.id)) return  // already exists — skip
+      if (store.has(r.id)) {
+        // Refresh stored item so click handler shows current detour data
+        store.get(r.id).item = r
+        return
+      }
 
       // Build pin as a styled div. AdvancedMarker renders HTML elements (fast) vs SVG paths (slow).
       const pin = document.createElement('div')
@@ -464,7 +493,9 @@ export default function RestaurantsMap() {
       })
       marker.addListener('click', () => {
         if (!infoWindowRef.current) return
-        infoWindowRef.current.setContent(buildInfoHtml(r, userLocation))
+        // Read current item from store so it reflects latest detour_miles
+        const current = store.get(r.id)?.item || r
+        infoWindowRef.current.setContent(buildInfoHtml(current, userLocation, current.detour_miles))
         infoWindowRef.current.open({ anchor: marker, map: mapInstanceRef.current })
         setTimeout(() => {
           document.querySelectorAll('[data-rest-detail]').forEach(link => {

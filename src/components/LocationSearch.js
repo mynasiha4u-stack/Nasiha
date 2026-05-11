@@ -23,28 +23,53 @@ export default function LocationSearch({ onSelect, onClear, placeholder = 'Searc
 
   // Ensure the 'places' library is loaded
   useEffect(() => {
-    function checkReady() {
-      if (window.google && window.google.maps && window.google.maps.places) {
-        setReady(true)
-        return true
-      }
-      return false
+    function placesAvailable() {
+      return !!(window.google && window.google.maps && window.google.maps.places)
     }
-    if (checkReady()) return
-    // Inject script if not present
-    const existing = document.querySelector('script[src*="maps.googleapis.com"]')
-    if (!existing) {
+    if (placesAvailable()) {
+      setReady(true)
+      return
+    }
+
+    // If a maps script is already loading/loaded but without 'places',
+    // we need to load places explicitly. Google's loader is idempotent —
+    // loading the script again with different libraries just adds them.
+    const scriptSrc = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&libraries=marker,places&v=weekly`
+    const existingWithPlaces = document.querySelector(`script[src*="libraries=marker,places"], script[src*="libraries=places"]`)
+    if (!existingWithPlaces) {
       const script = document.createElement('script')
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&libraries=marker,places&v=weekly`
+      script.src = scriptSrc
       script.async = true
-      script.onload = () => setReady(true)
+      script.onload = () => {
+        // After load, places might still be initializing; poll briefly
+        let attempts = 0
+        const poll = setInterval(() => {
+          attempts++
+          if (placesAvailable()) {
+            setReady(true)
+            clearInterval(poll)
+          } else if (attempts > 20) {
+            clearInterval(poll)
+            console.warn('[LocationSearch] Places library did not become available after script load')
+          }
+        }, 150)
+      }
+      script.onerror = () => console.error('[LocationSearch] Failed to load Google Maps script')
       document.head.appendChild(script)
     } else {
-      // Poll until places lib appears (the existing script might be loading without places)
-      const interval = setInterval(() => {
-        if (checkReady()) clearInterval(interval)
+      // Already loading — poll until ready
+      let attempts = 0
+      const poll = setInterval(() => {
+        attempts++
+        if (placesAvailable()) {
+          setReady(true)
+          clearInterval(poll)
+        } else if (attempts > 40) {
+          clearInterval(poll)
+          console.warn('[LocationSearch] Places library never became available')
+        }
       }, 200)
-      return () => clearInterval(interval)
+      return () => clearInterval(poll)
     }
   }, [])
 

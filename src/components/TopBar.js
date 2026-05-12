@@ -16,12 +16,13 @@ export default function TopBar() {
         border: 'none',
         padding: 0,
         margin: 0,
-        fontSize: 18,
-        fontWeight: 800,
-        color: colors.brand,
-        letterSpacing: -0.3,
+        fontSize: 22,
+        fontWeight: 900,
+        color: '#1C2B3A',
+        letterSpacing: -1,
         cursor: 'pointer',
         fontFamily: 'inherit',
+        lineHeight: 1,
       }}
       aria-label="Nasiha home"
     >

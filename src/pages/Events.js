@@ -660,7 +660,7 @@ export default function Events() {
             color: activeMosques.length > 0 ? 'white' : '#1a2a3a',
             border: '1px solid rgba(0,0,0,0.1)', borderRadius: 20,
             padding: '7px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-          }}>🕌 Mosque {activeMosques.length > 0 ? `(${activeMosques.length})` : '▾'}</button>
+          }}>🕌 Venue {activeMosques.length > 0 ? `(${activeMosques.length})` : '▾'}</button>
 
           <button onClick={() => { setShowFilters(v => v === 'type' ? null : 'type'); setShowCalendar(false) }} style={{
             display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,

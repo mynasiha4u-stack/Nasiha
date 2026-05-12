@@ -449,6 +449,7 @@ export default function Events() {
   const [loading, setLoading] = useState(true)
   const [showFilters, setShowFilters] = useState(null)
   const [thisWeekend, setThisWeekend] = useState(false)
+  const [today, setToday] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
   const [activeTypes, setActiveTypes] = useState([])
   const [activeAudiences, setActiveAudiences] = useState([])
@@ -553,7 +554,10 @@ export default function Events() {
   const satStr = satDate.toISOString().substring(0, 10)
   const sunStr = sunDate.toISOString().substring(0, 10)
 
+  const todayStr = todayDate.toISOString().substring(0, 10)
+
   const filtered = events.filter(e => {
+    if (today && e.event_date !== todayStr) return false
     if (thisWeekend && e.event_date !== satStr && e.event_date !== sunStr) return false
     if (activeDate && e.event_date !== activeDate) return false
     if (activeTypes.length > 0) {
@@ -568,8 +572,8 @@ export default function Events() {
     return true
   })
 
-  const today = new Date()
-  const endOfWeek = new Date(today); endOfWeek.setDate(today.getDate() + (7 - today.getDay()))
+  const nowDate = new Date()
+  const endOfWeek = new Date(nowDate); endOfWeek.setDate(nowDate.getDate() + (7 - nowDate.getDay()))
   const endOfNextWeek = new Date(endOfWeek); endOfNextWeek.setDate(endOfWeek.getDate() + 7)
 
   const groups = [
@@ -591,28 +595,60 @@ export default function Events() {
       <div style={{ padding: '16px 16px 0' }}>
         <NewsletterStrip />
 
-        {/* Top row: This Weekend + Near Me toggle */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
-          <button onClick={() => setThisWeekend(t => !t)} style={{
-            padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
-            background: thisWeekend ? '#e8943a' : 'white',
-            color: thisWeekend ? 'white' : '#1a2a3a',
-            border: '1px solid rgba(0,0,0,0.1)',
-          }}>This Weekend</button>
+        {/* Sort segmented toggle — top right */}
+        <div style={{ display: 'flex', marginBottom: 10, alignItems: 'center' }}>
           <div style={{ flex: 1 }} />
-          <button onClick={handleNearMeToggle} style={{
-            padding: '7px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
-            background: sortByNear ? colors.brand : 'white',
-            color: sortByNear ? 'white' : colors.textPrimary,
-            border: sortByNear ? 'none' : '1px solid rgba(0,0,0,0.1)',
-            display: 'flex', alignItems: 'center', gap: 5,
-          }}>📍 Near me</button>
+          <div style={{
+            display: 'inline-flex',
+            background: 'white',
+            borderRadius: 999,
+            border: '1px solid rgba(0,0,0,0.1)',
+            padding: 3,
+            boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+          }}>
+            <button onClick={() => setSortByNear(false)} style={{
+              padding: '6px 12px', borderRadius: 999, border: 'none', cursor: 'pointer',
+              fontSize: 12, fontWeight: 700,
+              background: !sortByNear ? '#1C2B3A' : 'transparent',
+              color: !sortByNear ? 'white' : '#3A4A5A',
+            }}>By date</button>
+            <button onClick={handleNearMeToggle} style={{
+              padding: '6px 12px', borderRadius: 999, border: 'none', cursor: 'pointer',
+              fontSize: 12, fontWeight: 700,
+              background: sortByNear ? '#1C2B3A' : 'transparent',
+              color: sortByNear ? 'white' : '#3A4A5A',
+              display: 'flex', alignItems: 'center', gap: 4,
+            }}>📍 Near me</button>
+          </div>
         </div>
         {locationDenied && (
           <div style={{ fontSize: 11, color: '#9A3A3A', marginBottom: 8 }}>
             Location access blocked. Enable in your browser settings to sort by distance.
           </div>
         )}
+
+        {/* Date filter row: Today / This Weekend / Pick a date */}
+        <div style={{ display: 'flex', gap: 7, marginBottom: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <button onClick={() => { setToday(t => !t); setThisWeekend(false); setActiveDate(null) }} style={{
+            padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
+            background: today ? '#e8943a' : 'white',
+            color: today ? 'white' : '#1a2a3a',
+            border: '1px solid rgba(0,0,0,0.1)',
+          }}>Today</button>
+          <button onClick={() => { setThisWeekend(t => !t); setToday(false); setActiveDate(null) }} style={{
+            padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
+            background: thisWeekend ? '#e8943a' : 'white',
+            color: thisWeekend ? 'white' : '#1a2a3a',
+            border: '1px solid rgba(0,0,0,0.1)',
+          }}>This Weekend</button>
+          <button onClick={() => { setShowCalendar(c => !c); setShowFilters(false); setToday(false); setThisWeekend(false) }} style={{
+            display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0,
+            background: activeDate ? '#e8943a' : 'white',
+            color: activeDate ? 'white' : '#1a2a3a',
+            border: '1px solid rgba(0,0,0,0.1)', borderRadius: 20,
+            padding: '7px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+          }}>📅 {activeDate ? formatDate(activeDate).replace(/\w+, /, '') : 'Pick a date'}</button>
+        </div>
 
         {/* Mosque scrolling filter */}
         <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 8, paddingBottom: 2, scrollbarWidth: 'none' }}>
@@ -622,16 +658,8 @@ export default function Events() {
           ))}
         </div>
 
-        {/* Date + filter row */}
+        {/* Event Type + Audience filters */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
-          <button onClick={() => { setShowCalendar(c => !c); setShowFilters(false) }} style={{
-            display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0,
-            background: activeDate ? '#e8943a' : 'white',
-            color: activeDate ? 'white' : '#1a2a3a',
-            border: '1px solid rgba(0,0,0,0.1)', borderRadius: 20,
-            padding: '7px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-          }}>📅 {activeDate ? formatDate(activeDate).replace(/\w+, /, '') : 'Date'}</button>
-
           <button onClick={() => { setShowFilters(v => v === 'type' ? null : 'type'); setShowCalendar(false) }} style={{
             display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
             background: activeTypes.length > 0 ? TYPE_COLOR.bg : 'white',

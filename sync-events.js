@@ -325,12 +325,11 @@ async function syncFeed(feed) {
 async function backfill() {
   console.log('\n🔄 Backfilling existing events...')
 
-  // Get events missing image_url or event_type
+  // Get events with descriptions (may have Where: in them)
   const { data: events } = await supabase
     .from('content')
-    .select('id, name, description, website, image_url, event_type, event_audience, instagram')
+    .select('id, name, description, website, image_url, event_type, event_audience, instagram, address, location_address, display_lat, display_lng, event_host')
     .eq('category_id', EVENTS_CATEGORY_ID)
-    .not('website', 'is', null)
 
   if (!events || events.length === 0) { console.log('  Nothing to backfill'); return }
 
@@ -344,17 +343,35 @@ async function backfill() {
       updates.event_audience = audiences
     }
 
-    // Geocode if missing coordinates — check both new and old column names
-    const eventAddress = event.address || event.location_address
-    if (!event.display_lat && eventAddress) {
-      process.stdout.write(`  📍 Geocoding "${event.name.substring(0, 35)}"... `)
-      const coords = await geocodeAddress(eventAddress)
+    // Try to extract "Where:" from description if no real address yet
+    const hasRealAddress = event.address && event.address.length > 5 && /\d/.test(event.address)
+    if (!hasRealAddress && event.description) {
+      const extracted = extractWhereFromDescription(event.description)
+      if (extracted) {
+        updates.address = extracted
+        updates.location_address = extracted
+        // Clear coords so we re-geocode below with the new address
+        updates.display_lat = null
+        updates.display_lng = null
+      }
+    }
+
+    // Geocode if missing coordinates — check updates first, then existing values
+    const eventAddress = updates.address || event.address || event.location_address
+    const needsGeocode = (updates.display_lat === null) || (!event.display_lat && !updates.display_lat)
+    if (needsGeocode && eventAddress) {
+      // Bias toward Bay Area if no state info
+      const queryAddr = /\b(CA|California|, [A-Z]{2})\b/.test(eventAddress) ? eventAddress : `${eventAddress}, CA`
+      process.stdout.write(`  📍 Geocoding "${event.name.substring(0, 35)}" @ ${queryAddr.substring(0, 30)}... `)
+      const coords = await geocodeAddress(queryAddr)
       if (coords.lat) {
         updates.display_lat = coords.lat
         updates.display_lng = coords.lng
         console.log('✅')
       } else {
         console.log('—')
+        delete updates.display_lat  // don't write null over existing coords if we have any
+        delete updates.display_lng
       }
     }
 

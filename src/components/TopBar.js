@@ -16,7 +16,7 @@ export default function TopBar() {
         border: 'none',
         padding: 0,
         margin: 0,
-        fontSize: 22,
+        fontSize: 32,
         fontWeight: 900,
         color: '#1C2B3A',
         letterSpacing: -1,

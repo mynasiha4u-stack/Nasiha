@@ -21,13 +21,16 @@ function LawyerCard({ item, onTap }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
         <div style={{ flex: 1, paddingRight: 8 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary, marginBottom: 6, lineHeight: 1.3 }}>{item.name}</div>
-          {/* Specialty chips inline */}
+          {/* Specialty chips inline — sorted to match filter order */}
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-            {(item.specialties || []).map(sp => {
-              const def = SPECIALTY_FILTERS.find(f => f.key === sp)
-              const label = def?.label || sp
-              return <span key={sp} style={{ background: '#FFF0E8', color: '#C2410C', fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5 }}>{label}</span>
-            })}
+            {(item.specialties || [])
+              .slice()
+              .sort((a, b) => SPECIALTY_FILTERS.findIndex(f => f.key === a) - SPECIALTY_FILTERS.findIndex(f => f.key === b))
+              .map(sp => {
+                const def = SPECIALTY_FILTERS.find(f => f.key === sp)
+                const label = def?.label || sp
+                return <span key={sp} style={{ background: '#E0F7F5', color: '#0F766E', fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5 }}>{label}</span>
+              })}
           </div>
         </div>
       </div>

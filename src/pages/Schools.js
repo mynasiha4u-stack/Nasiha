@@ -38,12 +38,15 @@ function SchoolCard({ item, onTap, userLocation }) {
             {dist !== null && (
               <div style={{ fontSize: 12, color: colors.brand, fontWeight: 700 }}>{dist.toFixed(1)} mi</div>
             )}
-            {/* Grade chips inline */}
-            {(item.grades || []).map(g => {
-              const def = GRADE_FILTERS.find(f => f.key === g)
-              if (!def) return null
-              return <span key={g} style={{ background: '#E0F7F5', color: '#0F766E', fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5 }}>{def.label}</span>
-            })}
+            {/* Grade chips inline — sorted to match GRADE_FILTERS order */}
+            {(item.grades || [])
+              .slice()
+              .sort((a, b) => GRADE_FILTERS.findIndex(f => f.key === a) - GRADE_FILTERS.findIndex(f => f.key === b))
+              .map(g => {
+                const def = GRADE_FILTERS.find(f => f.key === g)
+                if (!def) return null
+                return <span key={g} style={{ background: '#E0F7F5', color: '#0F766E', fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5 }}>{def.label}</span>
+              })}
           </div>
         </div>
       </div>

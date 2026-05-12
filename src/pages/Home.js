@@ -276,16 +276,27 @@ function AuthButton() {
 
   if (!user) {
     return (
-      <button onClick={() => navigate('/auth')} style={{
-        background: 'white',
-        border: 'none',
-        borderRadius: 999,
-        padding: '6px 14px',
-        fontSize: 12, fontWeight: 700,
-        color: colors.brand,
-        cursor: 'pointer',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-      }}>Sign in</button>
+      <div style={{ display: 'inline-flex', gap: 6 }}>
+        <button onClick={() => navigate('/auth?mode=login')} style={{
+          background: 'rgba(255,255,255,0.85)',
+          border: 'none',
+          borderRadius: 999,
+          padding: '6px 12px',
+          fontSize: 12, fontWeight: 700,
+          color: '#1C2B3A',
+          cursor: 'pointer',
+        }}>Log in</button>
+        <button onClick={() => navigate('/auth?mode=signup')} style={{
+          background: colors.brand,
+          border: 'none',
+          borderRadius: 999,
+          padding: '6px 12px',
+          fontSize: 12, fontWeight: 700,
+          color: 'white',
+          cursor: 'pointer',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+        }}>Sign up</button>
+      </div>
     )
   }
 

@@ -63,7 +63,7 @@ export default function Auth() {
           {mode === 'signup' ? 'Join Nasiha' : 'Welcome back'}
         </h1>
         <p style={{ fontSize: 13, color: 'rgba(28,43,58,0.7)' }}>
-          {mode === 'signup' ? 'Create an account to post listings, contact vendors, and more.' : 'Sign in to your account.'}
+          {mode === 'signup' ? 'Create an account to post listings, contact vendors, and more.' : 'Log in to your account.'}
         </p>
       </div>
 
@@ -132,14 +132,14 @@ export default function Auth() {
             opacity: submitting ? 0.7 : 1,
             marginBottom: 14,
           }}>
-            {submitting ? '...' : (mode === 'signup' ? 'Create account' : 'Sign in')}
+            {submitting ? '...' : (mode === 'signup' ? 'Create account' : 'Log in')}
           </button>
         </form>
 
         <div style={{ textAlign: 'center', fontSize: 13, color: '#3A4A5A' }}>
           {mode === 'signup' ? (
             <>Already have an account?{' '}
-              <button onClick={() => { setMode('login'); setError('') }} style={linkStyle}>Sign in</button>
+              <button onClick={() => { setMode('login'); setError('') }} style={linkStyle}>Log in</button>
             </>
           ) : (
             <>New to Nasiha?{' '}

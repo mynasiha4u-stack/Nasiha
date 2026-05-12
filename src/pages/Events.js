@@ -629,8 +629,8 @@ export default function Events() {
       <div style={{ padding: '16px 16px 0' }}>
         <NewsletterStrip />
 
-        {/* Top row: View toggle (left) + Sort toggle (right) */}
-        <div style={{ display: 'flex', marginBottom: 10, alignItems: 'center', gap: 8 }}>
+        {/* Row 1: View toggle + 3 filter dropdowns */}
+        <div style={{ display: 'flex', gap: 7, marginBottom: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{
             display: 'inline-flex',
             background: 'white',
@@ -638,52 +638,49 @@ export default function Events() {
             border: '1px solid rgba(0,0,0,0.1)',
             padding: 3,
             boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+            flexShrink: 0,
           }}>
             <button onClick={() => setViewMode('cards')} style={{
-              padding: '6px 12px', borderRadius: 999, border: 'none', cursor: 'pointer',
-              fontSize: 12, fontWeight: 700,
+              padding: '5px 11px', borderRadius: 999, border: 'none', cursor: 'pointer',
+              fontSize: 11, fontWeight: 700,
               background: viewMode === 'cards' ? '#1C2B3A' : 'transparent',
               color: viewMode === 'cards' ? 'white' : '#3A4A5A',
             }}>Cards</button>
             <button onClick={() => setViewMode('list')} style={{
-              padding: '6px 12px', borderRadius: 999, border: 'none', cursor: 'pointer',
-              fontSize: 12, fontWeight: 700,
+              padding: '5px 11px', borderRadius: 999, border: 'none', cursor: 'pointer',
+              fontSize: 11, fontWeight: 700,
               background: viewMode === 'list' ? '#1C2B3A' : 'transparent',
               color: viewMode === 'list' ? 'white' : '#3A4A5A',
             }}>List</button>
           </div>
-          <div style={{ flex: 1 }} />
-          <div style={{
-            display: 'inline-flex',
-            background: 'white',
-            borderRadius: 999,
-            border: '1px solid rgba(0,0,0,0.1)',
-            padding: 3,
-            boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-          }}>
-            <button onClick={() => setSortByNear(false)} style={{
-              padding: '6px 12px', borderRadius: 999, border: 'none', cursor: 'pointer',
-              fontSize: 12, fontWeight: 700,
-              background: !sortByNear ? '#1C2B3A' : 'transparent',
-              color: !sortByNear ? 'white' : '#3A4A5A',
-            }}>By date</button>
-            <button onClick={handleNearMeToggle} style={{
-              padding: '6px 12px', borderRadius: 999, border: 'none', cursor: 'pointer',
-              fontSize: 12, fontWeight: 700,
-              background: sortByNear ? '#1C2B3A' : 'transparent',
-              color: sortByNear ? 'white' : '#3A4A5A',
-              display: 'flex', alignItems: 'center', gap: 4,
-            }}>📍 Near me</button>
-          </div>
-        </div>
-        {locationDenied && (
-          <div style={{ fontSize: 11, color: '#9A3A3A', marginBottom: 8 }}>
-            Location access blocked. Enable in your browser settings to sort by distance.
-          </div>
-        )}
 
-        {/* Date filter row: Today / This Weekend / Pick a date */}
-        <div style={{ display: 'flex', gap: 7, marginBottom: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <button onClick={() => { setShowFilters(v => v === 'mosque' ? null : 'mosque'); setShowCalendar(false) }} style={{
+            display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
+            background: activeMosques.length > 0 ? '#1a2a3a' : 'white',
+            color: activeMosques.length > 0 ? 'white' : '#1a2a3a',
+            border: '1px solid rgba(0,0,0,0.1)', borderRadius: 20,
+            padding: '7px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+          }}>🕌 Mosque {activeMosques.length > 0 ? `(${activeMosques.length})` : '▾'}</button>
+
+          <button onClick={() => { setShowFilters(v => v === 'type' ? null : 'type'); setShowCalendar(false) }} style={{
+            display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
+            background: activeTypes.length > 0 ? TYPE_COLOR.bg : 'white',
+            color: activeTypes.length > 0 ? 'white' : '#1a2a3a',
+            border: '1px solid rgba(0,0,0,0.1)', borderRadius: 20,
+            padding: '7px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+          }}>Type {activeTypes.length > 0 ? `(${activeTypes.length})` : '▾'}</button>
+
+          <button onClick={() => { setShowFilters(v => v === 'audience' ? null : 'audience'); setShowCalendar(false) }} style={{
+            display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
+            background: activeAudiences.length > 0 ? AUDIENCE_COLOR.bg : 'white',
+            color: activeAudiences.length > 0 ? 'white' : '#1a2a3a',
+            border: '1px solid rgba(0,0,0,0.1)', borderRadius: 20,
+            padding: '7px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+          }}>Audience {activeAudiences.length > 0 ? `(${activeAudiences.length})` : '▾'}</button>
+        </div>
+
+        {/* Row 2: Date filters + Near me on the right */}
+        <div style={{ display: 'flex', gap: 7, marginBottom: 8, alignItems: 'center' }}>
           <button onClick={() => { setToday(t => !t); setThisWeekend(false); setActiveDate(null) }} style={{
             padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
             background: today ? '#e8943a' : 'white',
@@ -703,34 +700,40 @@ export default function Events() {
             border: '1px solid rgba(0,0,0,0.1)', borderRadius: 20,
             padding: '7px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
           }}>📅 {activeDate ? formatDate(activeDate).replace(/\w+, /, '') : 'Pick a date'}</button>
+          <div style={{ flex: 1 }} />
+          <button onClick={handleNearMeToggle} style={{
+            padding: '7px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0,
+            background: sortByNear ? colors.brand : 'white',
+            color: sortByNear ? 'white' : '#1a2a3a',
+            border: sortByNear ? 'none' : '1px solid rgba(0,0,0,0.1)',
+            display: 'flex', alignItems: 'center', gap: 4,
+          }}>📍 Near me</button>
         </div>
+        {locationDenied && (
+          <div style={{ fontSize: 11, color: '#9A3A3A', marginBottom: 8 }}>
+            Location access blocked. Enable in your browser settings to sort by distance.
+          </div>
+        )}
 
-        {/* Mosque scrolling filter */}
-        <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 8, paddingBottom: 2, scrollbarWidth: 'none' }}>
-          <button onClick={() => setActiveMosques([])} style={{ padding: '6px 14px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: activeMosques.length === 0 ? '#1a2a3a' : 'white', color: activeMosques.length === 0 ? 'white' : '#1a2a3a', border: '1px solid rgba(0,0,0,0.1)', flexShrink: 0 }}>All</button>
-          {MOSQUES.map(m => (
-            <button key={m} onClick={() => setActiveMosques(activeMosques.includes(m) ? activeMosques.filter(x => x !== m) : [...activeMosques, m])} style={{ padding: '6px 14px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: activeMosques.includes(m) ? '#1a2a3a' : 'white', color: activeMosques.includes(m) ? 'white' : '#1a2a3a', border: '1px solid rgba(0,0,0,0.1)', flexShrink: 0 }}>{m}</button>
-          ))}
-        </div>
-
-        {/* Event Type + Audience filters */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
-          <button onClick={() => { setShowFilters(v => v === 'type' ? null : 'type'); setShowCalendar(false) }} style={{
-            display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
-            background: activeTypes.length > 0 ? TYPE_COLOR.bg : 'white',
-            color: activeTypes.length > 0 ? 'white' : '#1a2a3a',
-            border: '1px solid rgba(0,0,0,0.1)', borderRadius: 20,
-            padding: '7px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-          }}>Event Type {activeTypes.length > 0 ? `(${activeTypes.length})` : '▾'}</button>
-
-          <button onClick={() => { setShowFilters(v => v === 'audience' ? null : 'audience'); setShowCalendar(false) }} style={{
-            display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
-            background: activeAudiences.length > 0 ? AUDIENCE_COLOR.bg : 'white',
-            color: activeAudiences.length > 0 ? 'white' : '#1a2a3a',
-            border: '1px solid rgba(0,0,0,0.1)', borderRadius: 20,
-            padding: '7px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-          }}>Audience {activeAudiences.length > 0 ? `(${activeAudiences.length})` : '▾'}</button>
-        </div>
+        {/* Mosque dropdown */}
+        {showFilters === 'mosque' && (
+          <div style={{ background: 'white', borderRadius: 14, padding: 12, marginBottom: 8, border: '1px solid rgba(0,0,0,0.08)' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              <button onClick={() => setActiveMosques([])} style={{
+                padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                background: activeMosques.length === 0 ? '#1a2a3a' : '#f0f0f0',
+                color: activeMosques.length === 0 ? 'white' : '#1a2a3a', border: 'none',
+              }}>All</button>
+              {MOSQUES.map(m => (
+                <button key={m} onClick={() => setActiveMosques(prev => prev.includes(m) ? prev.filter(x => x!==m) : [...prev, m])} style={{
+                  padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  background: activeMosques.includes(m) ? '#1a2a3a' : '#f0f0f0',
+                  color: activeMosques.includes(m) ? 'white' : '#1a2a3a', border: 'none',
+                }}>{m}</button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Event Type dropdown */}
         {showFilters === 'type' && (

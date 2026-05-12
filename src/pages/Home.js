@@ -5,14 +5,14 @@ import BottomNav from '../components/BottomNav'
 import { colors, headerGradient, card, radius } from '../theme'
 
 const CATEGORIES = [
-  { icon: '👨‍🍳', label: 'Home Cooks',     path: '/directory?cat=home-cooked-food' },
-  { icon: '🕌', label: 'Jummah Timings',  path: '/jummah' },
-  { icon: '🎉', label: 'Catering & Event Services',  path: '/event-planning' },
-  { icon: '👶', label: 'Childcare',       path: '/childcare' },
-  { icon: '📅', label: 'Upcoming Events',          path: '/events' },
-  { icon: '🏫', label: 'Full Time Islamic Schools',         path: '/full-time-islamic-schools' },
-  { icon: '⚖️', label: 'Lawyers',         path: '/lawyers' },
-  { icon: '🍽️', label: 'Restaurants',     path: '/restaurants' },
+  { icon: '🍽️', label: 'Restaurants',                  path: '/restaurants' },
+  { icon: '🕌', label: 'Jummah Timings',               path: '/jummah' },
+  { icon: '📅', label: 'Upcoming Events',              path: '/events' },
+  { icon: '🎉', label: 'Catering & Event Services',    path: '/event-planning' },
+  { icon: '👶', label: 'Childcare',                    path: '/childcare' },
+  { icon: '👨‍🍳', label: 'Home Cooks',                  path: '/directory?cat=home-cooked-food' },
+  { icon: '🏫', label: 'Full Time Islamic Schools',    path: '/full-time-islamic-schools' },
+  { icon: '⚖️', label: 'Lawyers',                      path: '/lawyers' },
 ]
 
 const SUGGESTIONS = ['Halal food near me', 'Jummah times', 'Events this weekend', 'Islamic schools']
@@ -136,40 +136,60 @@ export default function Home() {
           <span style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary }}>Browse</span>
         </div>
 
-        {/* Category tiles — horizontal scroll, 2 rows, with peek on right edge to hint at scrollability */}
-        <div style={{
-          display: 'grid',
-          gridTemplateRows: 'auto auto',
-          gridAutoFlow: 'column',
-          gridAutoColumns: '24%',  // ~4 tiles + a peek of the 5th
-          gap: 10,
-          marginBottom: 28,
-          overflowX: 'auto',
-          overflowY: 'hidden',
-          scrollSnapType: 'x mandatory',
-          paddingBottom: 4,
-          WebkitOverflowScrolling: 'touch',
-          // Hide scrollbar but keep functionality
-          scrollbarWidth: 'none',
-        }}
-        className="tile-scroll-row">
-          {CATEGORIES.map(cat => (
-            <button key={cat.label} onClick={() => navigate(cat.path)} style={{
-              background: '#FFF8F3',
-              border: `1px solid rgba(194,65,12,0.12)`,
-              borderRadius: radius.md,
-              padding: '16px 8px 12px',
-              display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'flex-start', gap: 8,
-              cursor: 'pointer',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-              minHeight: 92,
-              scrollSnapAlign: 'start',
-            }}>
-              <span style={{ fontSize: 26 }}>{cat.icon}</span>
-              <span style={{ fontSize: 10.5, fontWeight: 700, color: colors.textPrimary, textAlign: 'center', lineHeight: 1.25 }}>{cat.label}</span>
-            </button>
-          ))}
+        {/* Category tiles — horizontal scroll, 2 rows, with peek + chevron on right edge to hint at scrollability */}
+        <div style={{ position: 'relative', marginBottom: 28 }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateRows: 'auto auto',
+            gridAutoFlow: 'column',
+            gridAutoColumns: '24%',  // ~4 tiles + a peek of the 5th
+            gap: 10,
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            scrollSnapType: 'x mandatory',
+            paddingBottom: 4,
+            paddingRight: 24,  // room for the fade so it doesn't obscure last tile
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'none',
+          }}
+          className="tile-scroll-row">
+            {CATEGORIES.map(cat => (
+              <button key={cat.label} onClick={() => navigate(cat.path)} style={{
+                background: '#FFF8F3',
+                border: `1px solid rgba(194,65,12,0.12)`,
+                borderRadius: radius.md,
+                padding: '16px 8px 12px',
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'flex-start', gap: 8,
+                cursor: 'pointer',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+                minHeight: 92,
+                scrollSnapAlign: 'start',
+              }}>
+                <span style={{ fontSize: 26 }}>{cat.icon}</span>
+                <span style={{ fontSize: 10.5, fontWeight: 700, color: colors.textPrimary, textAlign: 'center', lineHeight: 1.25 }}>{cat.label}</span>
+              </button>
+            ))}
+          </div>
+          {/* Right-edge fade + chevron — hints at more content */}
+          <div style={{
+            position: 'absolute', top: 0, right: 0, bottom: 4,
+            width: 40,
+            background: 'linear-gradient(to right, rgba(247,243,238,0) 0%, #F7F3EE 70%)',
+            pointerEvents: 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+            paddingRight: 4,
+          }}>
+            <div style={{
+              width: 26, height: 26,
+              borderRadius: '50%',
+              background: 'white',
+              border: '1px solid rgba(0,0,0,0.08)',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 13, color: colors.brand, fontWeight: 800,
+            }}>›</div>
+          </div>
         </div>
         <style>{`
           .tile-scroll-row::-webkit-scrollbar { display: none; }

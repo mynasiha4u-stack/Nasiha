@@ -73,17 +73,8 @@ export default function Home() {
           pointerEvents: 'none',
         }} />
 
-        {/* Location pill */}
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-          background: 'rgba(255,255,255,0.15)',
-          borderRadius: radius.full, padding: '5px 12px',
-          marginBottom: 16,
-          backdropFilter: 'blur(8px)',
-        }}>
-          <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#FCD34D' }} />
-          <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(28,43,58,0.75)' }}>Bay Area</span>
-        </div>
+        {/* Location pill with live weather */}
+        <BayAreaWeather />
 
         {/* Wordmark */}
         <div style={{ marginBottom: 6 }}>
@@ -265,6 +256,80 @@ export default function Home() {
       </div>
 
       <BottomNav />
+    </div>
+  )
+}
+
+// --- Weather component ---
+// Fetches current Bay Area weather from Open-Meteo (free, no API key).
+// Shows: [emoji] [temp]° · Bay Area. Caches in sessionStorage for 30 min.
+function BayAreaWeather() {
+  const [weather, setWeather] = React.useState(null)
+
+  React.useEffect(() => {
+    // Try cache first
+    try {
+      const cached = sessionStorage.getItem('nasiha_weather_v1')
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        if (Date.now() - parsed.ts < 30 * 60 * 1000) {
+          setWeather(parsed.data)
+          return
+        }
+      }
+    } catch {}
+
+    // Fremont CA — central Bay Area metro
+    const url = 'https://api.open-meteo.com/v1/forecast?latitude=37.5485&longitude=-121.9886&current=temperature_2m,weather_code&temperature_unit=fahrenheit'
+    fetch(url)
+      .then(r => r.json())
+      .then(data => {
+        if (!data?.current) return
+        const w = {
+          temp: Math.round(data.current.temperature_2m),
+          code: data.current.weather_code,
+        }
+        setWeather(w)
+        try { sessionStorage.setItem('nasiha_weather_v1', JSON.stringify({ ts: Date.now(), data: w })) } catch {}
+      })
+      .catch(() => {})
+  }, [])
+
+  // Map WMO weather codes to emoji
+  // https://open-meteo.com/en/docs (search 'weather_code')
+  const emojiForCode = (code) => {
+    if (code === 0) return '☀️'  // clear
+    if (code === 1 || code === 2) return '🌤️'  // mainly clear / partly cloudy
+    if (code === 3) return '☁️'  // overcast
+    if (code >= 45 && code <= 48) return '🌫️'  // fog
+    if (code >= 51 && code <= 67) return '🌧️'  // drizzle/rain
+    if (code >= 71 && code <= 77) return '🌨️'  // snow
+    if (code >= 80 && code <= 82) return '🌦️'  // rain showers
+    if (code >= 95) return '⛈️'  // thunderstorm
+    return '🌤️'
+  }
+
+  return (
+    <div style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      background: 'rgba(255,255,255,0.2)',
+      borderRadius: 999, padding: '5px 12px',
+      marginBottom: 16,
+      backdropFilter: 'blur(8px)',
+    }}>
+      {weather ? (
+        <>
+          <span style={{ fontSize: 13 }}>{emojiForCode(weather.code)}</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#1C2B3A' }}>{weather.temp}°</span>
+          <span style={{ fontSize: 12, color: 'rgba(28,43,58,0.55)' }}>·</span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(28,43,58,0.75)' }}>Bay Area</span>
+        </>
+      ) : (
+        <>
+          <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#FCD34D' }} />
+          <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(28,43,58,0.75)' }}>Bay Area</span>
+        </>
+      )}
     </div>
   )
 }

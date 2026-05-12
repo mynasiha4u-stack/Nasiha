@@ -118,7 +118,7 @@ function EventCard({ event, onTap }) {
   const audiences = (event.event_audience && event.event_audience.length > 0) ? event.event_audience : detectAudiences(event.name, event.description)
   // Only use real image URLs — Instagram links etc are not valid <img src> values
   const imageUrl = isValidImageUrl(event.image_url) ? event.image_url : null
-  const eventDate = event.start_time ? new Date(event.start_time) : null
+  const eventDate = event.event_date ? new Date(event.event_date + 'T00:00:00') : null
 
   return (
     <div onClick={() => onTap(event)} style={{
@@ -126,24 +126,35 @@ function EventCard({ event, onTap }) {
       border: '1px solid rgba(0,0,0,0.08)',
       overflow: 'hidden', marginBottom: 12, cursor: 'pointer',
     }}>
-      <div style={{ position: 'relative', height: 130, background: imageUrl ? '#f0edf8' : 'linear-gradient(135deg, #FFF8F3 0%, #FEF2E8 100%)', overflow: 'hidden' }}>
+      <div style={{ position: 'relative', height: 130, background: imageUrl ? '#f0edf8' : '#F7F3EE', overflow: 'hidden', borderBottom: imageUrl ? 'none' : '1px solid rgba(194,65,12,0.08)' }}>
         {imageUrl
           ? <img src={imageUrl} alt={event.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          : <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'rgba(194,65,12,0.7)' }}>
+          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', padding: '0 18px', gap: 14 }}>
               {eventDate ? (
                 <>
-                  <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>
-                    {eventDate.toLocaleDateString('en-US', { month: 'short' })}
-                  </span>
-                  <span style={{ fontSize: 36, fontWeight: 800, lineHeight: 1 }}>
-                    {eventDate.getDate()}
-                  </span>
-                  <span style={{ fontSize: 11, fontWeight: 600, marginTop: 4 }}>
-                    {eventDate.toLocaleDateString('en-US', { weekday: 'long' })}
-                  </span>
+                  <div style={{
+                    background: 'white', borderRadius: 10,
+                    padding: '6px 0', minWidth: 64,
+                    border: '1px solid rgba(194,65,12,0.15)',
+                    textAlign: 'center', flexShrink: 0,
+                  }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: colors.brand, letterSpacing: 1, textTransform: 'uppercase', lineHeight: 1.4 }}>
+                      {eventDate.toLocaleDateString('en-US', { month: 'short' })}
+                    </div>
+                    <div style={{ fontSize: 26, fontWeight: 800, color: '#1C2B3A', lineHeight: 1.05 }}>
+                      {eventDate.getDate()}
+                    </div>
+                    <div style={{ fontSize: 9, fontWeight: 600, color: '#6A7A8A', lineHeight: 1.4 }}>
+                      {eventDate.toLocaleDateString('en-US', { weekday: 'short' })}
+                    </div>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0, fontSize: 11, fontWeight: 600, color: '#6A7A8A', lineHeight: 1.4 }}>
+                    {event.event_time && <div>🕐 {event.event_time}</div>}
+                    {event.event_host && <div style={{ marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📍 {event.event_host}</div>}
+                  </div>
                 </>
               ) : (
-                <span style={{ fontSize: 36, opacity: 0.3 }}>📅</span>
+                <span style={{ fontSize: 36, opacity: 0.3, margin: '0 auto' }}>📅</span>
               )}
             </div>
         }

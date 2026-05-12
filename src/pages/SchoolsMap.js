@@ -129,14 +129,15 @@ export default function SchoolsMap() {
         position: { lat: item.display_lat, lng: item.display_lng },
         map: mapInstanceRef.current,
         icon: {
-          // Small round dot — same size as Restaurants pins for visual consistency.
-          // Different color (#1E88E5 blue) so schools are distinguishable from restaurants.
-          path: window.google.maps.SymbolPath.CIRCLE,
-          fillColor: '#1E88E5',
+          // Teardrop pin in teal — distinguishable from restaurant orange dots.
+          // Smaller scale (0.7) keeps pin compact while still readable as a marker.
+          path: 'M12 0C7.6 0 4 3.6 4 8c0 6.4 8 16 8 16s8-9.6 8-16C20 3.6 16.4 0 12 0z',
+          fillColor: '#0EA5A0',
           fillOpacity: 1,
           strokeColor: 'white',
           strokeWeight: 1.5,
-          scale: 7,
+          scale: 0.7,
+          anchor: new window.google.maps.Point(12, 24),
         }
       })
       marker.addListener('click', () => setSelected(item))

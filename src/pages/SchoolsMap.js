@@ -130,11 +130,11 @@ export default function SchoolsMap() {
         map: mapInstanceRef.current,
         icon: {
           path: 'M12 0C7.6 0 4 3.6 4 8c0 6.4 8 16 8 16s8-9.6 8-16C20 3.6 16.4 0 12 0z',
-          fillColor: colors.pinChildcare,
+          fillColor: '#1E88E5',
           fillOpacity: 1,
           strokeColor: 'white',
-          strokeWeight: 1.5,
-          scale: 1.4,
+          strokeWeight: 1.2,
+          scale: 0.9,
           anchor: new window.google.maps.Point(12, 24),
         }
       })

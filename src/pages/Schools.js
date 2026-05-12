@@ -32,26 +32,21 @@ function SchoolCard({ item, onTap, userLocation }) {
     <div onClick={() => onTap(item)} style={{ ...card, padding: 16, cursor: 'pointer' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
         <div style={{ flex: 1, paddingRight: 8 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary, marginBottom: 3, lineHeight: 1.3 }}>{item.name}</div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary, marginBottom: 6, lineHeight: 1.3 }}>{item.name}</div>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
             {item.metro && <div style={{ fontSize: 12, color: '#4a5a6a', fontWeight: 500 }}>📍 {item.metro}</div>}
             {dist !== null && (
               <div style={{ fontSize: 12, color: colors.brand, fontWeight: 700 }}>{dist.toFixed(1)} mi</div>
             )}
+            {/* Grade chips inline */}
+            {(item.grades || []).map(g => {
+              const def = GRADE_FILTERS.find(f => f.key === g)
+              if (!def) return null
+              return <span key={g} style={{ background: '#F7F3EE', color: '#3A4A5A', fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5 }}>{def.label}</span>
+            })}
           </div>
         </div>
       </div>
-
-      {/* Grade chips */}
-      {item.grades && item.grades.length > 0 && (
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
-          {item.grades.map(g => {
-            const def = GRADE_FILTERS.find(f => f.key === g)
-            if (!def) return null
-            return <span key={g} style={{ background: '#FFF0E8', color: '#C2410C', fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5 }}>{def.label}</span>
-          })}
-        </div>
-      )}
 
       {item.description && (
         <div style={{ fontSize: 13, color: '#2a3a4a', lineHeight: 1.6, marginBottom: 10, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>

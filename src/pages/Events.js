@@ -205,6 +205,38 @@ function EventCard({ event, onTap }) {
   )
 }
 
+// Compact event row used in the List view mode
+function EventListRow({ event, onTap, distanceLabel }) {
+  const venueName = isRealAddress(event.address) ? event.address : (event.event_host || event.internal_notes)
+  return (
+    <div onClick={() => onTap(event)} style={{
+      display: 'flex', alignItems: 'center', gap: 10,
+      background: 'white',
+      padding: '11px 12px',
+      borderBottom: '1px solid rgba(0,0,0,0.06)',
+      cursor: 'pointer',
+    }}>
+      {event.event_time && (
+        <div style={{ fontSize: 12, fontWeight: 700, color: colors.brand, minWidth: 62, flexShrink: 0 }}>
+          {formatTime(event.event_time)}
+        </div>
+      )}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{event.name}</div>
+        {venueName && (
+          <div style={{ fontSize: 11, color: '#6A7A8A', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {venueName}
+          </div>
+        )}
+      </div>
+      {distanceLabel && (
+        <div style={{ fontSize: 11, fontWeight: 700, color: colors.brand, flexShrink: 0 }}>{distanceLabel}</div>
+      )}
+      <div style={{ fontSize: 14, color: '#9AA5B0', flexShrink: 0 }}>›</div>
+    </div>
+  )
+}
+
 // Compact inline calendar for date filtering on main page
 function InlineCalendar({ selectedDate, onChange, onClose }) {
   const today = new Date()
@@ -450,6 +482,8 @@ export default function Events() {
   const [showFilters, setShowFilters] = useState(null)
   const [thisWeekend, setThisWeekend] = useState(false)
   const [today, setToday] = useState(false)
+  // View density: 'cards' (default) or 'list' (compact, grouped by date)
+  const [viewMode, setViewMode] = useState('cards')
   const [showCalendar, setShowCalendar] = useState(false)
   const [activeTypes, setActiveTypes] = useState([])
   const [activeAudiences, setActiveAudiences] = useState([])
@@ -595,8 +629,29 @@ export default function Events() {
       <div style={{ padding: '16px 16px 0' }}>
         <NewsletterStrip />
 
-        {/* Sort segmented toggle — top right */}
-        <div style={{ display: 'flex', marginBottom: 10, alignItems: 'center' }}>
+        {/* Top row: View toggle (left) + Sort toggle (right) */}
+        <div style={{ display: 'flex', marginBottom: 10, alignItems: 'center', gap: 8 }}>
+          <div style={{
+            display: 'inline-flex',
+            background: 'white',
+            borderRadius: 999,
+            border: '1px solid rgba(0,0,0,0.1)',
+            padding: 3,
+            boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+          }}>
+            <button onClick={() => setViewMode('cards')} style={{
+              padding: '6px 12px', borderRadius: 999, border: 'none', cursor: 'pointer',
+              fontSize: 12, fontWeight: 700,
+              background: viewMode === 'cards' ? '#1C2B3A' : 'transparent',
+              color: viewMode === 'cards' ? 'white' : '#3A4A5A',
+            }}>Cards</button>
+            <button onClick={() => setViewMode('list')} style={{
+              padding: '6px 12px', borderRadius: 999, border: 'none', cursor: 'pointer',
+              fontSize: 12, fontWeight: 700,
+              background: viewMode === 'list' ? '#1C2B3A' : 'transparent',
+              color: viewMode === 'list' ? 'white' : '#3A4A5A',
+            }}>List</button>
+          </div>
           <div style={{ flex: 1 }} />
           <div style={{
             display: 'inline-flex',
@@ -724,40 +779,85 @@ export default function Events() {
           <div style={{ textAlign: 'center', padding: '40px 0', color: '#6A7A8A' }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>📅</div>No events match your filters
           </div>
-        ) : sortByNear && userLocation ? (
-          // Distance-sorted flat list
-          <>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#3A4A5A', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
-              Sorted by distance from your location
-            </div>
-            {[...filtered]
+        ) : (() => {
+          // Build the events array we'll render — apply Near me sort if enabled
+          let renderItems
+          if (sortByNear && userLocation) {
+            renderItems = [...filtered]
               .map(e => {
                 const coords = eventCoords(e)
-                return { event: e, dist: coords ? distMi(userLocation.lat, userLocation.lng, coords.lat, coords.lng) : Infinity }
+                const dist = coords ? distMi(userLocation.lat, userLocation.lng, coords.lat, coords.lng) : Infinity
+                const label = isFinite(dist)
+                  ? (dist < 1 ? `${(dist * 5280 / 1000).toFixed(1)}k ft` : `${dist.toFixed(1)} mi`)
+                  : null
+                return { event: e, distLabel: label, dist }
               })
               .sort((a, b) => a.dist - b.dist)
-              .map(({ event, dist }) => (
-                <div key={event.id} style={{ position: 'relative' }}>
-                  {isFinite(dist) && (
+          } else {
+            renderItems = filtered.map(e => ({ event: e, distLabel: null }))
+          }
+
+          if (viewMode === 'list') {
+            // List view — group by date, compact rows
+            const byDate = new Map()
+            renderItems.forEach(item => {
+              const key = item.event.event_date || 'no-date'
+              if (!byDate.has(key)) byDate.set(key, [])
+              byDate.get(key).push(item)
+            })
+            return (
+              <div style={{ borderRadius: 12, overflow: 'hidden', background: 'white', border: '1px solid rgba(0,0,0,0.08)' }}>
+                {Array.from(byDate.entries()).map(([date, items]) => (
+                  <div key={date}>
                     <div style={{
-                      position: 'absolute', top: 8, right: 8, zIndex: 2,
-                      background: 'white', borderRadius: 999, padding: '3px 10px',
                       fontSize: 11, fontWeight: 700, color: colors.brand,
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
+                      letterSpacing: 0.5, textTransform: 'uppercase',
+                      padding: '10px 12px 6px', background: '#FFF8F3',
+                      borderBottom: '1px solid rgba(194,65,12,0.08)',
                     }}>
-                      {dist < 1 ? `${(dist * 5280 / 1000).toFixed(1)}k ft` : `${dist.toFixed(1)} mi`}
+                      {date === 'no-date' ? 'No date' : formatDate(date)}
                     </div>
-                  )}
-                  <EventCard event={event} onTap={() => navigate(`/events/${event.url_slug}`)} />
+                    {items.map(({ event, distLabel }) => (
+                      <EventListRow key={event.id} event={event} distanceLabel={distLabel} onTap={() => navigate(`/events/${event.url_slug}`)} />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )
+          }
+
+          // Cards view (default)
+          if (sortByNear && userLocation) {
+            // Flat distance-sorted cards
+            return (
+              <>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#3A4A5A', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+                  Sorted by distance
                 </div>
-              ))}
-          </>
-        ) : groups.map(group => (
-          <div key={group.label}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#3A4A5A', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, marginLeft: -16, marginRight: -16, padding: '8px 16px', position: 'sticky', top: 0, zIndex: 5, background: '#F7F3EE' }}>{group.label}</div>
-            {group.events.map(e => <EventCard key={e.id} event={e} onTap={() => navigate(`/events/${e.url_slug}`)} />)}
-          </div>
-        ))}
+                {renderItems.map(({ event, distLabel }) => (
+                  <div key={event.id} style={{ position: 'relative' }}>
+                    {distLabel && (
+                      <div style={{
+                        position: 'absolute', top: 8, right: 8, zIndex: 2,
+                        background: 'white', borderRadius: 999, padding: '3px 10px',
+                        fontSize: 11, fontWeight: 700, color: colors.brand,
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
+                      }}>{distLabel}</div>
+                    )}
+                    <EventCard event={event} onTap={() => navigate(`/events/${event.url_slug}`)} />
+                  </div>
+                ))}
+              </>
+            )
+          }
+          // Cards grouped by date scope
+          return groups.map(group => (
+            <div key={group.label}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#3A4A5A', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, marginLeft: -16, marginRight: -16, padding: '8px 16px', position: 'sticky', top: 0, zIndex: 5, background: '#F7F3EE' }}>{group.label}</div>
+              {group.events.map(e => <EventCard key={e.id} event={e} onTap={() => navigate(`/events/${e.url_slug}`)} />)}
+            </div>
+          ))
+        })()}
       </div>
 
 

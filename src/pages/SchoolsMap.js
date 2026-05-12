@@ -261,7 +261,20 @@ export default function SchoolsMap() {
                 {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                   <div style={{ flex: 1, paddingRight: 8 }}>
-                    <div style={{ fontSize: 17, fontWeight: 800, color: colors.textPrimary, marginBottom: 3, lineHeight: 1.3 }}>{selected.name}</div>
+                    <div style={{ fontSize: 17, fontWeight: 800, color: colors.textPrimary, marginBottom: 6, lineHeight: 1.3 }}>{selected.name}</div>
+                    {/* Grade chips */}
+                    {(selected.grades || []).length > 0 && (
+                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 6 }}>
+                        {(selected.grades || [])
+                          .slice()
+                          .sort((a, b) => GRADE_FILTERS.findIndex(f => f.key === a) - GRADE_FILTERS.findIndex(f => f.key === b))
+                          .map(g => {
+                            const def = GRADE_FILTERS.find(f => f.key === g)
+                            if (!def) return null
+                            return <span key={g} style={{ background: '#E0F7F5', color: '#0F766E', fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5 }}>{def.label}</span>
+                          })}
+                      </div>
+                    )}
                     {selected.address && <div style={{ fontSize: 12, color: '#3A4A5A' }}>📍 {selected.address}</div>}
                     {!selected.address && selected.metro && <div style={{ fontSize: 12, color: '#3A4A5A' }}>📍 {selected.metro}</div>}
                   </div>

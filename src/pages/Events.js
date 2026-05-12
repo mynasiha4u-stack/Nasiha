@@ -336,7 +336,7 @@ export function EventDetailPage() {
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
       <div style={{ background: headerGradient, padding: '48px 20px 22px' }}>
-        <button onClick={() => navigate(-1)} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', marginBottom: 14, display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
+        <button onClick={() => navigate(-1)} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
         <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
           {types.map(t => <TypeBadge key={t} type={t} />)}
           {audiences.filter(a => a !== 'General Public').map(a => <AudienceBadge key={a} audience={a} />)}
@@ -463,7 +463,7 @@ export default function Events() {
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
       <div style={{ background: headerGradient, padding: '48px 20px 22px' }}>
-        <button onClick={() => navigate('/')} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', marginBottom: 14, display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
+        <button onClick={() => navigate('/')} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1C2B3A', marginBottom: 2 }}>📅 Events</h1>
         <p style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)' }}>{events.length} Bay Area Muslim events</p>
       </div>

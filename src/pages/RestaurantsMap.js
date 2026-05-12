@@ -686,11 +686,13 @@ export default function RestaurantsMap() {
         boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
         flexShrink: 0,
       }}>
+        <div style={{ marginBottom: 8 }}>
+          <TopBar />
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
           <button onClick={goBackToList} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', background: 'rgba(255,255,255,0.9)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
           <h1 style={{ fontSize: 20, fontWeight: 800, color: '#1C2B3A', margin: 0 }}>🍽️ Restaurants</h1>
-          <div style={{ marginLeft: 'auto', fontSize: 12, color: '#3A4A5A', fontWeight: 600, marginRight: 6 }}>{filtered.length} of {items.length}</div>
-          <TopBar />
+          <div style={{ marginLeft: 'auto', fontSize: 12, color: '#3A4A5A', fontWeight: 600 }}>{filtered.length} of {items.length}</div>
         </div>
 
         <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>

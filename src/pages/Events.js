@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import BottomNav from '../components/BottomNav'
+import TopBar from '../components/TopBar'
 
 const EVENT_TYPES = ['Halaqa', 'Islamic Learning', 'Wellness', 'Family & Kids', 'Community', 'Fundraiser', 'Matrimonial', 'Civic', 'Arts & Culture', 'Food & Drink']
 const AUDIENCES = ['General Public', 'Sisters Only', 'Brothers Only', 'Youth', 'Families']
@@ -366,18 +367,34 @@ export function EventDetailPage() {
 
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
-      <div style={{ background: headerGradient, padding: '48px 20px 22px' }}>
-        <button onClick={() => navigate(-1)} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
-        <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
-          {types.map(t => <TypeBadge key={t} type={t} />)}
-          {audiences.filter(a => a !== 'General Public').map(a => <AudienceBadge key={a} audience={a} />)}
+      {/* Header — navigation only */}
+      <div style={{ background: headerGradient, padding: '48px 20px 18px' }}>
+        <div style={{ marginBottom: 10 }}>
+          <TopBar />
         </div>
-        <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1C2B3A', lineHeight: 1.3, marginBottom: 4 }}>{event.name}</h1>
-        <div style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)' }}>{event.metro}</div>
+        <button onClick={() => navigate(-1)} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
-        {imageUrl && <img src={imageUrl} alt={event.name} style={{ width: '100%', borderRadius: 16, marginBottom: 12, objectFit: 'cover', maxHeight: 220 }} />}
+        {/* Event hero — image if real, otherwise brand-tinted fallback */}
+        {imageUrl ? (
+          <img src={imageUrl} alt={event.name} style={{ width: '100%', borderRadius: 16, marginBottom: 12, objectFit: 'cover', maxHeight: 220 }} />
+        ) : (
+          <div style={{
+            width: '100%', height: 160, borderRadius: 16, marginBottom: 12,
+            background: 'linear-gradient(135deg, #FFE8DC 0%, #FED7BB 100%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <span style={{ fontSize: 72, opacity: 0.35 }}>📅</span>
+          </div>
+        )}
+
+        {/* Event name + badges */}
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1C2B3A', lineHeight: 1.3, marginBottom: 8 }}>{event.name}</h1>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
+          {types.map(t => <TypeBadge key={t} type={t} />)}
+          {audiences.filter(a => a !== 'General Public').map(a => <AudienceBadge key={a} audience={a} />)}
+        </div>
 
         <div style={{ background: 'white', borderRadius: 16, padding: 16, marginBottom: 12, border: '1px solid rgba(0,0,0,0.08)' }}>
           {[

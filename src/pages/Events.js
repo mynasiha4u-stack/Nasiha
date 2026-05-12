@@ -126,38 +126,41 @@ function EventCard({ event, onTap }) {
       border: '1px solid rgba(0,0,0,0.08)',
       overflow: 'hidden', marginBottom: 12, cursor: 'pointer',
     }}>
-      <div style={{ position: 'relative', height: 130, background: imageUrl ? '#f0edf8' : '#F7F3EE', overflow: 'hidden', borderBottom: imageUrl ? 'none' : '1px solid rgba(194,65,12,0.08)' }}>
+      <div style={{ position: 'relative', height: imageUrl ? 130 : 84, background: imageUrl ? '#f0edf8' : '#F7F3EE', overflow: 'hidden', borderBottom: imageUrl ? 'none' : '1px solid rgba(194,65,12,0.08)' }}>
         {imageUrl
           ? <img src={imageUrl} alt={event.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', padding: '0 18px', gap: 14 }}>
-              {eventDate ? (
-                <>
-                  <div style={{
-                    background: 'white', borderRadius: 10,
-                    padding: '6px 0', minWidth: 64,
-                    border: '1px solid rgba(194,65,12,0.15)',
-                    textAlign: 'center', flexShrink: 0,
-                  }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: colors.brand, letterSpacing: 1, textTransform: 'uppercase', lineHeight: 1.4 }}>
-                      {eventDate.toLocaleDateString('en-US', { month: 'short' })}
-                    </div>
-                    <div style={{ fontSize: 26, fontWeight: 800, color: '#1C2B3A', lineHeight: 1.05 }}>
-                      {eventDate.getDate()}
-                    </div>
-                    <div style={{ fontSize: 9, fontWeight: 600, color: '#6A7A8A', lineHeight: 1.4 }}>
-                      {eventDate.toLocaleDateString('en-US', { weekday: 'short' })}
-                    </div>
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0, fontSize: 11, fontWeight: 600, color: '#6A7A8A', lineHeight: 1.4 }}>
-                    {event.event_time && <div>🕐 {event.event_time}</div>}
-                    {event.event_host && <div style={{ marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📍 {event.event_host}</div>}
-                  </div>
-                </>
-              ) : (
-                <span style={{ fontSize: 36, opacity: 0.3, margin: '0 auto' }}>📅</span>
-              )}
-            </div>
+          : eventDate
+            ? <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{
+                  fontSize: 11, fontWeight: 700, color: colors.brand,
+                  letterSpacing: 1, textTransform: 'uppercase',
+                  background: 'white', padding: '8px 16px', borderRadius: 999,
+                  border: '1px solid rgba(194,65,12,0.15)',
+                }}>
+                  {eventDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                </div>
+              </div>
+            : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: 32, opacity: 0.3 }}>📅</span>
+              </div>
         }
+        {/* Date badge over image (always shown when there's an image, for at-a-glance date) */}
+        {imageUrl && eventDate && (
+          <div style={{
+            position: 'absolute', top: 8, right: 8,
+            background: 'white', borderRadius: 8,
+            padding: '4px 0', minWidth: 44,
+            textAlign: 'center',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+          }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: colors.brand, letterSpacing: 0.5, textTransform: 'uppercase', lineHeight: 1.2 }}>
+              {eventDate.toLocaleDateString('en-US', { month: 'short' })}
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#1C2B3A', lineHeight: 1 }}>
+              {eventDate.getDate()}
+            </div>
+          </div>
+        )}
         {/* Mosque name top-left */}
         {(event.event_host || event.internal_notes) && (
           <div style={{ position: 'absolute', top: 8, left: 8, background: '#E8860A', borderRadius: 6, padding: '3px 8px', fontSize: 10, fontWeight: 700, color: 'white' }}>

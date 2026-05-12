@@ -65,6 +65,7 @@ export default function EventsMap() {
         .not('display_lat', 'is', null)
         .order('event_date')
       const filtered = (data || []).filter(e => !/jumu.{0,3}ah|jummah|jumu|friday prayer/i.test(e.name))
+      console.log('[EventsMap] loaded events:', filtered.length, 'from', data?.length || 0, 'raw')
       setEvents(filtered)
     }
     load()
@@ -100,6 +101,9 @@ export default function EventsMap() {
       gestureHandling: 'greedy',
       disableDefaultUI: true,
       zoomControl: true,
+      zoomControlOptions: {
+        position: window.google.maps.ControlPosition.RIGHT_TOP,
+      },
       styles: [
         { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] }
       ]
@@ -152,7 +156,14 @@ export default function EventsMap() {
             anchor: new window.google.maps.Point(12, 24),
           }
         })
-        marker.addListener('click', () => setSelectedEvent(event))
+        marker.addListener('click', () => {
+          // Pan to marker but offset upward so the bottom popup card doesn't cover it
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.panTo({ lat, lng })
+            mapInstanceRef.current.panBy(0, 80)  // shift view down so pin sits higher in viewport
+          }
+          setSelectedEvent(event)
+        })
         mapInstanceRef.current._markers.push(marker)
       })
     })
@@ -185,17 +196,18 @@ export default function EventsMap() {
       <div style={{ flex: 1, position: 'relative' }}>
         <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
 
-        {/* Event count */}
-        <div style={{ position: 'absolute', top: 10, right: 10, background: 'white', borderRadius: 20, padding: '5px 12px', fontSize: 12, fontWeight: 600, color: colors.textPrimary, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
-          {getFilteredEvents().length} events
+        {/* Event count — top right, away from any other overlays */}
+        <div style={{ position: 'absolute', top: 10, left: 10, background: 'white', borderRadius: 20, padding: '5px 12px', fontSize: 12, fontWeight: 600, color: colors.textPrimary, boxShadow: '0 2px 8px rgba(0,0,0,0.15)', zIndex: 5 }}>
+          {getFilteredEvents().length} {getFilteredEvents().length === 1 ? 'event' : 'events'}
         </div>
 
-        {/* Selected event popup */}
+        {/* Selected event popup — lifted above BottomNav (~70px) */}
         {selectedEvent && (
           <div style={{
-            position: 'absolute', bottom: 16, left: 16, right: 16,
+            position: 'absolute', bottom: 80, left: 12, right: 12,
             background: 'white', borderRadius: 16, padding: 14,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+            zIndex: 10,
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
               <div style={{ flex: 1 }}>

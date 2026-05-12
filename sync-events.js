@@ -252,8 +252,12 @@ async function syncFeed(feed) {
       category_id: EVENTS_CATEGORY_ID,
       name: event.summary,
       description: event.description,
+      // Write to both old (location_address) and new (address/metro) columns until
+      // the rename is fully migrated.
       location_address: event.location,
+      address: event.location,
       location_area: feed.area,
+      metro: feed.area,
       event_date: event.dtstart ? event.dtstart.substring(0, 10) : null,
       event_time: event.dtstart ? event.dtstart.substring(11, 16) : null,
       event_end_time: event.dtend ? event.dtend.substring(11, 16) : null,
@@ -303,10 +307,11 @@ async function backfill() {
       updates.event_audience = audiences
     }
 
-    // Geocode if missing coordinates
-    if (!event.display_lat && event.location_address) {
+    // Geocode if missing coordinates — check both new and old column names
+    const eventAddress = event.address || event.location_address
+    if (!event.display_lat && eventAddress) {
       process.stdout.write(`  📍 Geocoding "${event.name.substring(0, 35)}"... `)
-      const coords = await geocodeAddress(event.location_address)
+      const coords = await geocodeAddress(eventAddress)
       if (coords.lat) {
         updates.display_lat = coords.lat
         updates.display_lng = coords.lng

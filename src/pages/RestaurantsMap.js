@@ -104,11 +104,16 @@ export default function RestaurantsMap() {
   const [activeRecId, setActiveRecId] = useState(null)
   // "Search nearby" location — if set, map centers there
   const [nearbyLocation, setNearbyLocation] = useState(null)
+  // After search picks a location, show "Traveling here? Food on the way" hint
+  const [showSearchHint, setShowSearchHint] = useState(false)
+  const hintTimerRef = useRef(null)
   // "On the way home" mode — when active, fetch route and filter restaurants to corridor
   const [routeMode, setRouteMode] = useState(false)
   const [routeData, setRouteData] = useState(null)  // { path, duration_min, distance_mi }
   const [routeLoading, setRouteLoading] = useState(false)
   const [routePanelOpen, setRoutePanelOpen] = useState(false)
+  // Optional pre-filled destination passed when opening the panel from the post-search hint
+  const [routePanelDest, setRoutePanelDest] = useState(null)
   // When user clicks Find, hold the alternatives here until they pick one
   const [routeOptions, setRouteOptions] = useState(null)  // array | null
   // How far off-route to include restaurants (miles)
@@ -201,15 +206,21 @@ export default function RestaurantsMap() {
     setNearbyLocation({ lat, lng, name })
     if (mapInstanceRef.current) {
       mapInstanceRef.current.panTo({ lat, lng })
-      mapInstanceRef.current.setZoom(13)
+      mapInstanceRef.current.setZoom(14)
     }
+    // Show the "traveling here?" hint, auto-dismiss after 8s if user ignores
+    setShowSearchHint(true)
+    if (hintTimerRef.current) clearTimeout(hintTimerRef.current)
+    hintTimerRef.current = setTimeout(() => setShowSearchHint(false), 8000)
   }, [])
   const handleNearbyClear = useCallback(() => {
     setNearbyLocation(null)
+    setShowSearchHint(false)
   }, [])
 
   // "On the way" button: if route is active, clear it. Otherwise open the planner panel.
   const handleRouteButton = useCallback(() => {
+    setShowSearchHint(false)  // dismiss hint if showing
     if (routeMode) {
       setRouteMode(false)
       setRouteData(null)
@@ -230,6 +241,7 @@ export default function RestaurantsMap() {
   // Called by RoutePlannerPanel when user picks origin + destination + clicks Find
   const handleRoutePlan = useCallback(async ({ origin, destination }) => {
     setRoutePanelOpen(false)
+    setRoutePanelDest(null)
     setRouteLoading(true)
     const routes = await getRoute(
       { lat: origin.lat, lng: origin.lng },
@@ -420,6 +432,10 @@ export default function RestaurantsMap() {
           0% { transform: scale(0.6); opacity: 0.9; }
           100% { transform: scale(1.6); opacity: 0; }
         }
+        @keyframes slideDown {
+          from { transform: translateY(-12px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
       `
       document.head.appendChild(style)
     }
@@ -591,6 +607,7 @@ export default function RestaurantsMap() {
           prev.pin.style.width = '14px'
           prev.pin.style.height = '14px'
           prev.pin.style.borderWidth = '1.5px'
+          prev.pin.style.boxShadow = '0 1px 3px rgba(0,0,0,0.3)'
           prev.marker.zIndex = 1
         }
       }
@@ -606,18 +623,21 @@ export default function RestaurantsMap() {
         prev.pin.style.width = '14px'
         prev.pin.style.height = '14px'
         prev.pin.style.borderWidth = '1.5px'
+        prev.pin.style.boxShadow = '0 1px 3px rgba(0,0,0,0.3)'
         prev.marker.zIndex = 1
       }
     }
 
-    // Highlight the new active pin
+    // Highlight the new active pin — bigger + halo glow in brand orange
+    // (Industry standard: blue is reserved for 'you are here'. Active items get scale + glow.)
     if (activeRecId) {
       const curr = store.get(activeRecId)
       if (curr?.pin) {
-        curr.pin.style.background = '#0288D1'
+        curr.pin.style.background = colors.brand
         curr.pin.style.width = '20px'
         curr.pin.style.height = '20px'
         curr.pin.style.borderWidth = '2.5px'
+        curr.pin.style.boxShadow = '0 0 0 4px rgba(194,65,12,0.25), 0 0 16px rgba(194,65,12,0.6), 0 1px 3px rgba(0,0,0,0.3)'
         curr.marker.zIndex = 9000
       }
     }
@@ -723,7 +743,7 @@ export default function RestaurantsMap() {
               opacity: routeLoading ? 0.7 : 1,
             }}
           >
-            🚗 {routeLoading ? 'Loading…' : routeMode ? `On the way (${routeData?.duration_min || '?'} min)` : 'On the way'}
+            🚗 {routeLoading ? 'Loading…' : routeMode ? `Food on the way (${routeData?.duration_min || '?'} min)` : 'Food on the way'}
           </button>
         </div>
 
@@ -735,6 +755,41 @@ export default function RestaurantsMap() {
         </div>
       </div>
 
+      {/* Post-search hint: 'Are you traveling there?' shortcut to route mode */}
+      {showSearchHint && nearbyLocation && !routePanelOpen && !routeMode && !routeOptions && (
+        <div style={{
+          position: 'absolute', top: 195, left: 16, right: 16, zIndex: 9,
+          maxWidth: 400, margin: '0 auto',
+          background: 'white', borderRadius: 14, padding: '12px 14px',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+          border: `2px solid ${colors.brand}`,
+          display: 'flex', alignItems: 'center', gap: 10,
+          animation: 'slideDown 0.3s ease-out',
+        }}>
+          <span style={{ fontSize: 24 }}>🚗</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', marginBottom: 2 }}>
+              Traveling to {nearbyLocation.name?.split(',')[0] || 'there'}?
+            </div>
+            <div style={{ fontSize: 11, color: '#6A7A8A' }}>Find food on the way</div>
+          </div>
+          <button onClick={() => {
+            setShowSearchHint(false)
+            setRoutePanelDest(nearbyLocation)
+            setRoutePanelOpen(true)
+          }} style={{
+            background: colors.brand, color: 'white', border: 'none',
+            padding: '8px 12px', borderRadius: 10,
+            fontSize: 12, fontWeight: 700, cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}>Yes →</button>
+          <button onClick={() => setShowSearchHint(false)} style={{
+            background: 'none', border: 'none', fontSize: 18, color: '#9AA5B0',
+            cursor: 'pointer', padding: 0, lineHeight: 1,
+          }}>✕</button>
+        </div>
+      )}
+
       {/* Route planner panel — overlay below the header when open */}
       {routePanelOpen && (
         <div style={{
@@ -743,11 +798,12 @@ export default function RestaurantsMap() {
         }}>
           <RoutePlannerPanel
             userLocation={userLocation}
-            initialOrigin={nearbyLocation ? { ...nearbyLocation, kind: 'search' } : null}
+            initialOrigin={routePanelDest ? null : (nearbyLocation ? { ...nearbyLocation, kind: 'search' } : null)}
+            initialDestination={routePanelDest}
             corridorMiles={corridorMiles}
             onCorridorChange={setCorridorMiles}
             onPlan={handleRoutePlan}
-            onClose={() => setRoutePanelOpen(false)}
+            onClose={() => { setRoutePanelOpen(false); setRoutePanelDest(null) }}
           />
         </div>
       )}

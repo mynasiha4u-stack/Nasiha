@@ -8,14 +8,15 @@ import { getPlaces, savePlace, deletePlace } from '../utils/places'
  * Props:
  *   - userLocation: { lat, lng } | null
  *   - initialOrigin: { lat, lng, name } | null
+ *   - initialDestination: { lat, lng, name } | null
  *   - corridorMiles, onCorridorChange
  *   - onPlan({ origin, destination })
  *   - onClose()
  */
-export default function RoutePlannerPanel({ userLocation, initialOrigin, corridorMiles = 2, onCorridorChange, onPlan, onClose }) {
+export default function RoutePlannerPanel({ userLocation, initialOrigin, initialDestination, corridorMiles = 2, onCorridorChange, onPlan, onClose }) {
   const [places, setPlaces] = useState(getPlaces())
   const [origin, setOrigin] = useState(initialOrigin || (userLocation ? { ...userLocation, name: 'My Location', kind: 'gps' } : null))
-  const [destination, setDestination] = useState(null)
+  const [destination, setDestination] = useState(initialDestination || null)
 
   // 'chip' = showing chips; 'search' = showing autocomplete input
   const [originMode, setOriginMode] = useState('chip')

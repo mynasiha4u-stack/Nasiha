@@ -286,19 +286,25 @@ function NewsletterStrip() {
   const [email, setEmail] = useState('')
   const [done, setDone] = useState(false)
   return (
-    <div style={{ background: headerGradient, borderRadius: 16, padding: 16, marginBottom: 16 }}>
+    <div style={{
+      background: 'linear-gradient(135deg, #1C2B3A 0%, #2D4458 100%)',
+      borderRadius: 16, padding: 18, marginBottom: 16,
+      boxShadow: '0 4px 16px rgba(28,43,58,0.15)',
+    }}>
       {done ? (
-        <div style={{ textAlign: 'center', color: 'white', fontSize: 14, fontWeight: 600, padding: '4px 0' }}>✅ You're in! Top events every week.</div>
+        <div style={{ textAlign: 'center', color: 'white', fontSize: 14, fontWeight: 700, padding: '4px 0' }}>✅ You're in. Top events coming Monday.</div>
       ) : (
         <>
-          <div style={{ fontSize: 14, fontWeight: 700, color: 'white', marginBottom: 4 }}>📬 Top events every week</div>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginBottom: 12 }}>The best Bay Area Muslim events, every week</div>
+          <div style={{ fontSize: 17, fontWeight: 800, color: 'white', marginBottom: 6, lineHeight: 1.25 }}>
+            Top 5 Muslim events — straight to your inbox
+          </div>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginBottom: 14 }}>Free, every Monday. No spam, just what's worth showing up for.</div>
           <div style={{ display: 'flex', gap: 8 }}>
             <input value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com"
-              style={{ flex: 1, borderRadius: 10, border: 'none', padding: '10px 12px', fontSize: 14, outline: 'none' }} />
+              style={{ flex: 1, borderRadius: 10, border: 'none', padding: '11px 12px', fontSize: 14, outline: 'none' }} />
             <button onClick={() => email && setDone(true)}
-              style={{ background: '#E8860A', border: 'none', borderRadius: 10, padding: '10px 16px', color: 'white', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
-              Subscribe
+              style={{ background: '#E8860A', border: 'none', borderRadius: 10, padding: '11px 18px', color: 'white', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>
+              Get them
             </button>
           </div>
         </>
@@ -464,7 +470,7 @@ export default function Events() {
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
       <div style={{ background: headerGradient, padding: '48px 20px 22px' }}>
         <button onClick={() => navigate('/')} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
-        <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1C2B3A', marginBottom: 2 }}>📅 Events</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1C2B3A', marginBottom: 2 }}>📅 Upcoming Events</h1>
         <p style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)' }}>{events.length} Bay Area Muslim events</p>
       </div>
 

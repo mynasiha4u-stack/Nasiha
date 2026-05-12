@@ -8,7 +8,7 @@ const CATEGORIES = [
   { icon: '🍽️', label: 'Restaurants',                  path: '/restaurants' },
   { icon: '🕌', label: 'Jummah Timings',               path: '/jummah' },
   { icon: '📅', label: 'Upcoming Events',              path: '/events' },
-  { icon: '🎉', label: 'Catering & Event Services',    path: '/event-planning' },
+  { icon: '💐', label: 'Catering & Event Services',    path: '/event-planning' },
   { icon: '👶', label: 'Childcare',                    path: '/childcare' },
   { icon: '👨‍🍳', label: 'Home Cooks',                  path: '/directory?cat=home-cooked-food' },
   { icon: '🏫', label: 'Full Time Islamic Schools',    path: '/full-time-islamic-schools' },
@@ -117,13 +117,14 @@ export default function Home() {
         <div style={{ display: 'flex', gap: 8, marginTop: 12, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
           {SUGGESTIONS.map(s => (
             <button key={s} style={{
-              background: 'rgba(255,255,255,0.15)',
-              border: '1px solid rgba(255,255,255,0.2)',
+              background: 'white',
+              border: '1px solid rgba(255,255,255,0.5)',
               borderRadius: radius.full,
               padding: '6px 14px',
-              fontSize: 12, fontWeight: 500,
-              color: 'rgba(255,255,255,0.9)',
+              fontSize: 12, fontWeight: 600,
+              color: colors.textPrimary,
               whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
             }}>{s}</button>
           ))}
         </div>

@@ -6,7 +6,7 @@ import { colors, headerGradient, card, radius } from '../theme'
 
 const CATEGORIES = [
   { icon: '👨‍🍳', label: 'Home Cooks',     path: '/directory?cat=home-cooked-food' },
-  { icon: '🕌', label: 'Jummah',          path: '/jummah' },
+  { icon: '🕌', label: 'Jummah Timings',  path: '/jummah' },
   { icon: '🎂', label: 'Desserts',        path: '/directory?cat=dessert-catering' },
   { icon: '👶', label: 'Childcare',       path: '/childcare' },
   { icon: '📅', label: 'Events',          path: '/events' },

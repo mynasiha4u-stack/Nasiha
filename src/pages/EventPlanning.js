@@ -74,6 +74,9 @@ function VendorCard({ item, onTap }) {
         {item.instagram && (
           <a href={item.instagram.startsWith('http') ? item.instagram : 'https://instagram.com/' + item.instagram.replace('@', '')} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ flex: 1, minWidth: 70, background: '#F7F3EE', borderRadius: 10, padding: '8px 0', fontSize: 12, fontWeight: 600, color: colors.textPrimary, textAlign: 'center', textDecoration: 'none' }}>📷 Instagram</a>
         )}
+        {!item.phone && !item.email && !item.website && !item.instagram && (
+          <div style={{ fontSize: 12, color: 'rgba(26,42,58,0.4)', fontStyle: 'italic', padding: '4px 0' }}>Tap for details</div>
+        )}
       </div>
     </div>
   )

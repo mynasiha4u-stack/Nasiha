@@ -6,10 +6,10 @@ import ListingDetail, { cleanText } from '../components/ListingDetail'
 import { colors, headerGradient, card } from '../theme'
 
 const GRADE_FILTERS = [
-  { key: 'prek',          label: 'Pre-K' },
-  { key: 'kindergarten',  label: 'Kindergarten' },
-  { key: 'grade-school',  label: 'Grade School (1–8)' },
-  { key: 'high-school',   label: 'High School (9–12)' },
+  { key: 'Pre-K',                       label: 'Pre-K' },
+  { key: 'Kindergarden',                label: 'Kindergarden' },
+  { key: 'Grade School (1st - 8th)',    label: 'Grade School (1–8)' },
+  { key: 'High School (9th - 12th)',    label: 'High School (9–12)' },
 ]
 
 function distanceMiles(lat1, lng1, lat2, lng2) {

@@ -164,10 +164,18 @@ function parseICal(text) {
     const summary = get('SUMMARY')
     const dtstart = get('DTSTART')
     const dtend = get('DTEND')
-    const location = get('LOCATION')
+    let location = get('LOCATION')
     const description = get('DESCRIPTION')
     const url = get('URL')
     const uid = get('UID')
+
+    // Fallback: many calendars (MCA etc) don't fill LOCATION but include
+    // "Where: <venue>" in the description. Try to extract it.
+    if (!location && description) {
+      const extracted = extractWhereFromDescription(description)
+      if (extracted) location = extracted
+    }
+
     if (!summary || !dtstart) continue
     if (summary.toLowerCase().includes('*canceled*')) continue
     if (summary.toLowerCase().includes('*cancelled*')) continue
@@ -194,6 +202,35 @@ function parseICal(text) {
     })
   }
   return events
+}
+
+// Pull "Where: ..." out of an iCal DESCRIPTION (often contains HTML and the
+// venue info isn't in LOCATION).
+// Returns the cleaned address text or null.
+function extractWhereFromDescription(desc) {
+  if (!desc) return null
+  // Normalize: strip HTML tags and decode common entities so the regex sees plain text
+  const plain = desc
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>\s*<p[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&[a-z]+;/g, ' ')
+
+  // Look for "Where:" or "Location:" at the start of a line
+  // Stop at next line break or next bold label (When:, Time:, Cost:, RSVP:, etc.)
+  const m = plain.match(/(?:^|\n)\s*(?:Where|Location|Venue|Address)\s*[:：]\s*([^\n]+?)(?:\n|$)/i)
+  if (!m) return null
+  let extracted = m[1].trim()
+
+  // Trim trailing junk that often follows on the same line
+  extracted = extracted.replace(/\s*\|\s*$/, '')
+  extracted = extracted.replace(/\s+(?:When|Time|Cost|Fee|RSVP|Register)\s*[:：].*$/i, '')
+
+  // Sanity: must have at least a couple words
+  if (extracted.length < 3 || extracted.length > 200) return null
+  return extracted
 }
 
 function makeSlug(title, date) {

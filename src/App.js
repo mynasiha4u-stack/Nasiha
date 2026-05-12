@@ -15,6 +15,7 @@ import Restaurants, { RestaurantDetail } from './pages/Restaurants'
 import RestaurantsMap from './pages/RestaurantsMap'
 import Schools, { SchoolDetail } from './pages/Schools'
 import SchoolsMap from './pages/SchoolsMap'
+import Lawyers, { LawyerDetail } from './pages/Lawyers'
 
 export default function App() {
   return (
@@ -38,6 +39,8 @@ export default function App() {
         <Route path="/full-time-islamic-schools" element={<Schools />} />
         <Route path="/full-time-islamic-schools/map" element={<SchoolsMap />} />
         <Route path="/full-time-islamic-schools/:slug" element={<SchoolDetail />} />
+        <Route path="/lawyers" element={<Lawyers />} />
+        <Route path="/lawyers/:slug" element={<LawyerDetail />} />
       </Routes>
     </BrowserRouter>
   )

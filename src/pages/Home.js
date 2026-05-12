@@ -11,7 +11,7 @@ const CATEGORIES = [
   { icon: '👶', label: 'Childcare',       path: '/childcare' },
   { icon: '📅', label: 'Events',          path: '/events' },
   { icon: '🏫', label: 'Full Time Islamic Schools',         path: '/full-time-islamic-schools' },
-  { icon: '⚖️', label: 'Lawyers',         path: '/directory?cat=lawyers' },
+  { icon: '⚖️', label: 'Lawyers',         path: '/lawyers' },
   { icon: '🍽️', label: 'Restaurants',     path: '/restaurants' },
 ]
 

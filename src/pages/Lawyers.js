@@ -11,6 +11,7 @@ const SPECIALTY_FILTERS = [
   { key: 'Family Law',                       label: 'Family Law' },
   { key: 'Estate Planning (Wills and Trusts)', label: 'Estate Planning' },
   { key: 'Personal Injury',                  label: 'Personal Injury' },
+  { key: 'Criminal Defense',                 label: 'Criminal Defense' },
   { key: 'Real Estate Law',                  label: 'Real Estate' },
 ]
 

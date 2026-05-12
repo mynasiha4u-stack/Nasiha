@@ -7,7 +7,7 @@ import { colors, headerGradient, card } from '../theme'
 
 const GRADE_FILTERS = [
   { key: 'Pre-K',                       label: 'Pre-K' },
-  { key: 'Kindergarden',                label: 'Kindergarden' },
+  { key: 'Kindergarten',                label: 'Kindergarten' },
   { key: 'Grade School (1st - 8th)',    label: 'Grade School (1–8)' },
   { key: 'High School (9th - 12th)',    label: 'High School (9–12)' },
 ]

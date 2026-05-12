@@ -87,12 +87,13 @@ export default function Schools() {
   const [gradeFilter, setGradeFilter] = useState(new Set())  // multi-select
   const [sortBy, setSortBy] = useState('nearest')
   const [userLocation, setUserLocation] = useState(null)
+  const [locationDenied, setLocationDenied] = useState(false)
 
   useEffect(() => {
-    if (!navigator.geolocation) { setSortBy('az'); return }
+    if (!navigator.geolocation) { setLocationDenied(true); setSortBy('az'); return }
     navigator.geolocation.getCurrentPosition(
       pos => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => setSortBy('az')
+      () => { setLocationDenied(true); setSortBy('az') }
     )
   }, [])
 
@@ -196,13 +197,37 @@ export default function Schools() {
           })}
         </div>
 
-        {/* List/Map toggle */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+        {/* Sort + List/Map toggle row — matches Childcare layout */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+          <div style={{ flex: 1, display: 'flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
+            {[
+              { key: 'nearest', label: '📍 Nearest' },
+              { key: 'az', label: 'A–Z' },
+            ].map(s => (
+              <button key={s.key} onClick={() => setSortBy(s.key)} disabled={s.key === 'nearest' && locationDenied} style={{
+                flex: 1, padding: '8px 0', borderRadius: 10, border: 'none',
+                cursor: s.key === 'nearest' && locationDenied ? 'not-allowed' : 'pointer',
+                fontSize: 12, fontWeight: 600,
+                background: sortBy === s.key ? colors.deep : 'transparent',
+                color: sortBy === s.key ? 'white' : s.key === 'nearest' && locationDenied ? 'rgba(26,42,58,0.25)' : 'rgba(26,42,58,0.5)',
+              }}>{s.label}</button>
+            ))}
+          </div>
           <div style={{ display: 'inline-flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
             <button style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: '#1C2B3A', color: 'white' }}>☰ List</button>
             <button onClick={() => navigate('/full-time-islamic-schools/map')} style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#3A4A5A' }}>🗺️ Map</button>
           </div>
         </div>
+
+        {locationDenied && (
+          <div style={{ background: '#fff8f0', border: '1px solid #e8a040', borderRadius: 12, padding: '12px 14px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 20 }}>📍</span>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: colors.textPrimary }}>Enable location for better results</div>
+              <div style={{ fontSize: 12, color: '#3A4A5A', marginTop: 2 }}>Sort schools by closest to you</div>
+            </div>
+          </div>
+        )}
 
         <div style={{ fontSize: 12, color: '#6A7A8A', marginBottom: 8, fontWeight: 500 }}>
           {sorted.length} {sorted.length === 1 ? 'result' : 'results'}

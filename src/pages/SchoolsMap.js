@@ -87,7 +87,8 @@ export default function SchoolsMap() {
       disableDefaultUI: true,
       zoomControl: true,
       zoomControlOptions: {
-        position: window.google.maps.ControlPosition.RIGHT_TOP,
+        // RIGHT_CENTER avoids overlap with the header at the top.
+        position: window.google.maps.ControlPosition.RIGHT_CENTER,
       },
     })
   }, [mapReady])

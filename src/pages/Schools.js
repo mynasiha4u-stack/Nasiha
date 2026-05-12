@@ -42,7 +42,7 @@ function SchoolCard({ item, onTap, userLocation }) {
             {(item.grades || []).map(g => {
               const def = GRADE_FILTERS.find(f => f.key === g)
               if (!def) return null
-              return <span key={g} style={{ background: '#F7F3EE', color: '#3A4A5A', fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5 }}>{def.label}</span>
+              return <span key={g} style={{ background: '#E0EAFD', color: '#1E3A8A', fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 5 }}>{def.label}</span>
             })}
           </div>
         </div>

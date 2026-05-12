@@ -1,0 +1,265 @@
+import { colors, headerGradient, radius } from '../theme'
+import React, { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
+import BottomNav from '../components/BottomNav'
+
+// Break a description into short paragraphs at natural sentence boundaries.
+// Combines very short sentences, splits long blocks every 1-2 sentences,
+// and breaks before transition phrases that usually start a new thought.
+function formatDescription(text, maxChars = null) {
+  if (!text) return []
+  let s = text.replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
+  if (maxChars && s.length > maxChars) s = s.substring(0, maxChars).replace(/\s\S*$/, '') + '…'
+
+  // Break before known transition starts (force a paragraph break)
+  const transitions = /(\s)(We offer|Our program|Located|Hours|Contact|Please|For more|Open|Currently|Our staff|We are|Tuition|Ages|We provide|We accept|Email|Call|Visit|Website|Cost|Pricing|Schedule|Daily)/g
+  s = s.replace(transitions, '$1\n$2')
+
+  // Split into sentences, then group into short paragraphs (max 2 sentences or ~140 chars per paragraph)
+  const paragraphs = []
+  s.split(/\n+/).forEach(block => {
+    const sentences = block.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [block]
+    let buf = ''
+    sentences.forEach(sent => {
+      const t = sent.trim()
+      if (!t) return
+      if (!buf) { buf = t; return }
+      if ((buf.length + t.length) < 140 && buf.split(/[.!?]/).length <= 2) {
+        buf += ' ' + t
+      } else {
+        paragraphs.push(buf)
+        buf = t
+      }
+    })
+    if (buf) paragraphs.push(buf)
+  })
+  return paragraphs.filter(p => p.trim().length > 0)
+}
+
+export default function SchoolsMap() {
+  const navigate = useNavigate()
+  const mapRef = useRef(null)
+  const mapInstanceRef = useRef(null)
+  const userMarkerRef = useRef(null)
+  const [items, setItems] = useState([])
+  const [selected, setSelected] = useState(null)
+  const [mapReady, setMapReady] = useState(false)
+  const [userLocation, setUserLocation] = useState(null)
+
+  useEffect(() => {
+    if (!navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(
+      pos => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {}
+    )
+  }, [])
+
+  useEffect(() => {
+    async function load() {
+      const { data: cat } = await supabase.from('categories').select('id').eq('slug', 'islamic-schools').single()
+      if (!cat) return
+      const { data } = await supabase.from('content').select('id,name,phone,website,email,whatsapp,instagram,facebook,address,metro,display_lat,display_lng,url_slug,description')
+        .eq('category_id', cat.id)
+        .eq('status', 'published')
+        .not('display_lat', 'is', null)
+      setItems(data || [])
+    }
+    load()
+
+    if (!window.google) {
+      const script = document.createElement('script')
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`
+      script.async = true
+      script.onload = () => setMapReady(true)
+      document.head.appendChild(script)
+    } else {
+      setMapReady(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || mapInstanceRef.current) return
+    mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
+      center: { lat: 37.5630, lng: -121.9760 },
+      zoom: 10,
+      gestureHandling: 'greedy',
+      disableDefaultUI: true,
+      zoomControl: true,
+      zoomControlOptions: {
+        position: window.google.maps.ControlPosition.RIGHT_TOP,
+      },
+    })
+  }, [mapReady])
+
+  useEffect(() => {
+    if (!mapInstanceRef.current || !window.google || !userLocation) return
+    if (userMarkerRef.current) userMarkerRef.current.setMap(null)
+    userMarkerRef.current = new window.google.maps.Marker({
+      position: { lat: userLocation.lat, lng: userLocation.lng },
+      map: mapInstanceRef.current,
+      icon: {
+        path: window.google.maps.SymbolPath.CIRCLE,
+        fillColor: '#1E88E5',
+        fillOpacity: 1,
+        strokeColor: 'white',
+        strokeWeight: 3,
+        scale: 9,
+      },
+      zIndex: 9999,
+      title: 'Your location',
+    })
+  }, [userLocation, mapReady])
+
+  const recenterToUser = () => {
+    if (!mapInstanceRef.current || !userLocation) return
+    mapInstanceRef.current.panTo({ lat: userLocation.lat, lng: userLocation.lng })
+    mapInstanceRef.current.setZoom(13)
+  }
+
+  useEffect(() => {
+    if (!mapInstanceRef.current || !window.google || !items.length) return
+    if (mapInstanceRef.current._markers) mapInstanceRef.current._markers.forEach(m => m.setMap(null))
+    mapInstanceRef.current._markers = []
+
+    items.forEach(item => {
+      if (!item.display_lat || !item.display_lng) return
+      const marker = new window.google.maps.Marker({
+        position: { lat: item.display_lat, lng: item.display_lng },
+        map: mapInstanceRef.current,
+        icon: {
+          path: 'M12 0C7.6 0 4 3.6 4 8c0 6.4 8 16 8 16s8-9.6 8-16C20 3.6 16.4 0 12 0z',
+          fillColor: colors.pinChildcare,
+          fillOpacity: 1,
+          strokeColor: 'white',
+          strokeWeight: 1.5,
+          scale: 1.4,
+          anchor: new window.google.maps.Point(12, 24),
+        }
+      })
+      marker.addListener('click', () => setSelected(item))
+      mapInstanceRef.current._markers.push(marker)
+    })
+  }, [items, mapReady])
+
+  return (
+    <div style={{ maxWidth: 430, margin: '0 auto', height: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      {/* Map fills full background */}
+      <div ref={mapRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
+
+      {/* Header — sunset gradient, translucent (85%), rounded lip */}
+      <div style={{
+        position: 'relative', zIndex: 4,
+        background: headerGradient,
+        opacity: 0.85,
+        padding: '48px 16px 18px',
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20,
+        boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
+        flexShrink: 0,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+          <button onClick={() => navigate('/schools')} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', background: 'rgba(255,255,255,0.85)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
+          <h1 style={{ fontSize: 20, fontWeight: 800, color: '#1C2B3A', margin: 0 }}>🏫 Islamic Schools</h1>
+          <div style={{ marginLeft: 'auto', fontSize: 12, color: '#3A4A5A', fontWeight: 600 }}>{items.length} schools</div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <div style={{ display: 'inline-flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
+            <button onClick={() => navigate('/schools')} style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#3A4A5A', whiteSpace: 'nowrap' }}>☰ List</button>
+            <button style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: '#1C2B3A', color: 'white', whiteSpace: 'nowrap' }}>🗺️ Map</button>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ flex: 1, position: 'relative', pointerEvents: 'none' }}>
+        {userLocation && !selected && (
+          <button onClick={recenterToUser} style={{
+            position: 'absolute', bottom: 20, right: 16, zIndex: 5,
+            background: 'white', border: '1px solid rgba(0,0,0,0.15)', borderRadius: 999,
+            padding: '10px 14px', fontSize: 13, fontWeight: 700, color: '#1C2B3A',
+            cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            pointerEvents: 'auto',
+          }}>Recenter</button>
+        )}
+
+        {selected && (
+          <>
+            {/* Backdrop */}
+            <div onClick={() => setSelected(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', pointerEvents: 'auto' }} />
+            {/* Bottom sheet card — auto-fits content */}
+            <div style={{
+              position: 'absolute', bottom: 0, left: 0, right: 0,
+              background: 'white', borderRadius: '20px 20px 0 0',
+              padding: '0 0 24px',
+              boxShadow: '0 -4px 30px rgba(0,0,0,0.15)',
+              maxHeight: '75vh', overflowY: 'auto',
+              pointerEvents: 'auto',
+            }}>
+              {/* Drag handle */}
+              <div style={{ width: 36, height: 4, background: 'rgba(0,0,0,0.12)', borderRadius: 2, margin: '12px auto 16px' }} />
+
+              <div style={{ padding: '0 16px' }}>
+                {/* Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                  <div style={{ flex: 1, paddingRight: 8 }}>
+                    <div style={{ fontSize: 17, fontWeight: 800, color: colors.textPrimary, marginBottom: 3, lineHeight: 1.3 }}>{selected.name}</div>
+                    {selected.address && <div style={{ fontSize: 12, color: '#3A4A5A' }}>📍 {selected.address}</div>}
+                    {!selected.address && selected.metro && <div style={{ fontSize: 12, color: '#3A4A5A' }}>📍 {selected.metro}</div>}
+                  </div>
+                  <button onClick={() => setSelected(null)} style={{ background: '#F7F3EE', border: 'none', borderRadius: 20, width: 28, height: 28, fontSize: 14, color: '#6A7A8A', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>×</button>
+                </div>
+
+                {/* Description — formatted with line breaks, capped at 200 chars */}
+                {selected.description && (
+                  <div style={{ fontSize: 13, color: colors.textPrimary, lineHeight: 1.7, marginBottom: 14, background: '#F7F3EE', borderRadius: 10, padding: '10px 12px' }}>
+                    {formatDescription(selected.description, 200).map((p, i) => (
+                      <p key={i} style={{ margin: i === 0 ? 0 : '8px 0 0' }}>{p}</p>
+                    ))}
+                  </div>
+                )}
+
+                {/* Primary action row: Directions + Call */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                  {(selected.display_lat || selected.address) && (
+                    <a
+                      href={selected.display_lat && selected.display_lng
+                        ? `https://www.google.com/maps/dir/?api=1&destination=${selected.display_lat},${selected.display_lng}`
+                        : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(selected.address)}`}
+                      target="_blank" rel="noreferrer"
+                      style={{ flex: 1, background: colors.brand, color: 'white', borderRadius: 12, padding: '12px 0', fontSize: 13, fontWeight: 700, textDecoration: 'none', textAlign: 'center' }}>
+                      Directions
+                    </a>
+                  )}
+                  {selected.phone && (
+                    <a href={`tel:${selected.phone}`} style={{ flex: 1, background: colors.pinChildcare, color: 'white', borderRadius: 12, padding: '12px 0', fontSize: 13, fontWeight: 700, textDecoration: 'none', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>📞 Call</a>
+                  )}
+                </div>
+
+                {/* Secondary: full details */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                  <button onClick={() => navigate(`/schools/${selected.url_slug}`)} style={{ flex: 1, background: colors.deep, color: 'white', border: 'none', borderRadius: 12, padding: '12px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>View Full Details</button>
+                </div>
+
+                {/* Extra contact row */}
+                {(selected.website || selected.email || selected.whatsapp) && (
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {selected.website && (
+                      <a href={selected.website} target="_blank" rel="noreferrer" style={{ flex: 1, background: '#F7F3EE', borderRadius: 12, padding: '10px 0', fontSize: 12, fontWeight: 600, color: colors.textPrimary, textDecoration: 'none', textAlign: 'center' }}>🌐 Website</a>
+                    )}
+                    {selected.email && (
+                      <a href={`mailto:${selected.email}`} style={{ flex: 1, background: '#F7F3EE', borderRadius: 12, padding: '10px 0', fontSize: 12, fontWeight: 600, color: colors.textPrimary, textDecoration: 'none', textAlign: 'center' }}>✉️ Email</a>
+                    )}
+                    {selected.whatsapp && (
+                      <a href={`https://wa.me/${selected.whatsapp.replace(/\D/g,'')}`} target="_blank" rel="noreferrer" style={{ flex: 1, background: '#F7F3EE', borderRadius: 12, padding: '10px 0', fontSize: 12, fontWeight: 600, color: colors.textPrimary, textDecoration: 'none', textAlign: 'center' }}>💬 WhatsApp</a>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+      <BottomNav />
+    </div>
+  )
+}

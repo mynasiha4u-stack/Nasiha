@@ -109,6 +109,8 @@ export default function RestaurantsMap() {
   const [routeData, setRouteData] = useState(null)  // { path, duration_min, distance_mi }
   const [routeLoading, setRouteLoading] = useState(false)
   const [routePanelOpen, setRoutePanelOpen] = useState(false)
+  // When user clicks Find, hold the alternatives here until they pick one
+  const [routeOptions, setRouteOptions] = useState(null)  // array | null
   // How far off-route to include restaurants (miles)
   const [corridorMiles, setCorridorMiles] = useState(2)
   // Origin + destination kept around so we can compute detour time per pin click
@@ -211,6 +213,7 @@ export default function RestaurantsMap() {
     if (routeMode) {
       setRouteMode(false)
       setRouteData(null)
+      setRouteOptions(null)
       if (routePolylineRef.current) {
         routePolylineRef.current.setMap(null)
         routePolylineRef.current = null
@@ -228,18 +231,31 @@ export default function RestaurantsMap() {
   const handleRoutePlan = useCallback(async ({ origin, destination }) => {
     setRoutePanelOpen(false)
     setRouteLoading(true)
-    const route = await getRoute(
+    const routes = await getRoute(
       { lat: origin.lat, lng: origin.lng },
       { lat: destination.lat, lng: destination.lng }
     )
     setRouteLoading(false)
-    if (!route) {
+    if (!routes || routes.length === 0) {
       alert('Could not load route. Please try again.')
       return
     }
-    setRouteData(route)
     setRouteOrigin(origin)
     setRouteDestination(destination)
+    if (routes.length === 1) {
+      // Only one option — apply directly
+      setRouteData(routes[0])
+      setRouteMode(true)
+    } else {
+      // Show picker
+      setRouteOptions(routes)
+    }
+  }, [])
+
+  // User picks one of the routes from the picker
+  const handleRouteChoice = useCallback((route) => {
+    setRouteData(route)
+    setRouteOptions(null)
     setRouteMode(true)
   }, [])
 
@@ -517,6 +533,10 @@ export default function RestaurantsMap() {
         if (!infoWindowRef.current) return
         // Read current item from store so it reflects latest detour_miles
         const current = store.get(r.id)?.item || r
+        // Pan the map so the pin is visible (especially helpful when clicking near edges)
+        if (current.display_lat && current.display_lng && mapInstanceRef.current) {
+          mapInstanceRef.current.panTo({ lat: current.display_lat, lng: current.display_lng })
+        }
         const initialHtml = buildInfoHtml(current, userLocation, current.detour_miles, null /* loading time */)
         infoWindowRef.current.setContent(initialHtml)
         infoWindowRef.current.open({ anchor: marker, map: mapInstanceRef.current })
@@ -729,6 +749,59 @@ export default function RestaurantsMap() {
             onPlan={handleRoutePlan}
             onClose={() => setRoutePanelOpen(false)}
           />
+        </div>
+      )}
+
+      {/* Route picker — when multiple routes are available */}
+      {routeOptions && (
+        <div style={{
+          position: 'absolute', top: 200, left: 16, right: 16, zIndex: 10,
+          maxWidth: 400, margin: '0 auto',
+        }}>
+          <div style={{
+            background: 'white', borderRadius: 14, padding: 14,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+            border: '1px solid rgba(0,0,0,0.08)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
+              <span style={{ fontSize: 14, fontWeight: 800, color: '#1C2B3A', flex: 1 }}>🛣️ Pick your route</span>
+              <button onClick={() => setRouteOptions(null)} style={{
+                background: 'none', border: 'none', fontSize: 18, color: '#6A7A8A',
+                cursor: 'pointer', padding: 0, lineHeight: 1,
+              }}>✕</button>
+            </div>
+            <div style={{ fontSize: 11, color: '#6A7A8A', marginBottom: 10 }}>
+              Choose which route to find halal stops along
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {routeOptions.map((r, i) => (
+                <button key={r.id} onClick={() => handleRouteChoice(r)} style={{
+                  background: i === 0 ? '#FFF8F3' : 'white',
+                  border: i === 0 ? `2px solid ${colors.brand}` : '1px solid rgba(0,0,0,0.15)',
+                  borderRadius: 10, padding: '12px 14px',
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  cursor: 'pointer', textAlign: 'left',
+                }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: 8,
+                    background: i === 0 ? colors.brand : '#F7F3EE',
+                    color: i === 0 ? 'white' : '#3A4A5A',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 14, fontWeight: 800, flexShrink: 0,
+                  }}>{i + 1}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', marginBottom: 2 }}>
+                      via {r.summary}
+                      {i === 0 && <span style={{ fontSize: 10, fontWeight: 700, color: colors.brand, marginLeft: 6 }}>FASTEST</span>}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#6A7A8A' }}>
+                      {r.duration_min} min · {r.distance_mi?.toFixed(1)} mi
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 

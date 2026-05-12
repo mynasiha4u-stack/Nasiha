@@ -147,69 +147,73 @@ export default function RoutePlannerPanel({ userLocation, initialOrigin, corrido
       </div>
 
       {/* FROM */}
-      <FieldRow
-        label="FROM"
-        mode={originMode}
-        chipContent={
-          <>
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: '#6A7A8A', marginBottom: 6, letterSpacing: 0.5 }}>FROM</div>
+        {originMode === 'search' ? (
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <input ref={originInputRef} type="text" placeholder="Address, city, place..." autoFocus style={inputStyle} />
+            <button onClick={() => setOriginMode('chip')} style={cancelStyle}>cancel</button>
+          </div>
+        ) : origin ? (
+          <SelectedPill
+            icon={origin.kind === 'gps' ? '📍' : origin.kind === 'saved' && origin.placeId === 'home' ? '🏠' : '📍'}
+            name={origin.name}
+            onChange={() => {
+              setOrigin(null)
+              setOriginMode('chip')
+            }}
+          />
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             <Chip
-              active={origin?.kind === 'gps'}
               disabled={!userLocation}
               onClick={() => setOrigin(userLocation ? { ...userLocation, name: 'My Location', kind: 'gps' } : null)}
             >📍 My Location</Chip>
             {sortedPlaces.map(p => (
               <Chip
                 key={p.id}
-                active={origin?.placeId === p.id}
                 onClick={() => pickSavedAsOrigin(p)}
                 onLongPress={() => setEditingPlace(p)}
               >{p.id === 'home' ? '🏠' : '📍'} {p.label}</Chip>
             ))}
-            <Chip
-              active={origin?.kind === 'search'}
-              onClick={() => { setOriginMode('search'); setTimeout(() => originInputRef.current?.focus(), 50) }}
-            >🔍 Other</Chip>
-          </>
-        }
-        searchContent={
-          <>
-            <input ref={originInputRef} type="text" placeholder="Address, city, place..." autoFocus style={inputStyle} />
-            <button onClick={() => setOriginMode('chip')} style={cancelStyle}>cancel</button>
-          </>
-        }
-        subline={origin && originMode === 'chip' && origin.kind !== 'gps' ? truncate(origin.name, 40) : null}
-      />
+            <Chip onClick={() => { setOriginMode('search'); setTimeout(() => originInputRef.current?.focus(), 50) }}>🔍 Other</Chip>
+          </div>
+        )}
+      </div>
 
       {/* TO */}
-      <FieldRow
-        label="TO"
-        mode={destMode}
-        chipContent={
-          <>
-            {sortedPlaces.map(p => (
-              <Chip
-                key={p.id}
-                active={destination?.placeId === p.id}
-                onClick={() => pickSavedAsDest(p)}
-                onLongPress={() => setEditingPlace(p)}
-              >{p.id === 'home' ? '🏠' : '📍'} {p.label}</Chip>
-            ))}
-            <Chip
-              active={destination && !destination.placeId}
-              onClick={() => { setDestMode('search'); setTimeout(() => destInputRef.current?.focus(), 50) }}
-            >🔍 {destination && !destination.placeId ? truncate(destination.name, 16) : 'Other'}</Chip>
-          </>
-        }
-        searchContent={
-          <>
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: '#6A7A8A', marginBottom: 6, letterSpacing: 0.5 }}>TO</div>
+        {destMode === 'search' ? (
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <input ref={destInputRef} type="text" placeholder="Where are you going?" autoFocus style={inputStyle} />
             {sortedPlaces.length > 0 && (
               <button onClick={() => setDestMode('chip')} style={cancelStyle}>cancel</button>
             )}
-          </>
-        }
-        subline={destination && destMode === 'chip' && !destination.placeId ? truncate(destination.name, 40) : null}
-      />
+          </div>
+        ) : destination ? (
+          <SelectedPill
+            icon={destination.placeId === 'home' ? '🏠' : '📍'}
+            name={destination.name}
+            onChange={() => {
+              setDestination(null)
+              setShowSaveAs(false)
+              setDestMode(sortedPlaces.length > 0 ? 'chip' : 'search')
+            }}
+          />
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            {sortedPlaces.map(p => (
+              <Chip
+                key={p.id}
+                onClick={() => pickSavedAsDest(p)}
+                onLongPress={() => setEditingPlace(p)}
+              >{p.id === 'home' ? '🏠' : '📍'} {p.label}</Chip>
+            ))}
+            <Chip onClick={() => { setDestMode('search'); setTimeout(() => destInputRef.current?.focus(), 50) }}>🔍 Other</Chip>
+          </div>
+        )}
+      </div>
 
       {/* Save-as offer — only after picking a fresh destination */}
       {showSaveAs && destination && (
@@ -293,6 +297,27 @@ export default function RoutePlannerPanel({ userLocation, initialOrigin, corrido
 }
 
 /* ---------- subcomponents & styles ---------- */
+
+function SelectedPill({ icon, name, onChange }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 10,
+      background: 'linear-gradient(135deg, #FFF8F3 0%, #FEF2E8 100%)',
+      border: `2px solid ${colors.brand}`,
+      borderRadius: 12,
+      padding: '10px 12px',
+    }}>
+      <span style={{ fontSize: 18 }}>{icon}</span>
+      <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: colors.brand, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+      <button onClick={onChange} style={{
+        background: 'white', border: '1px solid rgba(194,65,12,0.3)',
+        color: colors.brand, fontSize: 11, fontWeight: 700,
+        padding: '5px 10px', borderRadius: 999, cursor: 'pointer',
+        whiteSpace: 'nowrap',
+      }}>Change</button>
+    </div>
+  )
+}
 
 function FieldRow({ label, mode, chipContent, searchContent, subline }) {
   return (

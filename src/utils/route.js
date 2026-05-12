@@ -51,12 +51,13 @@ export function filterRestaurantsAlongRoute(restaurants, routePath, radiusMiles 
 }
 
 /**
- * Get a driving route from Google Directions API.
- * Returns { path: [{lat,lng}], duration_min, distance_mi } or null on failure.
+ * Get driving route(s) from Google Directions API.
+ * Returns an array of routes: [{ path, duration_min, distance_mi, summary }, ...]
+ * (Up to 3 alternatives when alternatives:true.)
  *
- * Uses the JavaScript SDK so we don't need backend; the API key auths the call.
+ * Returns null on failure, or single-route array if alternatives not requested.
  */
-export function getRoute(origin, destination) {
+export function getRoute(origin, destination, { alternatives = true } = {}) {
   return new Promise((resolve) => {
     if (!window.google?.maps?.DirectionsService) {
       console.warn('[getRoute] DirectionsService not loaded')
@@ -68,21 +69,26 @@ export function getRoute(origin, destination) {
         origin: { lat: origin.lat, lng: origin.lng },
         destination: { lat: destination.lat, lng: destination.lng },
         travelMode: 'DRIVING',
+        provideRouteAlternatives: alternatives,
       },
       (result, status) => {
         if (status !== 'OK' || !result.routes?.length) {
           console.warn('[getRoute] failed:', status)
           return resolve(null)
         }
-        const route = result.routes[0]
-        const leg = route.legs?.[0]
-        // overview_path is the array of LatLng points along the route
-        const path = (route.overview_path || []).map(p => ({ lat: p.lat(), lng: p.lng() }))
-        resolve({
-          path,
-          duration_min: leg ? Math.round(leg.duration.value / 60) : null,
-          distance_mi: leg ? leg.distance.value / 1609.34 : null,
+        const routes = result.routes.map((route, i) => {
+          const leg = route.legs?.[0]
+          const path = (route.overview_path || []).map(p => ({ lat: p.lat(), lng: p.lng() }))
+          return {
+            id: i,
+            path,
+            duration_min: leg ? Math.round(leg.duration.value / 60) : null,
+            distance_mi: leg ? leg.distance.value / 1609.34 : null,
+            // 'summary' is something like "I-280 N" or "El Camino Real"
+            summary: route.summary || `Route ${i + 1}`,
+          }
         })
+        resolve(routes)
       }
     )
   })

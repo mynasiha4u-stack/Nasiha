@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/AuthContext'
 import BottomNav from '../components/BottomNav'
 import { colors, headerGradient, card, radius } from '../theme'
 
@@ -73,8 +74,11 @@ export default function Home() {
           pointerEvents: 'none',
         }} />
 
-        {/* Location pill with live weather */}
-        <BayAreaWeather />
+        {/* Top row: weather pill (left), auth button (right) */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <BayAreaWeather />
+          <AuthButton />
+        </div>
 
         {/* Wordmark */}
         <div style={{ marginBottom: 6 }}>
@@ -263,6 +267,70 @@ export default function Home() {
 // --- Weather component ---
 // Fetches current Bay Area weather from Open-Meteo (free, no API key).
 // Shows: [emoji] [temp]° · Bay Area. Caches in sessionStorage for 30 min.
+// --- Auth button (top-right of home) ---
+// Shows 'Sign in' when logged out, user initial + menu when logged in.
+function AuthButton() {
+  const navigate = useNavigate()
+  const { user, profile, signOut } = useAuth()
+  const [open, setOpen] = React.useState(false)
+
+  if (!user) {
+    return (
+      <button onClick={() => navigate('/auth')} style={{
+        background: 'white',
+        border: 'none',
+        borderRadius: 999,
+        padding: '6px 14px',
+        fontSize: 12, fontWeight: 700,
+        color: colors.brand,
+        cursor: 'pointer',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+      }}>Sign in</button>
+    )
+  }
+
+  const initial = (profile?.display_name || user.email || '?').charAt(0).toUpperCase()
+  return (
+    <div style={{ position: 'relative' }}>
+      <button onClick={() => setOpen(o => !o)} style={{
+        width: 32, height: 32, borderRadius: '50%',
+        background: colors.brand, color: 'white',
+        border: 'none', cursor: 'pointer',
+        fontSize: 14, fontWeight: 800,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+      }}>{initial}</button>
+      {open && (
+        <>
+          <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 99 }} />
+          <div style={{
+            position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+            background: 'white', borderRadius: 12,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+            border: '1px solid rgba(0,0,0,0.08)',
+            minWidth: 180, zIndex: 100,
+            overflow: 'hidden',
+          }}>
+            <div style={{ padding: '12px 14px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A' }}>{profile?.display_name || user.email}</div>
+              <div style={{ fontSize: 11, color: '#6A7A8A', marginTop: 2 }}>{user.email}</div>
+            </div>
+            <button onClick={() => { setOpen(false); navigate('/my-listings') }} style={menuItemStyle}>My listings</button>
+            <button onClick={async () => { setOpen(false); await signOut(); navigate('/') }} style={{ ...menuItemStyle, color: '#9A3A3A' }}>Sign out</button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+const menuItemStyle = {
+  display: 'block', width: '100%', textAlign: 'left',
+  padding: '11px 14px', background: 'white', border: 'none',
+  fontSize: 13, fontWeight: 600, color: '#1C2B3A',
+  cursor: 'pointer', fontFamily: 'inherit',
+}
+
 function BayAreaWeather() {
   const [weather, setWeather] = React.useState(null)
 
@@ -314,7 +382,6 @@ function BayAreaWeather() {
       display: 'inline-flex', alignItems: 'center', gap: 6,
       background: 'rgba(255,255,255,0.2)',
       borderRadius: 999, padding: '5px 12px',
-      marginBottom: 16,
       backdropFilter: 'blur(8px)',
     }}>
       {weather ? (

@@ -166,7 +166,7 @@ export default function Schools() {
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
       <div style={{ background: headerGradient, padding: '48px 20px 22px' }}>
         <button onClick={() => navigate('/')} style={{ fontSize: 13, fontWeight: 700, color: colors.deep, marginBottom: 14, display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
-        <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1C2B3A', marginBottom: 2 }}>🏫 Islamic Schools</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1C2B3A', marginBottom: 2 }}>🏫 Full Time Islamic Schools</h1>
         <p style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)' }}>{items.length} schools in the Bay Area</p>
       </div>
 
@@ -200,7 +200,7 @@ export default function Schools() {
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
           <div style={{ display: 'inline-flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
             <button style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: '#1C2B3A', color: 'white' }}>☰ List</button>
-            <button onClick={() => navigate('/schools/map')} style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#3A4A5A' }}>🗺️ Map</button>
+            <button onClick={() => navigate('/full-time-islamic-schools/map')} style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#3A4A5A' }}>🗺️ Map</button>
           </div>
         </div>
 
@@ -212,7 +212,7 @@ export default function Schools() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {sorted.map(item => (
-            <SchoolCard key={item.id} item={item} userLocation={userLocation} onTap={() => item.url_slug && navigate(`/schools/${item.url_slug}`)} />
+            <SchoolCard key={item.id} item={item} userLocation={userLocation} onTap={() => item.url_slug && navigate(`/full-time-islamic-schools/${item.url_slug}`)} />
           ))}
         </div>
 
@@ -249,8 +249,8 @@ export function SchoolDetail() {
   if (!item) return (
     <div style={{ padding: 40, textAlign: 'center' }}>
       <p>School not found.</p>
-      <button onClick={() => navigate('/schools')}>← Back to Schools</button>
+      <button onClick={() => navigate('/full-time-islamic-schools')}>← Back to Schools</button>
     </div>
   )
-  return <ListingDetail item={item} backTo="/schools" backLabel="Schools" />
+  return <ListingDetail item={item} backTo="/full-time-islamic-schools" backLabel="Schools" />
 }

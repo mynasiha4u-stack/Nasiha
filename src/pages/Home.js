@@ -10,7 +10,7 @@ const CATEGORIES = [
   { icon: '🎂', label: 'Desserts',        path: '/directory?cat=dessert-catering' },
   { icon: '👶', label: 'Childcare',       path: '/childcare' },
   { icon: '📅', label: 'Events',          path: '/events' },
-  { icon: '🏫', label: 'Schools',         path: '/schools' },
+  { icon: '🏫', label: 'Full Time Islamic Schools',         path: '/full-time-islamic-schools' },
   { icon: '⚖️', label: 'Lawyers',         path: '/directory?cat=lawyers' },
   { icon: '🍽️', label: 'Restaurants',     path: '/restaurants' },
 ]

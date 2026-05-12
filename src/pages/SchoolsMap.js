@@ -159,13 +159,13 @@ export default function SchoolsMap() {
         flexShrink: 0,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-          <button onClick={() => navigate('/schools')} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', background: 'rgba(255,255,255,0.85)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
-          <h1 style={{ fontSize: 20, fontWeight: 800, color: '#1C2B3A', margin: 0 }}>🏫 Islamic Schools</h1>
+          <button onClick={() => navigate('/full-time-islamic-schools')} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', background: 'rgba(255,255,255,0.85)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
+          <h1 style={{ fontSize: 20, fontWeight: 800, color: '#1C2B3A', margin: 0 }}>🏫 Full Time Islamic Schools</h1>
           <div style={{ marginLeft: 'auto', fontSize: 12, color: '#3A4A5A', fontWeight: 600 }}>{items.length} schools</div>
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <div style={{ display: 'inline-flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
-            <button onClick={() => navigate('/schools')} style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#3A4A5A', whiteSpace: 'nowrap' }}>☰ List</button>
+            <button onClick={() => navigate('/full-time-islamic-schools')} style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#3A4A5A', whiteSpace: 'nowrap' }}>☰ List</button>
             <button style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: '#1C2B3A', color: 'white', whiteSpace: 'nowrap' }}>🗺️ Map</button>
           </div>
         </div>
@@ -237,7 +237,7 @@ export default function SchoolsMap() {
 
                 {/* Secondary: full details */}
                 <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-                  <button onClick={() => navigate(`/schools/${selected.url_slug}`)} style={{ flex: 1, background: colors.deep, color: 'white', border: 'none', borderRadius: 12, padding: '12px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>View Full Details</button>
+                  <button onClick={() => navigate(`/full-time-islamic-schools/${selected.url_slug}`)} style={{ flex: 1, background: colors.deep, color: 'white', border: 'none', borderRadius: 12, padding: '12px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>View Full Details</button>
                 </div>
 
                 {/* Extra contact row */}

@@ -35,9 +35,9 @@ export default function App() {
         <Route path="/restaurants" element={<Restaurants />} />
         <Route path="/restaurants/map" element={<RestaurantsMap />} />
         <Route path="/restaurants/:slug" element={<RestaurantDetail />} />
-        <Route path="/schools" element={<Schools />} />
-        <Route path="/schools/map" element={<SchoolsMap />} />
-        <Route path="/schools/:slug" element={<SchoolDetail />} />
+        <Route path="/full-time-islamic-schools" element={<Schools />} />
+        <Route path="/full-time-islamic-schools/map" element={<SchoolsMap />} />
+        <Route path="/full-time-islamic-schools/:slug" element={<SchoolDetail />} />
       </Routes>
     </BrowserRouter>
   )

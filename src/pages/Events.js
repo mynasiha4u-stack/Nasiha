@@ -125,68 +125,68 @@ function EventCard({ event, onTap }) {
       background: 'white', borderRadius: 16,
       border: '1px solid rgba(0,0,0,0.08)',
       overflow: 'hidden', marginBottom: 12, cursor: 'pointer',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
     }}>
-      <div style={{ position: 'relative', height: imageUrl ? 130 : 84, background: imageUrl ? '#f0edf8' : '#F7F3EE', overflow: 'hidden', borderBottom: imageUrl ? 'none' : '1px solid rgba(194,65,12,0.08)' }}>
+      {/* Top section: 130px tall — image OR cream placeholder. Same height either way. */}
+      <div style={{ position: 'relative', height: 130, background: imageUrl ? '#f0edf8' : '#F7F3EE', overflow: 'hidden' }}>
         {imageUrl
           ? <img src={imageUrl} alt={event.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          : eventDate
-            ? <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{
-                  fontSize: 11, fontWeight: 700, color: colors.brand,
-                  letterSpacing: 1, textTransform: 'uppercase',
-                  background: 'white', padding: '8px 16px', borderRadius: 999,
-                  border: '1px solid rgba(194,65,12,0.15)',
-                }}>
-                  {eventDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                </div>
-              </div>
-            : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: 32, opacity: 0.3 }}>📅</span>
-              </div>
+          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: 64, opacity: 0.18, lineHeight: 1 }}>📅</span>
+            </div>
         }
-        {/* Date badge over image (always shown when there's an image, for at-a-glance date) */}
-        {imageUrl && eventDate && (
-          <div style={{
-            position: 'absolute', top: 8, right: 8,
-            background: 'white', borderRadius: 8,
-            padding: '4px 0', minWidth: 44,
-            textAlign: 'center',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-          }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: colors.brand, letterSpacing: 0.5, textTransform: 'uppercase', lineHeight: 1.2 }}>
-              {eventDate.toLocaleDateString('en-US', { month: 'short' })}
-            </div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#1C2B3A', lineHeight: 1 }}>
-              {eventDate.getDate()}
-            </div>
-          </div>
-        )}
         {/* Mosque name top-left */}
         {(event.event_host || event.internal_notes) && (
           <div style={{ position: 'absolute', top: 8, left: 8, background: '#E8860A', borderRadius: 6, padding: '3px 8px', fontSize: 10, fontWeight: 700, color: 'white' }}>
             {event.event_host || event.internal_notes}
           </div>
         )}
-        {/* Type + audience badges bottom-left */}
-        <div style={{ position: 'absolute', bottom: 8, left: 8, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-          {types.map(t => <TypeBadge key={t} type={t} />)}
-          {audiences.filter(a => a !== 'General Public').map(a => <AudienceBadge key={a} audience={a} />)}
-        </div>
       </div>
-      <div style={{ padding: '12px 14px' }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary, marginBottom: 6, lineHeight: 1.3 }}>{event.name}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: colors.textPrimary }}>{formatDate(event.event_date)}</span>
-          {event.event_time && <>
-            <span style={{ fontSize: 10, color: 'rgba(26,42,58,0.3)' }}>·</span>
-            <span style={{ fontSize: 12, color: '#3A4A5A' }}>{formatTime(event.event_time)}</span>
-          </>}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          {(event.event_host || event.internal_notes) && (
-            <span style={{ fontSize: 11, fontWeight: 700, color: colors.textPrimary, background: '#f0f0f0', padding: '2px 7px', borderRadius: 5 }}>{event.event_host || event.internal_notes}</span>
+
+      {/* Bottom section: date block (always) + event details. Same layout regardless of image. */}
+      <div style={{ padding: 14, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+        {/* Date block — always present */}
+        {eventDate && (
+          <div style={{
+            background: 'white',
+            border: `1.5px solid ${colors.brand}`,
+            borderRadius: 10,
+            padding: '6px 0',
+            minWidth: 56,
+            textAlign: 'center',
+            flexShrink: 0,
+          }}>
+            <div style={{ fontSize: 10, fontWeight: 800, color: colors.brand, letterSpacing: 1, textTransform: 'uppercase', lineHeight: 1.3 }}>
+              {eventDate.toLocaleDateString('en-US', { month: 'short' })}
+            </div>
+            <div style={{ fontSize: 24, fontWeight: 800, color: '#1C2B3A', lineHeight: 1.05 }}>
+              {eventDate.getDate()}
+            </div>
+            <div style={{ fontSize: 9, fontWeight: 700, color: '#6A7A8A', letterSpacing: 0.5, textTransform: 'uppercase', lineHeight: 1.3 }}>
+              {eventDate.toLocaleDateString('en-US', { weekday: 'short' })}
+            </div>
+          </div>
+        )}
+
+        {/* Right column: name + time/venue + badges */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary, marginBottom: 6, lineHeight: 1.3 }}>{event.name}</div>
+          {event.event_time && (
+            <div style={{ fontSize: 12, color: '#3A4A5A', marginBottom: 3 }}>
+              🕐 {formatTime(event.event_time)}
+            </div>
           )}
-          <span style={{ fontSize: 11, color: '#6A7A8A' }}>{event.metro}</span>
+          {(event.event_host || event.address) && (
+            <div style={{ fontSize: 12, color: '#3A4A5A', marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              📍 {event.address || event.event_host}
+            </div>
+          )}
+          {(types.length > 0 || audiences.filter(a => a !== 'General Public').length > 0) && (
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+              {types.map(t => <TypeBadge key={t} type={t} />)}
+              {audiences.filter(a => a !== 'General Public').map(a => <AudienceBadge key={a} audience={a} />)}
+            </div>
+          )}
         </div>
       </div>
     </div>

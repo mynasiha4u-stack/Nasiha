@@ -26,6 +26,31 @@ export default function EventsMap() {
   const [events, setEvents] = useState([])
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [filter, setFilter] = useState('all') // all, weekend, week
+  const [mapReady, setMapReady] = useState(false)
+
+  // Load Google Maps script (if not already loaded by another map page)
+  useEffect(() => {
+    if (window.google?.maps) {
+      setMapReady(true)
+      return
+    }
+    const existing = document.querySelector('script[src*="maps.googleapis.com"]')
+    if (existing) {
+      // Already loading — wait for it
+      const check = setInterval(() => {
+        if (window.google?.maps) {
+          clearInterval(check)
+          setMapReady(true)
+        }
+      }, 100)
+      return () => clearInterval(check)
+    }
+    const script = document.createElement('script')
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}`
+    script.async = true
+    script.onload = () => setMapReady(true)
+    document.head.appendChild(script)
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -66,7 +91,7 @@ export default function EventsMap() {
   }
 
   useEffect(() => {
-    if (!mapRef.current || !window.google) return
+    if (!mapReady || !mapRef.current || !window.google) return
     if (mapInstanceRef.current) return
 
     mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
@@ -79,7 +104,7 @@ export default function EventsMap() {
         { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] }
       ]
     })
-  }, [events])
+  }, [mapReady])
 
   useEffect(() => {
     if (!mapInstanceRef.current || !window.google) return

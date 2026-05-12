@@ -7,7 +7,7 @@ import MapPage from './pages/Map'
 import MosqueDetail from './pages/MosqueDetail'
 import Events, { EventDetailPage } from './pages/Events'
 import Admin from './pages/Admin'
-import EventsMap from './pages/EventsMap'
+import EventPlanning, { EventVendorDetail } from './pages/EventPlanning'
 import Childcare, { ChildcareDetail } from './pages/Childcare'
 import ChildcareMap from './pages/ChildcareMap'
 import JummahMap from './pages/JummahMap'
@@ -16,7 +16,6 @@ import RestaurantsMap from './pages/RestaurantsMap'
 import Schools, { SchoolDetail } from './pages/Schools'
 import SchoolsMap from './pages/SchoolsMap'
 import Lawyers, { LawyerDetail } from './pages/Lawyers'
-import EventPlanning, { EventVendorDetail } from './pages/EventPlanning'
 
 export default function App() {
   return (
@@ -27,7 +26,6 @@ export default function App() {
         <Route path="/events" element={<Events />} />
         <Route path="/events/:slug" element={<EventDetailPage />} />
         <Route path="/admin" element={<Admin />} />
-        <Route path="/events/map" element={<EventsMap />} />
         <Route path="/childcare" element={<Childcare />} />
         <Route path="/childcare/map" element={<ChildcareMap />} />
         <Route path="/childcare/:slug" element={<ChildcareDetail />} />

@@ -445,6 +445,7 @@ export function EventDetailPage() {
 export default function Events() {
   const navigate = useNavigate()
   const [events, setEvents] = useState([])
+  const [mosques, setMosques] = useState([])  // for fallback coords by event_host
   const [loading, setLoading] = useState(true)
   const [showFilters, setShowFilters] = useState(null)
   const [thisWeekend, setThisWeekend] = useState(false)
@@ -453,6 +454,10 @@ export default function Events() {
   const [activeAudiences, setActiveAudiences] = useState([])
   const [activeMosques, setActiveMosques] = useState([])
   const [activeDate, setActiveDate] = useState(null)
+  // Near-me sorting
+  const [sortByNear, setSortByNear] = useState(false)
+  const [userLocation, setUserLocation] = useState(null)
+  const [locationDenied, setLocationDenied] = useState(false)
 
   useEffect(() => {
     const today = new Date().toISOString().substring(0, 10)
@@ -469,7 +474,74 @@ export default function Events() {
         setEvents(filtered)
         setLoading(false)
       })
+
+    // Also load mosques (for fallback coords by event_host name)
+    supabase.from('categories').select('id').eq('slug', 'mosques').single()
+      .then(({ data: cat }) => {
+        if (!cat) return
+        return supabase.from('content')
+          .select('name, display_lat, display_lng')
+          .eq('category_id', cat.id)
+          .eq('status', 'published')
+          .not('display_lat', 'is', null)
+      })
+      .then(res => { if (res?.data) setMosques(res.data) })
   }, [])
+
+  // Request browser location when user toggles Near me on
+  const handleNearMeToggle = () => {
+    if (sortByNear) {
+      setSortByNear(false)
+      return
+    }
+    if (userLocation) {
+      setSortByNear(true)
+      return
+    }
+    if (!navigator.geolocation) {
+      alert('Location not supported on this browser.')
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+        setSortByNear(true)
+      },
+      err => {
+        console.warn('Geolocation denied:', err)
+        setLocationDenied(true)
+      },
+      { timeout: 10000 }
+    )
+  }
+
+  // Distance helper (miles) — used to sort by Near me
+  const distMi = (lat1, lng1, lat2, lng2) => {
+    if (lat1 == null || lng1 == null || lat2 == null || lng2 == null) return Infinity
+    const R = 3958.8
+    const toRad = x => x * Math.PI / 180
+    const dLat = toRad(lat2 - lat1)
+    const dLng = toRad(lng2 - lng1)
+    const a = Math.sin(dLat/2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2) ** 2
+    return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  }
+
+  // Get effective coords for an event — falls back to host mosque if event has none
+  const eventCoords = (e) => {
+    if (e.display_lat != null && e.display_lng != null) return { lat: e.display_lat, lng: e.display_lng }
+    const host = e.event_host || e.internal_notes
+    if (!host) return null
+    // Try exact match first, then substring match (handles "MCA Santa Clara" → "MCA - Muslim Community Association (Santa Clara)")
+    const exactMatch = mosques.find(m => m.name === host)
+    if (exactMatch) return { lat: exactMatch.display_lat, lng: exactMatch.display_lng }
+    const hostLower = host.toLowerCase()
+    const fuzzy = mosques.find(m => {
+      const nameLower = m.name.toLowerCase()
+      return nameLower.includes(hostLower) || hostLower.split(' ').every(part => nameLower.includes(part.toLowerCase()))
+    })
+    if (fuzzy) return { lat: fuzzy.display_lat, lng: fuzzy.display_lng }
+    return null
+  }
 
   // Calculate this weekend dates
   const todayDate = new Date()
@@ -519,7 +591,7 @@ export default function Events() {
       <div style={{ padding: '16px 16px 0' }}>
         <NewsletterStrip />
 
-        {/* Top row: This Weekend + Map toggle */}
+        {/* Top row: This Weekend + Near Me toggle */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
           <button onClick={() => setThisWeekend(t => !t)} style={{
             padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
@@ -528,12 +600,19 @@ export default function Events() {
             border: '1px solid rgba(0,0,0,0.1)',
           }}>This Weekend</button>
           <div style={{ flex: 1 }} />
-          <button onClick={() => navigate('/events/map')} style={{
+          <button onClick={handleNearMeToggle} style={{
             padding: '7px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
-            background: 'white', color: colors.textPrimary, border: '1px solid rgba(0,0,0,0.1)',
+            background: sortByNear ? colors.brand : 'white',
+            color: sortByNear ? 'white' : colors.textPrimary,
+            border: sortByNear ? 'none' : '1px solid rgba(0,0,0,0.1)',
             display: 'flex', alignItems: 'center', gap: 5,
-          }}>🗺️ Map</button>
+          }}>📍 Near me</button>
         </div>
+        {locationDenied && (
+          <div style={{ fontSize: 11, color: '#9A3A3A', marginBottom: 8 }}>
+            Location access blocked. Enable in your browser settings to sort by distance.
+          </div>
+        )}
 
         {/* Mosque scrolling filter */}
         <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 8, paddingBottom: 2, scrollbarWidth: 'none' }}>
@@ -613,10 +692,38 @@ export default function Events() {
           <div style={{ textAlign: 'center', padding: '40px 0', color: '#6A7A8A' }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>📅</div>Loading events...
           </div>
-        ) : groups.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 0', color: '#6A7A8A' }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>📅</div>No events match your filters
           </div>
+        ) : sortByNear && userLocation ? (
+          // Distance-sorted flat list
+          <>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#3A4A5A', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+              Sorted by distance from your location
+            </div>
+            {[...filtered]
+              .map(e => {
+                const coords = eventCoords(e)
+                return { event: e, dist: coords ? distMi(userLocation.lat, userLocation.lng, coords.lat, coords.lng) : Infinity }
+              })
+              .sort((a, b) => a.dist - b.dist)
+              .map(({ event, dist }) => (
+                <div key={event.id} style={{ position: 'relative' }}>
+                  {isFinite(dist) && (
+                    <div style={{
+                      position: 'absolute', top: 8, right: 8, zIndex: 2,
+                      background: 'white', borderRadius: 999, padding: '3px 10px',
+                      fontSize: 11, fontWeight: 700, color: colors.brand,
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
+                    }}>
+                      {dist < 1 ? `${(dist * 5280 / 1000).toFixed(1)}k ft` : `${dist.toFixed(1)} mi`}
+                    </div>
+                  )}
+                  <EventCard event={event} onTap={() => navigate(`/events/${event.url_slug}`)} />
+                </div>
+              ))}
+          </>
         ) : groups.map(group => (
           <div key={group.label}>
             <div style={{ fontSize: 12, fontWeight: 700, color: '#3A4A5A', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, marginLeft: -16, marginRight: -16, padding: '8px 16px', position: 'sticky', top: 0, zIndex: 5, background: '#F7F3EE' }}>{group.label}</div>

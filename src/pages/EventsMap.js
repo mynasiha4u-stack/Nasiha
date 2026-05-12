@@ -28,18 +28,21 @@ export default function EventsMap() {
   const [filter, setFilter] = useState('all') // all, weekend, week
 
   useEffect(() => {
-    const today = new Date().toISOString().substring(0, 10)
-    supabase.from('content')
-      .select('id, name, event_date, event_time, event_host, address, display_lat, display_lng, url_slug, event_type, image_url')
-      .eq('category_id', 'd916a550-c316-40a9-9582-35836417b6cb')
-      .eq('status', 'published')
-      .gte('event_date', today)
-      .not('display_lat', 'is', null)
-      .order('event_date')
-      .then(({ data }) => {
-        const filtered = (data || []).filter(e => !/jumu.{0,3}ah|jummah|jumu|friday prayer/i.test(e.name))
-        setEvents(filtered)
-      })
+    async function load() {
+      const today = new Date().toISOString().substring(0, 10)
+      const { data: cat } = await supabase.from('categories').select('id').eq('slug', 'events').single()
+      if (!cat) return
+      const { data } = await supabase.from('content')
+        .select('id, name, event_date, event_time, event_host, address, display_lat, display_lng, url_slug, event_type, image_url')
+        .eq('category_id', cat.id)
+        .eq('status', 'published')
+        .gte('event_date', today)
+        .not('display_lat', 'is', null)
+        .order('event_date')
+      const filtered = (data || []).filter(e => !/jumu.{0,3}ah|jummah|jumu|friday prayer/i.test(e.name))
+      setEvents(filtered)
+    }
+    load()
   }, [])
 
   // Filter events based on time filter
@@ -89,25 +92,44 @@ export default function EventsMap() {
 
     const filtered = getFilteredEvents()
 
+    // Group events by exact coordinate so multiple events at the same mosque can be
+    // spread out in a small circle around the venue (otherwise they stack and only the
+    // top one is clickable).
+    const byPosition = new Map()
     filtered.forEach(event => {
       if (!event.display_lat || !event.display_lng) return
+      const key = `${event.display_lat.toFixed(5)},${event.display_lng.toFixed(5)}`
+      if (!byPosition.has(key)) byPosition.set(key, [])
+      byPosition.get(key).push(event)
+    })
 
-      const marker = new window.google.maps.Marker({
-        position: { lat: event.display_lat, lng: event.display_lng },
-        map: mapInstanceRef.current,
-        icon: {
-          path: 'M12 0C7.6 0 4 3.6 4 8c0 6.4 8 16 8 16s8-9.6 8-16C20 3.6 16.4 0 12 0z',
-          fillColor: '#e8943a',
-          fillOpacity: 1,
-          strokeColor: 'white',
-          strokeWeight: 1.5,
-          scale: 1.4,
-          anchor: new window.google.maps.Point(12, 24),
+    byPosition.forEach(group => {
+      group.forEach((event, i) => {
+        // Spread overlapping markers in a small circle (~50m radius for groups >1)
+        let lat = event.display_lat
+        let lng = event.display_lng
+        if (group.length > 1) {
+          const angle = (i / group.length) * 2 * Math.PI
+          const radius = 0.0006  // ~50m
+          lat += Math.cos(angle) * radius
+          lng += Math.sin(angle) * radius
         }
+        const marker = new window.google.maps.Marker({
+          position: { lat, lng },
+          map: mapInstanceRef.current,
+          icon: {
+            path: 'M12 0C7.6 0 4 3.6 4 8c0 6.4 8 16 8 16s8-9.6 8-16C20 3.6 16.4 0 12 0z',
+            fillColor: '#e8943a',
+            fillOpacity: 1,
+            strokeColor: 'white',
+            strokeWeight: 1.5,
+            scale: 1.4,
+            anchor: new window.google.maps.Point(12, 24),
+          }
+        })
+        marker.addListener('click', () => setSelectedEvent(event))
+        mapInstanceRef.current._markers.push(marker)
       })
-
-      marker.addListener('click', () => setSelectedEvent(event))
-      mapInstanceRef.current._markers.push(marker)
     })
   }, [events, filter])
 

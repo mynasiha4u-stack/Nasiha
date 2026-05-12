@@ -37,6 +37,13 @@ function formatDescription(text, maxChars = null) {
   return paragraphs.filter(p => p.trim().length > 0)
 }
 
+const GRADE_FILTERS = [
+  { key: 'Pre-K',                       label: 'Pre-K' },
+  { key: 'Kindergarten',                label: 'Kindergarten' },
+  { key: 'Grade School (1st - 8th)',    label: 'Grade School (1–8)' },
+  { key: 'High School (9th - 12th)',    label: 'High School (9–12)' },
+]
+
 export default function SchoolsMap() {
   const navigate = useNavigate()
   const mapRef = useRef(null)
@@ -46,6 +53,7 @@ export default function SchoolsMap() {
   const [selected, setSelected] = useState(null)
   const [mapReady, setMapReady] = useState(false)
   const [userLocation, setUserLocation] = useState(null)
+  const [gradeFilter, setGradeFilter] = useState(new Set())
 
   useEffect(() => {
     if (!navigator.geolocation) return
@@ -59,11 +67,28 @@ export default function SchoolsMap() {
     async function load() {
       const { data: cat } = await supabase.from('categories').select('id').eq('slug', 'islamic-schools').single()
       if (!cat) return
-      const { data } = await supabase.from('content').select('id,name,phone,website,email,whatsapp,instagram,facebook,address,metro,display_lat,display_lng,url_slug,description')
+      const { data: rows } = await supabase.from('content').select('id,name,phone,website,email,whatsapp,instagram,facebook,address,metro,display_lat,display_lng,url_slug,description')
         .eq('category_id', cat.id)
         .eq('status', 'published')
         .not('display_lat', 'is', null)
-      setItems(data || [])
+
+      // Fetch grade tags for filtering
+      const ids = (rows || []).map(r => r.id)
+      let attrs = []
+      if (ids.length > 0) {
+        const { data: aRows } = await supabase.from('attributes')
+          .select('content_id, attribute_value')
+          .in('content_id', ids)
+          .eq('attribute_name', 'grade')
+        attrs = aRows || []
+      }
+      const gradesById = new Map()
+      attrs.forEach(a => {
+        if (!gradesById.has(a.content_id)) gradesById.set(a.content_id, [])
+        gradesById.get(a.content_id).push(a.attribute_value)
+      })
+
+      setItems((rows || []).map(r => ({ ...r, grades: gradesById.get(r.id) || [] })))
     }
     load()
 
@@ -118,12 +143,25 @@ export default function SchoolsMap() {
     mapInstanceRef.current.setZoom(13)
   }
 
+  // Apply grade filter to items before rendering pins
+  const filteredItems = items.filter(item => {
+    if (gradeFilter.size === 0) return true
+    return (item.grades || []).some(g => gradeFilter.has(g))
+  })
+
+  const toggleGrade = (key) => {
+    const next = new Set(gradeFilter)
+    if (next.has(key)) next.delete(key)
+    else next.add(key)
+    setGradeFilter(next)
+  }
+
   useEffect(() => {
-    if (!mapInstanceRef.current || !window.google || !items.length) return
+    if (!mapInstanceRef.current || !window.google) return
     if (mapInstanceRef.current._markers) mapInstanceRef.current._markers.forEach(m => m.setMap(null))
     mapInstanceRef.current._markers = []
 
-    items.forEach(item => {
+    filteredItems.forEach(item => {
       if (!item.display_lat || !item.display_lng) return
       const marker = new window.google.maps.Marker({
         position: { lat: item.display_lat, lng: item.display_lng },
@@ -143,7 +181,7 @@ export default function SchoolsMap() {
       marker.addListener('click', () => setSelected(item))
       mapInstanceRef.current._markers.push(marker)
     })
-  }, [items, mapReady])
+  }, [filteredItems, mapReady])
 
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', height: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
@@ -164,13 +202,31 @@ export default function SchoolsMap() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
           <button onClick={() => navigate('/full-time-islamic-schools')} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', background: 'rgba(255,255,255,0.85)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
           <h1 style={{ fontSize: 20, fontWeight: 800, color: '#1C2B3A', margin: 0 }}>🏫 Full Time Islamic Schools</h1>
-          <div style={{ marginLeft: 'auto', fontSize: 12, color: '#3A4A5A', fontWeight: 600 }}>{items.length} schools</div>
+          <div style={{ marginLeft: 'auto', fontSize: 12, color: '#3A4A5A', fontWeight: 600 }}>{filteredItems.length} {filteredItems.length === items.length ? 'schools' : `of ${items.length}`}</div>
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <div style={{ display: 'inline-flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
             <button onClick={() => navigate('/full-time-islamic-schools')} style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#3A4A5A', whiteSpace: 'nowrap' }}>☰ List</button>
             <button style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: '#1C2B3A', color: 'white', whiteSpace: 'nowrap' }}>🗺️ Map</button>
           </div>
+        </div>
+
+        {/* Grade filter chips */}
+        <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
+          {GRADE_FILTERS.map(g => {
+            const active = gradeFilter.has(g.key)
+            return (
+              <button key={g.key} onClick={() => toggleGrade(g.key)}
+                style={{
+                  background: active ? colors.brand : 'white',
+                  color: active ? 'white' : '#1C2B3A',
+                  border: active ? 'none' : '1px solid rgba(0,0,0,0.12)',
+                  borderRadius: 999, padding: '6px 12px',
+                  fontSize: 11, fontWeight: 700,
+                  cursor: 'pointer',
+                }}>{g.label}</button>
+            )
+          })}
         </div>
       </div>
 
@@ -189,13 +245,13 @@ export default function SchoolsMap() {
           <>
             {/* Backdrop */}
             <div onClick={() => setSelected(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', pointerEvents: 'auto' }} />
-            {/* Bottom sheet card — auto-fits content */}
+            {/* Bottom sheet card — auto-fits content, lifted above BottomNav */}
             <div style={{
-              position: 'absolute', bottom: 0, left: 0, right: 0,
+              position: 'absolute', bottom: 70, left: 0, right: 0,
               background: 'white', borderRadius: '20px 20px 0 0',
               padding: '0 0 24px',
               boxShadow: '0 -4px 30px rgba(0,0,0,0.15)',
-              maxHeight: '75vh', overflowY: 'auto',
+              maxHeight: 'calc(75vh - 70px)', overflowY: 'auto',
               pointerEvents: 'auto',
             }}>
               {/* Drag handle */}

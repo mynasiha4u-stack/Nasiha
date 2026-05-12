@@ -7,7 +7,7 @@ import { colors, headerGradient, card, radius } from '../theme'
 const CATEGORIES = [
   { icon: '👨‍🍳', label: 'Home Cooks',     path: '/directory?cat=home-cooked-food' },
   { icon: '🕌', label: 'Jummah Timings',  path: '/jummah' },
-  { icon: '🎂', label: 'Desserts',        path: '/directory?cat=dessert-catering' },
+  { icon: '🎉', label: 'Event Planning',  path: '/event-planning' },
   { icon: '👶', label: 'Childcare',       path: '/childcare' },
   { icon: '📅', label: 'Events',          path: '/events' },
   { icon: '🏫', label: 'Full Time Islamic Schools',         path: '/full-time-islamic-schools' },

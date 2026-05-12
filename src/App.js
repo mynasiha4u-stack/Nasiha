@@ -16,6 +16,7 @@ import RestaurantsMap from './pages/RestaurantsMap'
 import Schools, { SchoolDetail } from './pages/Schools'
 import SchoolsMap from './pages/SchoolsMap'
 import Lawyers, { LawyerDetail } from './pages/Lawyers'
+import EventPlanning, { EventVendorDetail } from './pages/EventPlanning'
 
 export default function App() {
   return (
@@ -41,6 +42,8 @@ export default function App() {
         <Route path="/full-time-islamic-schools/:slug" element={<SchoolDetail />} />
         <Route path="/lawyers" element={<Lawyers />} />
         <Route path="/lawyers/:slug" element={<LawyerDetail />} />
+        <Route path="/event-planning" element={<EventPlanning />} />
+        <Route path="/event-planning/:slug" element={<EventVendorDetail />} />
       </Routes>
     </BrowserRouter>
   )

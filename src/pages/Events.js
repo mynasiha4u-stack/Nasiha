@@ -52,6 +52,17 @@ function stripHtml(html) {
     .trim()
 }
 
+// True if the address is a meaningful venue (not just "CA" or other state codes).
+// Real addresses have either a street number or a building/place name with multiple words.
+function isRealAddress(addr) {
+  if (!addr || typeof addr !== 'string') return false
+  const trimmed = addr.trim()
+  if (trimmed.length < 5) return false
+  // Just a state code like "CA", "CA, USA", "California", etc — not useful
+  if (/^(CA|California|United States|USA|US|N\/A)[\s,.]*$/i.test(trimmed)) return false
+  return true
+}
+
 function detectTypes(name, description) {
   const title = name.toLowerCase()
   const desc = (description || '').toLowerCase()
@@ -127,12 +138,12 @@ function EventCard({ event, onTap }) {
       overflow: 'hidden', marginBottom: 12, cursor: 'pointer',
       boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
     }}>
-      {/* Top section: 130px tall — image OR cream placeholder. Same height either way. */}
-      <div style={{ position: 'relative', height: 130, background: imageUrl ? '#f0edf8' : '#F7F3EE', overflow: 'hidden' }}>
+      {/* Top section: 130px tall — image OR brand-tinted placeholder. Same height either way. */}
+      <div style={{ position: 'relative', height: 130, background: imageUrl ? '#f0edf8' : 'linear-gradient(135deg, #FFE8DC 0%, #FED7BB 100%)', overflow: 'hidden' }}>
         {imageUrl
           ? <img src={imageUrl} alt={event.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontSize: 64, opacity: 0.18, lineHeight: 1 }}>📅</span>
+              <span style={{ fontSize: 56, opacity: 0.35, lineHeight: 1 }}>📅</span>
             </div>
         }
         {/* Mosque name top-left */}
@@ -176,9 +187,9 @@ function EventCard({ event, onTap }) {
               🕐 {formatTime(event.event_time)}
             </div>
           )}
-          {(event.event_host || event.address) && (
+          {(event.event_host || isRealAddress(event.address)) && (
             <div style={{ fontSize: 12, color: '#3A4A5A', marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              📍 {event.address || event.event_host}
+              📍 {isRealAddress(event.address) ? event.address : event.event_host}
             </div>
           )}
           {(types.length > 0 || audiences.filter(a => a !== 'General Public').length > 0) && (
@@ -372,7 +383,7 @@ export function EventDetailPage() {
           {[
             { icon: '📅', label: 'Date', value: formatDate(event.event_date) },
             { icon: '🕐', label: 'Time', value: `${formatTime(event.event_time)}${event.event_end_time ? ` – ${formatTime(event.event_end_time)}` : ''}` },
-            { icon: '📍', label: 'Location', value: event.address || event.metro },
+            { icon: '📍', label: 'Location', value: isRealAddress(event.address) ? event.address : (event.event_host || 'See event details') },
           ].map(row => (
             <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
               <span style={{ fontSize: 18, width: 24, textAlign: 'center' }}>{row.icon}</span>

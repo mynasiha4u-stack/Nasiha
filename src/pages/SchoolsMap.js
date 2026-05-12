@@ -130,13 +130,13 @@ export default function SchoolsMap() {
         map: mapInstanceRef.current,
         icon: {
           // Teardrop pin in teal — distinguishable from restaurant orange dots.
-          // Smaller scale (0.7) keeps pin compact while still readable as a marker.
+          // Scale 1.2 makes pins visually prominent on the map.
           path: 'M12 0C7.6 0 4 3.6 4 8c0 6.4 8 16 8 16s8-9.6 8-16C20 3.6 16.4 0 12 0z',
           fillColor: '#0EA5A0',
           fillOpacity: 1,
           strokeColor: 'white',
-          strokeWeight: 1.5,
-          scale: 0.7,
+          strokeWeight: 1.8,
+          scale: 1.2,
           anchor: new window.google.maps.Point(12, 24),
         }
       })

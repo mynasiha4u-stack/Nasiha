@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import BottomNav from '../components/BottomNav'
+import TopBar from '../components/TopBar'
 import RecommendationStrip from '../components/RecommendationStrip'
 import FilterDropdown from '../components/FilterDropdown'
 import LocationSearch from '../components/LocationSearch'
@@ -688,7 +689,8 @@ export default function RestaurantsMap() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
           <button onClick={goBackToList} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', background: 'rgba(255,255,255,0.9)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
           <h1 style={{ fontSize: 20, fontWeight: 800, color: '#1C2B3A', margin: 0 }}>🍽️ Restaurants</h1>
-          <div style={{ marginLeft: 'auto', fontSize: 12, color: '#3A4A5A', fontWeight: 600 }}>{filtered.length} of {items.length}</div>
+          <div style={{ marginLeft: 'auto', fontSize: 12, color: '#3A4A5A', fontWeight: 600, marginRight: 6 }}>{filtered.length} of {items.length}</div>
+          <TopBar />
         </div>
 
         <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
@@ -725,27 +727,29 @@ export default function RestaurantsMap() {
           />
         </div>
 
-        {/* "On the way" toggle */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <button
-            onClick={handleRouteButton}
-            disabled={routeLoading}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              background: routeMode ? '#0EA5A0' : 'white',
-              color: routeMode ? 'white' : '#1C2B3A',
-              border: routeMode ? 'none' : '1px solid rgba(0,0,0,0.12)',
-              borderRadius: 999, padding: '7px 12px',
-              fontSize: 12, fontWeight: 700,
-              cursor: routeLoading ? 'wait' : 'pointer',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
-              whiteSpace: 'nowrap',
-              opacity: routeLoading ? 0.7 : 1,
-            }}
-          >
-            🚗 {routeLoading ? 'Loading…' : routeMode ? `Food on the way (${routeData?.duration_min || '?'} min)` : 'Food on the way'}
-          </button>
-        </div>
+        {/* "On the way" toggle — hidden while the post-search hint toast is showing (avoid duplicate CTAs) */}
+        {!showSearchHint && (
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <button
+              onClick={handleRouteButton}
+              disabled={routeLoading}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                background: routeMode ? '#0EA5A0' : 'white',
+                color: routeMode ? 'white' : '#1C2B3A',
+                border: routeMode ? 'none' : '1px solid rgba(0,0,0,0.12)',
+                borderRadius: 999, padding: '7px 12px',
+                fontSize: 12, fontWeight: 700,
+                cursor: routeLoading ? 'wait' : 'pointer',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
+                whiteSpace: 'nowrap',
+                opacity: routeLoading ? 0.7 : 1,
+              }}
+            >
+              🚗 {routeLoading ? 'Loading…' : routeMode ? `Food on the way (${routeData?.duration_min || '?'} min)` : 'Food on the way'}
+            </button>
+          </div>
+        )}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <div style={{ display: 'inline-flex', background: 'white', borderRadius: 12, padding: 3, border: '1px solid rgba(0,0,0,0.08)' }}>

@@ -11,6 +11,47 @@ const MOSQUES = ['MCC East Bay', 'MCA Santa Clara', 'ICF Fremont', 'SRVIC San Ra
 const TYPE_COLOR = { bg: '#e8943a', color: 'white' }
 const AUDIENCE_COLOR = { bg: '#9b87c4', color: 'white' }
 
+// True only for URLs that look like an actual image (not an Instagram/Facebook link, etc).
+function isValidImageUrl(url) {
+  if (!url || typeof url !== 'string') return false
+  const lower = url.toLowerCase().trim()
+  if (!lower.startsWith('http')) return false
+  // Common image extensions
+  if (/\.(jpg|jpeg|png|gif|webp|avif|svg)(\?|#|$)/i.test(lower)) return true
+  // Known image-hosting paths (Supabase storage, common CDNs)
+  if (lower.includes('supabase.co/storage') || lower.includes('cloudinary.com') || lower.includes('imgur.com')) return true
+  // Skip Instagram/Facebook/site URLs that aren't images
+  if (/instagram\.com|facebook\.com|twitter\.com|x\.com|tiktok\.com|youtube\.com|linkedin\.com/.test(lower)) return false
+  return false  // unknown → don't risk a broken img tag
+}
+
+// Strip HTML tags and decode common entities for clean display in <div>{text}</div>
+function stripHtml(html) {
+  if (!html || typeof html !== 'string') return ''
+  return html
+    // Convert breaks/paragraphs to newlines first
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>\s*<p[^>]*>/gi, '\n\n')
+    .replace(/<\/?p[^>]*>/gi, '')
+    .replace(/<\/?div[^>]*>/gi, '\n')
+    // Strip remaining tags
+    .replace(/<[^>]+>/g, '')
+    // Decode common entities
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&hellip;/g, '…')
+    .replace(/&mdash;/g, '—')
+    .replace(/&ndash;/g, '–')
+    // Collapse excessive whitespace
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]+/g, ' ')
+    .trim()
+}
+
 function detectTypes(name, description) {
   const title = name.toLowerCase()
   const desc = (description || '').toLowerCase()
@@ -75,7 +116,9 @@ function AudienceBadge({ audience }) {
 function EventCard({ event, onTap }) {
   const types = event.event_type ? [event.event_type] : detectTypes(event.name, event.description)
   const audiences = (event.event_audience && event.event_audience.length > 0) ? event.event_audience : detectAudiences(event.name, event.description)
-  const imageUrl = event.image_url || event.instagram
+  // Only use real image URLs — Instagram links etc are not valid <img src> values
+  const imageUrl = isValidImageUrl(event.image_url) ? event.image_url : null
+  const eventDate = event.start_time ? new Date(event.start_time) : null
 
   return (
     <div onClick={() => onTap(event)} style={{
@@ -83,11 +126,25 @@ function EventCard({ event, onTap }) {
       border: '1px solid rgba(0,0,0,0.08)',
       overflow: 'hidden', marginBottom: 12, cursor: 'pointer',
     }}>
-      <div style={{ position: 'relative', height: 130, background: '#f0edf8', overflow: 'hidden' }}>
+      <div style={{ position: 'relative', height: 130, background: imageUrl ? '#f0edf8' : 'linear-gradient(135deg, #FFF8F3 0%, #FEF2E8 100%)', overflow: 'hidden' }}>
         {imageUrl
           ? <img src={imageUrl} alt={event.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, fontWeight: 800, color: 'rgba(26,42,58,0.1)', letterSpacing: 3 }}>
-              {event.metro?.split(' ').map(w => w[0]).join('').substring(0, 3)}
+          : <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'rgba(194,65,12,0.7)' }}>
+              {eventDate ? (
+                <>
+                  <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>
+                    {eventDate.toLocaleDateString('en-US', { month: 'short' })}
+                  </span>
+                  <span style={{ fontSize: 36, fontWeight: 800, lineHeight: 1 }}>
+                    {eventDate.getDate()}
+                  </span>
+                  <span style={{ fontSize: 11, fontWeight: 600, marginTop: 4 }}>
+                    {eventDate.toLocaleDateString('en-US', { weekday: 'long' })}
+                  </span>
+                </>
+              ) : (
+                <span style={{ fontSize: 36, opacity: 0.3 }}>📅</span>
+              )}
             </div>
         }
         {/* Mosque name top-left */}
@@ -274,7 +331,7 @@ export function EventDetailPage() {
 
   const types = event.event_type ? [event.event_type] : detectTypes(event.name, event.description)
   const audiences = (event.event_audience && event.event_audience.length > 0) ? event.event_audience : detectAudiences(event.name, event.description)
-  const imageUrl = event.image_url || event.instagram
+  const imageUrl = isValidImageUrl(event.image_url) ? event.image_url : null
 
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
@@ -328,7 +385,7 @@ export function EventDetailPage() {
         {event.description && (
           <div style={{ background: 'white', borderRadius: 16, padding: 16, marginBottom: 12, border: '1px solid rgba(0,0,0,0.08)' }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary, marginBottom: 10 }}>About this event</div>
-            <div style={{ fontSize: 14, color: 'rgba(26,42,58,0.75)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>{event.description}</div>
+            <div style={{ fontSize: 14, color: 'rgba(26,42,58,0.75)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>{stripHtml(event.description)}</div>
           </div>
         )}
       </div>

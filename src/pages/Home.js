@@ -7,9 +7,9 @@ import { colors, headerGradient, card, radius } from '../theme'
 const CATEGORIES = [
   { icon: '👨‍🍳', label: 'Home Cooks',     path: '/directory?cat=home-cooked-food' },
   { icon: '🕌', label: 'Jummah Timings',  path: '/jummah' },
-  { icon: '🎉', label: 'Event Planning',  path: '/event-planning' },
+  { icon: '🎉', label: 'Catering & Event Services',  path: '/event-planning' },
   { icon: '👶', label: 'Childcare',       path: '/childcare' },
-  { icon: '📅', label: 'Events',          path: '/events' },
+  { icon: '📅', label: 'Upcoming Events',          path: '/events' },
   { icon: '🏫', label: 'Full Time Islamic Schools',         path: '/full-time-islamic-schools' },
   { icon: '⚖️', label: 'Lawyers',         path: '/lawyers' },
   { icon: '🍽️', label: 'Restaurants',     path: '/restaurants' },
@@ -134,11 +134,25 @@ export default function Home() {
         {/* Browse section */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <span style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary }}>Browse</span>
-          <span style={{ fontSize: 13, color: colors.brand, fontWeight: 600 }}>See all</span>
         </div>
 
-        {/* Category grid — all same card color, icon does the work */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 10, marginBottom: 28 }}>
+        {/* Category tiles — horizontal scroll, 2 rows, with peek on right edge to hint at scrollability */}
+        <div style={{
+          display: 'grid',
+          gridTemplateRows: 'auto auto',
+          gridAutoFlow: 'column',
+          gridAutoColumns: '24%',  // ~4 tiles + a peek of the 5th
+          gap: 10,
+          marginBottom: 28,
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          scrollSnapType: 'x mandatory',
+          paddingBottom: 4,
+          WebkitOverflowScrolling: 'touch',
+          // Hide scrollbar but keep functionality
+          scrollbarWidth: 'none',
+        }}
+        className="tile-scroll-row">
           {CATEGORIES.map(cat => (
             <button key={cat.label} onClick={() => navigate(cat.path)} style={{
               background: '#FFF8F3',
@@ -146,15 +160,20 @@ export default function Home() {
               borderRadius: radius.md,
               padding: '16px 8px 12px',
               display: 'flex', flexDirection: 'column',
-              alignItems: 'center', gap: 8,
+              alignItems: 'center', justifyContent: 'flex-start', gap: 8,
               cursor: 'pointer',
               boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+              minHeight: 92,
+              scrollSnapAlign: 'start',
             }}>
-              <span style={{ fontSize: 28 }}>{cat.icon}</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: colors.textPrimary, textAlign: 'center', lineHeight: 1.3 }}>{cat.label}</span>
+              <span style={{ fontSize: 26 }}>{cat.icon}</span>
+              <span style={{ fontSize: 10.5, fontWeight: 700, color: colors.textPrimary, textAlign: 'center', lineHeight: 1.25 }}>{cat.label}</span>
             </button>
           ))}
         </div>
+        <style>{`
+          .tile-scroll-row::-webkit-scrollbar { display: none; }
+        `}</style>
 
         {/* Upcoming Events */}
         {events.length > 0 && (

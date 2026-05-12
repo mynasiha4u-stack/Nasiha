@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import BottomNav from '../components/BottomNav'
+import TopBar from '../components/TopBar'
 import ListingDetail from '../components/ListingDetail'
 import RecommendationStrip from '../components/RecommendationStrip'
 import FilterDropdown from '../components/FilterDropdown'
@@ -286,7 +287,10 @@ export default function Restaurants() {
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 80 }}>
       <div style={{ background: headerGradient, padding: '48px 20px 22px' }}>
-        <button onClick={() => navigate('/')} style={{ fontSize: 13, fontWeight: 700, color: colors.deep, marginBottom: 14, display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <button onClick={() => navigate('/')} style={{ fontSize: 13, fontWeight: 700, color: colors.deep, marginBottom: 14, display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
+          <TopBar />
+        </div>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1C2B3A', marginBottom: 2 }}>🍽️ Restaurants</h1>
         <p style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)' }}>
           {nearbyLocation

@@ -20,7 +20,9 @@ export default function MyListings() {
   const [listings, setListings] = useState([])
   const [categories, setCategories] = useState({})
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState('all')  // all, pending, published, rejected
+  const [filter, setFilter] = useState('all')  // all, pending, published, rejected, paused
+  const [searchQuery, setSearchQuery] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('all')  // 'all' or a category id
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -84,9 +86,22 @@ export default function MyListings() {
   }
 
   const filtered = listings.filter(l => {
-    if (filter === 'all') return true
-    if (filter === 'published') return l.status === 'published' || l.status === 'approved'
-    return l.status === filter
+    // Status filter
+    if (filter !== 'all') {
+      if (filter === 'published') {
+        if (l.status !== 'published' && l.status !== 'approved') return false
+      } else if (l.status !== filter) return false
+    }
+    // Category filter
+    if (categoryFilter !== 'all' && l.category_id !== categoryFilter) return false
+    // Search filter (name + address)
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase()
+      const inName = l.name?.toLowerCase().includes(q)
+      const inAddress = l.address?.toLowerCase().includes(q)
+      if (!inName && !inAddress) return false
+    }
+    return true
   })
 
   if (authLoading) return <div style={{ padding: 40, textAlign: 'center', color: '#6A7A8A' }}>Loading…</div>
@@ -109,21 +124,81 @@ export default function MyListings() {
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
-        {/* Filter chips */}
+        {/* Search bar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'white', borderRadius: 12, padding: '11px 14px', marginBottom: 10, border: '1px solid rgba(0,0,0,0.08)' }}>
+          <span style={{ fontSize: 16, opacity: 0.5 }}>🔍</span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search by name or address..."
+            style={{
+              flex: 1, border: 'none', outline: 'none',
+              fontSize: 14, color: '#1C2B3A', background: 'transparent',
+              fontFamily: 'inherit', padding: 0, minWidth: 0,
+            }}
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 12, color: '#6A7A8A', padding: '2px 6px',
+            }}>✕</button>
+          )}
+        </div>
+
+        {/* Category dropdown */}
+        <div style={{ marginBottom: 10 }}>
+          <select
+            value={categoryFilter}
+            onChange={e => setCategoryFilter(e.target.value)}
+            style={{
+              width: '100%', padding: '10px 12px',
+              border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12,
+              fontSize: 13, fontWeight: 600, color: '#1C2B3A',
+              background: 'white', cursor: 'pointer',
+              fontFamily: 'inherit', appearance: 'menulist',
+            }}
+          >
+            <option value="all">All categories</option>
+            {Object.values(categories)
+              .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+              .map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+          </select>
+        </div>
+
+        {/* Status filter chips */}
         <div style={{ display: 'flex', gap: 7, marginBottom: 14, flexWrap: 'wrap' }}>
           {[
-            { key: 'all', label: 'All', count: listings.length },
-            { key: 'pending', label: 'Pending', count: listings.filter(l => l.status === 'pending').length },
-            { key: 'published', label: 'Published', count: listings.filter(l => l.status === 'published' || l.status === 'approved').length },
-            { key: 'rejected', label: 'Rejected', count: listings.filter(l => l.status === 'rejected').length },
-          ].map(f => (
-            <button key={f.key} onClick={() => setFilter(f.key)} style={{
-              padding: '6px 12px', borderRadius: 20, border: '1px solid rgba(0,0,0,0.1)',
-              cursor: 'pointer', fontSize: 12, fontWeight: 600,
-              background: filter === f.key ? '#1C2B3A' : 'white',
-              color: filter === f.key ? 'white' : '#1a2a3a',
-            }}>{f.label} ({f.count})</button>
-          ))}
+            { key: 'all',       label: 'All' },
+            { key: 'pending',   label: 'Pending' },
+            { key: 'published', label: 'Published' },
+            { key: 'paused',    label: 'Paused' },
+            { key: 'rejected',  label: 'Rejected' },
+          ].map(f => {
+            // Compute count after applying search + category, but ignoring status
+            const count = listings.filter(l => {
+              if (categoryFilter !== 'all' && l.category_id !== categoryFilter) return false
+              if (searchQuery.trim()) {
+                const q = searchQuery.trim().toLowerCase()
+                const inName = l.name?.toLowerCase().includes(q)
+                const inAddress = l.address?.toLowerCase().includes(q)
+                if (!inName && !inAddress) return false
+              }
+              if (f.key === 'all') return true
+              if (f.key === 'published') return l.status === 'published' || l.status === 'approved'
+              return l.status === f.key
+            }).length
+            return (
+              <button key={f.key} onClick={() => setFilter(f.key)} style={{
+                padding: '6px 12px', borderRadius: 20, border: '1px solid rgba(0,0,0,0.1)',
+                cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                background: filter === f.key ? '#1C2B3A' : 'white',
+                color: filter === f.key ? 'white' : '#1a2a3a',
+              }}>{f.label} ({count})</button>
+            )
+          })}
         </div>
 
         {/* Add new button */}

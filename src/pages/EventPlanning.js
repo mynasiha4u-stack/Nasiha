@@ -4,52 +4,38 @@ import { supabase } from '../lib/supabase'
 import BottomNav from '../components/BottomNav'
 import AddListingButton from '../components/AddListingButton'
 import TopBar from '../components/TopBar'
+import FilterDropdown from '../components/FilterDropdown'
 import ListingDetail, { cleanText } from '../components/ListingDetail'
 import { colors, headerGradient, card } from '../theme'
 
-// Filter groups — keep canonical values matching DB attribute_value
-// Three filter dropdowns:
-//   1. Service Type (uses content.tags — desserts vs event-services from the merged categories)
-//   2. Services offered (uses attributes.event_type — decor/planners/florist/etc.)
-//   3. Delivery & Setup (subset of attributes — delivery vs on-site setup)
+// Three filter dropdowns — same multi-select pattern as Restaurants.
+// 1. Service Type → matches content.tags (set by Migration 5)
+// 2. Services    → matches attributes.event_type
+// 3. Delivery    → also attributes.event_type, but the delivery/on-site subset
 const SERVICE_TYPE_OPTIONS = [
-  { value: '',                key: '',                  label: 'All service types' },
-  { value: 'desserts',        key: 'desserts',          label: '🍰 Desserts & Drinks' },
-  { value: 'event-services',  key: 'event-services',    label: '💐 Catering & Event Services' },
+  { key: 'desserts',          label: '🍰 Desserts & Drinks' },
+  { key: 'event-services',    label: '💐 Catering & Events' },
 ]
 
 const SERVICES_OPTIONS = [
-  { value: '',                                          label: 'All services' },
-  { value: 'Event Decor',                               label: 'Decor' },
-  { value: 'Event Planners',                            label: 'Planners' },
-  { value: 'Florist/Garlands',                          label: 'Florist' },
-  { value: 'Henna/Mehndi Artist',                       label: 'Mehndi' },
-  { value: 'Makeup & Hair',                             label: 'Makeup & Hair' },
-  { value: 'Photography & Videography',                 label: 'Photography' },
-  { value: 'Cakes, Baked Goods, and More',              label: 'Cakes & Desserts' },
-  { value: 'Chai, Coffee, and Speciality Drinks',       label: 'Chai & Drinks' },
+  { key: 'Event Decor',                               label: 'Decor' },
+  { key: 'Event Planners',                            label: 'Planners' },
+  { key: 'Florist/Garlands',                          label: 'Florist' },
+  { key: 'Henna/Mehndi Artist',                       label: 'Mehndi' },
+  { key: 'Makeup & Hair',                             label: 'Makeup & Hair' },
+  { key: 'Photography & Videography',                 label: 'Photography' },
+  { key: 'Cakes, Baked Goods, and More',              label: 'Cakes & Desserts' },
+  { key: 'Chai, Coffee, and Speciality Drinks',       label: 'Chai & Drinks' },
 ]
 
 const DELIVERY_OPTIONS = [
-  { value: '',                                          label: 'Delivery or on-site' },
-  { value: 'Delivery Offered',                          label: '🚚 Delivery' },
-  { value: 'Mobile Pop Up',                             label: '🎪 On-site Setup' },
+  { key: 'Delivery Offered',                          label: '🚚 Delivery' },
+  { key: 'Mobile Pop Up',                             label: '🎪 On-site Setup' },
 ]
 
-const selectStyle = {
-  flex: 1, minWidth: 0, padding: '9px 8px',
-  border: '1px solid rgba(0,0,0,0.08)', borderRadius: 10,
-  fontSize: 12, fontWeight: 600, color: '#1C2B3A',
-  background: 'white', cursor: 'pointer',
-  fontFamily: 'inherit', appearance: 'menulist',
-}
-
-// Flat lookup table used by VendorCard to render the small tag chips on each card.
+// Flat lookup used by VendorCard to render the small tag chips on each card.
 // Maps the raw attribute value (e.g. 'Event Decor') -> short display label (e.g. 'Decor').
-const ALL_FILTERS = [
-  ...SERVICES_OPTIONS.filter(o => o.value).map(o => ({ key: o.value, label: o.label })),
-  ...DELIVERY_OPTIONS.filter(o => o.value).map(o => ({ key: o.value, label: o.label })),
-]
+const ALL_FILTERS = [...SERVICES_OPTIONS, ...DELIVERY_OPTIONS]
 
 function VendorCard({ item, onTap }) {
   return (
@@ -104,10 +90,10 @@ export default function EventPlanning() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  // Three filter dropdowns
-  const [serviceType, setServiceType] = useState('')  // '' | 'desserts' | 'event-services'
-  const [serviceFilter, setServiceFilter] = useState('')  // attribute value e.g. 'Event Decor'
-  const [deliveryFilter, setDeliveryFilter] = useState('')  // 'Delivery Offered' or 'Mobile Pop Up'
+  // Three multi-select filters — same pattern as Restaurants
+  const [serviceTypeFilter, setServiceTypeFilter] = useState(new Set())
+  const [serviceFilter, setServiceFilter] = useState(new Set())
+  const [deliveryFilter, setDeliveryFilter] = useState(new Set())
 
   useEffect(() => {
     async function load() {
@@ -144,14 +130,22 @@ export default function EventPlanning() {
   }, [])
 
   const filtered = items.filter(item => {
-    // Service type: uses tags column
-    if (serviceType) {
-      if (!Array.isArray(item.tags) || !item.tags.includes(serviceType)) return false
+    // Service type — match if any selected tag is in item.tags
+    if (serviceTypeFilter.size > 0) {
+      const itemTags = Array.isArray(item.tags) ? item.tags : []
+      const match = [...serviceTypeFilter].some(t => itemTags.includes(t))
+      if (!match) return false
     }
-    // Services offered: uses attributes (event_type)
-    if (serviceFilter && !(item.types || []).includes(serviceFilter)) return false
-    // Delivery vs on-site: uses attributes (event_type)
-    if (deliveryFilter && !(item.types || []).includes(deliveryFilter)) return false
+    // Services — match if any selected service is in item.types
+    if (serviceFilter.size > 0) {
+      const match = [...serviceFilter].some(s => (item.types || []).includes(s))
+      if (!match) return false
+    }
+    // Delivery — match if any selected delivery option is in item.types
+    if (deliveryFilter.size > 0) {
+      const match = [...deliveryFilter].some(d => (item.types || []).includes(d))
+      if (!match) return false
+    }
     // Search
     if (search.trim()) {
       const s = search.toLowerCase()
@@ -186,22 +180,34 @@ export default function EventPlanning() {
             style={{ flex: 1, border: 'none', outline: 'none', fontSize: 15 }} />
         </div>
 
-        {/* Three filter dropdowns side by side */}
+        {/* 3 inline filter dropdowns — same pattern as Restaurants */}
         <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-          <select value={serviceType} onChange={e => setServiceType(e.target.value)} style={selectStyle}>
-            {SERVICE_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
-          <select value={serviceFilter} onChange={e => setServiceFilter(e.target.value)} style={selectStyle}>
-            {SERVICES_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
-          <select value={deliveryFilter} onChange={e => setDeliveryFilter(e.target.value)} style={selectStyle}>
-            {DELIVERY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
+          <FilterDropdown
+            label="Service Type"
+            options={SERVICE_TYPE_OPTIONS}
+            selected={serviceTypeFilter}
+            onChange={setServiceTypeFilter}
+            accentColor={colors.brand}
+          />
+          <FilterDropdown
+            label="Service"
+            options={SERVICES_OPTIONS}
+            selected={serviceFilter}
+            onChange={setServiceFilter}
+            accentColor={colors.deep}
+          />
+          <FilterDropdown
+            label="Delivery"
+            options={DELIVERY_OPTIONS}
+            selected={deliveryFilter}
+            onChange={setDeliveryFilter}
+            accentColor="#1C2B3A"
+          />
         </div>
 
         <div style={{ fontSize: 12, color: '#6A7A8A', margin: '12px 0 8px', fontWeight: 500 }}>
           {sorted.length} {sorted.length === 1 ? 'vendor' : 'vendors'}
-          {(serviceType || serviceFilter || deliveryFilter) && ' matching your filters'}
+          {(serviceTypeFilter.size > 0 || serviceFilter.size > 0 || deliveryFilter.size > 0) && ' matching your filters'}
         </div>
 
         {loading && <div style={{ textAlign: 'center', padding: 40, color: '#6a7a8a' }}>Loading…</div>}

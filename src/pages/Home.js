@@ -9,7 +9,7 @@ const CATEGORIES = [
   { icon: '🍽️', label: 'Restaurants',                  path: '/restaurants' },
   { icon: '🕌', label: 'Jummah Timings',               path: '/jummah' },
   { icon: '📅', label: 'Upcoming Events',              path: '/events' },
-  { icon: '💐', label: 'Catering & Event Services',    path: '/event-planning' },
+  { icon: '💐', label: 'Desserts, Catering & Events',  path: '/desserts-catering-event-planning' },
   { icon: '👶', label: 'Childcare',                    path: '/childcare' },
   { icon: '👨‍🍳', label: 'Home Cooks',                  path: '/directory?cat=home-cooked-food' },
   { icon: '🏫', label: 'Full Time Islamic Schools',    path: '/full-time-islamic-schools' },

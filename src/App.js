@@ -56,6 +56,10 @@ export default function App() {
           <Route path="/full-time-islamic-schools/:slug" element={<SchoolDetail />} />
           <Route path="/lawyers" element={<Lawyers />} />
           <Route path="/lawyers/:slug" element={<LawyerDetail />} />
+          {/* Desserts/Catering/Event Planning — new canonical URL */}
+          <Route path="/desserts-catering-event-planning" element={<EventPlanning />} />
+          <Route path="/desserts-catering-event-planning/:slug" element={<EventVendorDetail />} />
+          {/* Old URL kept as alias so existing bookmarks/links don't break */}
           <Route path="/event-planning" element={<EventPlanning />} />
           <Route path="/event-planning/:slug" element={<EventVendorDetail />} />
         </Routes>

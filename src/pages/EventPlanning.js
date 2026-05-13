@@ -8,36 +8,41 @@ import ListingDetail, { cleanText } from '../components/ListingDetail'
 import { colors, headerGradient, card } from '../theme'
 
 // Filter groups — keep canonical values matching DB attribute_value
-const FILTER_GROUPS = [
-  {
-    title: 'Services',
-    filters: [
-      { key: 'Event Decor',                          label: 'Decor' },
-      { key: 'Event Planners',                       label: 'Planners' },
-      { key: 'Florist/Garlands',                     label: 'Florist' },
-      { key: 'Henna/Mehndi Artist',                  label: 'Mehndi' },
-      { key: 'Makeup & Hair',                        label: 'Makeup & Hair' },
-      { key: 'Photography & Videography',            label: 'Photography' },
-    ],
-  },
-  {
-    title: 'Desserts & Drinks',
-    filters: [
-      { key: 'Cakes, Baked Goods, and More',         label: 'Cakes & Desserts' },
-      { key: 'Chai, Coffee, and Speciality Drinks',  label: 'Chai & Drinks' },
-    ],
-  },
-  {
-    title: 'Format',
-    filters: [
-      { key: 'Delivery Offered',                     label: '🚚 Delivery' },
-      { key: 'Mobile Pop Up',                        label: '🎪 On-site Setup' },
-    ],
-  },
+// Three filter dropdowns:
+//   1. Service Type (uses content.tags — desserts vs event-services from the merged categories)
+//   2. Services offered (uses attributes.event_type — decor/planners/florist/etc.)
+//   3. Delivery & Setup (subset of attributes — delivery vs on-site setup)
+const SERVICE_TYPE_OPTIONS = [
+  { value: '',                key: '',                  label: 'All service types' },
+  { value: 'desserts',        key: 'desserts',          label: '🍰 Desserts & Drinks' },
+  { value: 'event-services',  key: 'event-services',    label: '💐 Catering & Event Services' },
 ]
 
-// Flat lookup for chip rendering
-const ALL_FILTERS = FILTER_GROUPS.flatMap(g => g.filters)
+const SERVICES_OPTIONS = [
+  { value: '',                                          label: 'All services' },
+  { value: 'Event Decor',                               label: 'Decor' },
+  { value: 'Event Planners',                            label: 'Planners' },
+  { value: 'Florist/Garlands',                          label: 'Florist' },
+  { value: 'Henna/Mehndi Artist',                       label: 'Mehndi' },
+  { value: 'Makeup & Hair',                             label: 'Makeup & Hair' },
+  { value: 'Photography & Videography',                 label: 'Photography' },
+  { value: 'Cakes, Baked Goods, and More',              label: 'Cakes & Desserts' },
+  { value: 'Chai, Coffee, and Speciality Drinks',       label: 'Chai & Drinks' },
+]
+
+const DELIVERY_OPTIONS = [
+  { value: '',                                          label: 'Delivery or on-site' },
+  { value: 'Delivery Offered',                          label: '🚚 Delivery' },
+  { value: 'Mobile Pop Up',                             label: '🎪 On-site Setup' },
+]
+
+const selectStyle = {
+  width: '100%', padding: '10px 12px',
+  border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12,
+  fontSize: 13, fontWeight: 600, color: '#1C2B3A',
+  background: 'white', cursor: 'pointer',
+  fontFamily: 'inherit', appearance: 'menulist',
+}
 
 function VendorCard({ item, onTap }) {
   return (
@@ -92,7 +97,10 @@ export default function EventPlanning() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [typeFilter, setTypeFilter] = useState(new Set())
+  // Three filter dropdowns
+  const [serviceType, setServiceType] = useState('')  // '' | 'desserts' | 'event-services'
+  const [serviceFilter, setServiceFilter] = useState('')  // attribute value e.g. 'Event Decor'
+  const [deliveryFilter, setDeliveryFilter] = useState('')  // 'Delivery Offered' or 'Mobile Pop Up'
 
   useEffect(() => {
     async function load() {
@@ -128,19 +136,17 @@ export default function EventPlanning() {
     load()
   }, [])
 
-  const toggleType = (key) => {
-    const next = new Set(typeFilter)
-    if (next.has(key)) next.delete(key)
-    else next.add(key)
-    setTypeFilter(next)
-  }
-
   const filtered = items.filter(item => {
-    if (typeFilter.size > 0) {
-      const has = (item.types || []).some(t => typeFilter.has(t))
-      if (!has) return false
+    // Service type: uses tags column
+    if (serviceType) {
+      if (!Array.isArray(item.tags) || !item.tags.includes(serviceType)) return false
     }
-    if (search) {
+    // Services offered: uses attributes (event_type)
+    if (serviceFilter && !(item.types || []).includes(serviceFilter)) return false
+    // Delivery vs on-site: uses attributes (event_type)
+    if (deliveryFilter && !(item.types || []).includes(deliveryFilter)) return false
+    // Search
+    if (search.trim()) {
       const s = search.toLowerCase()
       return item.name.toLowerCase().includes(s) ||
         (item.description || '').toLowerCase().includes(s) ||
@@ -161,7 +167,7 @@ export default function EventPlanning() {
           <button onClick={() => navigate('/')} style={{ fontSize: 13, fontWeight: 700, color: colors.deep, display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
           <AddListingButton categorySlug="event-services" label="vendor" />
         </div>
-        <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1C2B3A', marginBottom: 2 }}>💐 Catering & Event Services</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1C2B3A', marginBottom: 2 }}>💐 Desserts, Catering & Event Planning</h1>
         <p style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)' }}>{items.length} vendors for your event</p>
       </div>
 
@@ -173,28 +179,18 @@ export default function EventPlanning() {
             style={{ flex: 1, border: 'none', outline: 'none', fontSize: 15 }} />
         </div>
 
-        {/* Grouped filter chips */}
-        {FILTER_GROUPS.map(group => (
-          <div key={group.title} style={{ marginBottom: 10 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#6A7A8A', letterSpacing: 0.5, marginBottom: 6 }}>{group.title.toUpperCase()}</div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {group.filters.map(f => {
-                const active = typeFilter.has(f.key)
-                return (
-                  <button key={f.key} onClick={() => toggleType(f.key)}
-                    style={{
-                      background: active ? colors.brand : 'white',
-                      color: active ? 'white' : '#1C2B3A',
-                      border: active ? 'none' : '1px solid rgba(0,0,0,0.12)',
-                      borderRadius: 999, padding: '6px 12px',
-                      fontSize: 12, fontWeight: 700,
-                      cursor: 'pointer',
-                    }}>{f.label}</button>
-                )
-              })}
-            </div>
-          </div>
-        ))}
+        {/* Three filter dropdowns */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
+          <select value={serviceType} onChange={e => setServiceType(e.target.value)} style={selectStyle}>
+            {SERVICE_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+          <select value={serviceFilter} onChange={e => setServiceFilter(e.target.value)} style={selectStyle}>
+            {SERVICES_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+          <select value={deliveryFilter} onChange={e => setDeliveryFilter(e.target.value)} style={selectStyle}>
+            {DELIVERY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
 
         <div style={{ fontSize: 12, color: '#6A7A8A', margin: '12px 0 8px', fontWeight: 500 }}>
           {sorted.length} {sorted.length === 1 ? 'vendor' : 'vendors'}
@@ -205,7 +201,7 @@ export default function EventPlanning() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {sorted.map(item => (
-            <VendorCard key={item.id} item={item} onTap={() => item.url_slug && navigate(`/event-planning/${item.url_slug}`)} />
+            <VendorCard key={item.id} item={item} onTap={() => item.url_slug && navigate(`/desserts-catering-event-planning/${item.url_slug}`)} />
           ))}
         </div>
 
@@ -244,8 +240,8 @@ export function EventVendorDetail() {
   if (!item) return (
     <div style={{ padding: 40, textAlign: 'center' }}>
       <p>Vendor not found.</p>
-      <button onClick={() => navigate('/event-planning')}>← Back</button>
+      <button onClick={() => navigate('/desserts-catering-event-planning')}>← Back</button>
     </div>
   )
-  return <ListingDetail item={item} backTo="/event-planning" backLabel="Event Planning" />
+  return <ListingDetail item={item} backTo="/desserts-catering-event-planning" backLabel="Desserts, Catering & Event Planning" />
 }

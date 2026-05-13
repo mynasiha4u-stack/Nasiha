@@ -334,6 +334,9 @@ function AuthButton() {
               <div style={{ fontSize: 11, color: '#6A7A8A', marginTop: 2 }}>{user.email}</div>
             </div>
             <button onClick={() => { setOpen(false); navigate('/my-listings') }} style={menuItemStyle}>My listings</button>
+            {profile?.is_admin && (
+              <button onClick={() => { setOpen(false); navigate('/admin/review') }} style={{ ...menuItemStyle, color: colors.brand, fontWeight: 800 }}>⚖️ Admin · Review</button>
+            )}
             <button onClick={async () => { setOpen(false); await signOut(); navigate('/') }} style={{ ...menuItemStyle, color: '#9A3A3A' }}>Sign out</button>
           </div>
         </>

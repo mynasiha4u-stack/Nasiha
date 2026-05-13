@@ -9,6 +9,8 @@ import MosqueDetail from './pages/MosqueDetail'
 import Events, { EventDetailPage } from './pages/Events'
 import Admin from './pages/Admin'
 import Auth from './pages/Auth'
+import SubmitListing from './pages/SubmitListing'
+import MyListings from './pages/MyListings'
 import EventPlanning, { EventVendorDetail } from './pages/EventPlanning'
 import Childcare, { ChildcareDetail } from './pages/Childcare'
 import ChildcareMap from './pages/ChildcareMap'
@@ -26,6 +28,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/submit" element={<SubmitListing />} />
+          <Route path="/my-listings" element={<MyListings />} />
           <Route path="/jummah" element={<Jummah />} />
           <Route path="/events" element={<Events />} />
           <Route path="/events/:slug" element={<EventDetailPage />} />

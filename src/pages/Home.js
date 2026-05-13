@@ -130,6 +130,13 @@ export default function Home() {
         {/* Browse section */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <span style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary }}>Browse</span>
+          <button onClick={() => navigate('/submit')} style={{
+            display: 'flex', alignItems: 'center', gap: 4,
+            background: colors.brand, color: 'white', border: 'none',
+            borderRadius: 999, padding: '6px 12px',
+            fontSize: 12, fontWeight: 700, cursor: 'pointer',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+          }}>+ Add a listing</button>
         </div>
 
         {/* Category tiles — horizontal scroll, 2 rows, with peek + chevron on right edge to hint at scrollability */}

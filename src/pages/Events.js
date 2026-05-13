@@ -506,6 +506,7 @@ export default function Events() {
   const [events, setEvents] = useState([])
   const [mosques, setMosques] = useState([])  // for fallback coords by event_host
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
   const [showFilters, setShowFilters] = useState(null)
   const [thisWeekend, setThisWeekend] = useState(false)
   const [today, setToday] = useState(false)
@@ -630,6 +631,19 @@ export default function Events() {
       if (!audiences.some(a => activeAudiences.includes(a))) return false
     }
     if (activeMosques.length > 0 && !activeMosques.includes(e.event_host || e.internal_notes)) return false
+    // Search: name, description, host, venue/address
+    if (search.trim()) {
+      const s = search.toLowerCase()
+      const hay = [
+        e.name,
+        e.description,
+        e.event_host,
+        e.internal_notes,
+        e.event_location,
+        e.address,
+      ].filter(Boolean).join(' ').toLowerCase()
+      if (!hay.includes(s)) return false
+    }
     return true
   })
 
@@ -658,6 +672,13 @@ export default function Events() {
 
       <div style={{ padding: '16px 16px 0' }}>
         <NewsletterStrip />
+
+        {/* Search bar — same styling as Restaurants/Childcare/etc. */}
+        <div style={{ background: 'white', borderRadius: 12, border: '1px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', marginBottom: 10 }}>
+          <span style={{ fontSize: 16 }}>🔍</span>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search events, hosts, venues..."
+            style={{ flex: 1, border: 'none', outline: 'none', fontSize: 15 }} />
+        </div>
 
         {/* Row 1: View toggle + 3 filter dropdowns */}
         <div style={{ display: 'flex', gap: 7, marginBottom: 8, alignItems: 'center', flexWrap: 'wrap' }}>

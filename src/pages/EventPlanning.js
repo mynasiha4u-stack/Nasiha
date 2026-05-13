@@ -37,12 +37,19 @@ const DELIVERY_OPTIONS = [
 ]
 
 const selectStyle = {
-  width: '100%', padding: '10px 12px',
-  border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12,
-  fontSize: 13, fontWeight: 600, color: '#1C2B3A',
+  flex: 1, minWidth: 0, padding: '9px 8px',
+  border: '1px solid rgba(0,0,0,0.08)', borderRadius: 10,
+  fontSize: 12, fontWeight: 600, color: '#1C2B3A',
   background: 'white', cursor: 'pointer',
   fontFamily: 'inherit', appearance: 'menulist',
 }
+
+// Flat lookup table used by VendorCard to render the small tag chips on each card.
+// Maps the raw attribute value (e.g. 'Event Decor') -> short display label (e.g. 'Decor').
+const ALL_FILTERS = [
+  ...SERVICES_OPTIONS.filter(o => o.value).map(o => ({ key: o.value, label: o.label })),
+  ...DELIVERY_OPTIONS.filter(o => o.value).map(o => ({ key: o.value, label: o.label })),
+]
 
 function VendorCard({ item, onTap }) {
   return (
@@ -179,8 +186,8 @@ export default function EventPlanning() {
             style={{ flex: 1, border: 'none', outline: 'none', fontSize: 15 }} />
         </div>
 
-        {/* Three filter dropdowns */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
+        {/* Three filter dropdowns side by side */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
           <select value={serviceType} onChange={e => setServiceType(e.target.value)} style={selectStyle}>
             {SERVICE_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>

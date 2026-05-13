@@ -183,7 +183,7 @@ export default function EventPlanning() {
         {/* 3 inline filter dropdowns — same pattern as Restaurants */}
         <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
           <FilterDropdown
-            label="Service Type"
+            label="Type"
             options={SERVICE_TYPE_OPTIONS}
             selected={serviceTypeFilter}
             onChange={setServiceTypeFilter}

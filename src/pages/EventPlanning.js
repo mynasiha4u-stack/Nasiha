@@ -194,7 +194,7 @@ export default function EventPlanning() {
 
         <div style={{ fontSize: 12, color: '#6A7A8A', margin: '12px 0 8px', fontWeight: 500 }}>
           {sorted.length} {sorted.length === 1 ? 'vendor' : 'vendors'}
-          {typeFilter.size > 0 && ` matching ${typeFilter.size} filter${typeFilter.size > 1 ? 's' : ''}`}
+          {(serviceType || serviceFilter || deliveryFilter) && ' matching your filters'}
         </div>
 
         {loading && <div style={{ textAlign: 'center', padding: 40, color: '#6a7a8a' }}>Loading…</div>}

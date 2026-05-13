@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import BottomNav from '../components/BottomNav'
 import TopBar from '../components/TopBar'
+import AddListingButton from '../components/AddListingButton'
 import ListingDetail, { cleanText } from '../components/ListingDetail'
 import { colors, headerGradient, card, radius } from '../theme'
 
@@ -221,8 +222,9 @@ export default function Childcare() {
         <div style={{ marginBottom: 10 }}>
           <TopBar />
         </div>
-        <div style={{ marginBottom: 14 }}>
+        <div style={{ marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
           <button onClick={() => navigate('/')} style={{ fontSize: 13, fontWeight: 700, color: colors.deep, display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
+          <AddListingButton categorySlug="childcare" label="provider" />
         </div>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1C2B3A', marginBottom: 2 }}>👶 Childcare</h1>
         <p style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)' }}>{items.length} providers in the Bay Area</p>

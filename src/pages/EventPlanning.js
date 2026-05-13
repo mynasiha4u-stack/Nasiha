@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import BottomNav from '../components/BottomNav'
+import AddListingButton from '../components/AddListingButton'
 import TopBar from '../components/TopBar'
 import ListingDetail, { cleanText } from '../components/ListingDetail'
 import { colors, headerGradient, card } from '../theme'
@@ -73,7 +74,10 @@ function VendorCard({ item, onTap }) {
           <a href={item.website.startsWith('http') ? item.website : 'https://' + item.website} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ flex: 1, minWidth: 70, background: '#F7F3EE', borderRadius: 10, padding: '8px 0', fontSize: 12, fontWeight: 600, color: colors.textPrimary, textAlign: 'center', textDecoration: 'none' }}>🌐 Website</a>
         )}
         {item.instagram && (
-          <a href={item.instagram.startsWith('http') ? item.instagram : 'https://instagram.com/' + item.instagram.replace('@', '')} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ flex: 1, minWidth: 70, background: '#F7F3EE', borderRadius: 10, padding: '8px 0', fontSize: 12, fontWeight: 600, color: colors.textPrimary, textAlign: 'center', textDecoration: 'none' }}>📷 Instagram</a>
+          <a href={item.instagram.startsWith('http') ? item.instagram : 'https://instagram.com/' + item.instagram.replace('@', '')} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ flex: 1, minWidth: 70, background: '#F7F3EE', borderRadius: 10, padding: '8px 0', fontSize: 12, fontWeight: 600, color: colors.textPrimary, textAlign: 'center', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <span style={{ display: 'inline-flex', width: 16, height: 16, background: 'linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)', borderRadius: 4, alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 8, fontWeight: 800 }}>IG</span>
+            Instagram
+          </a>
         )}
         {!item.phone && !item.email && !item.website && !item.instagram && (
           <div style={{ fontSize: 12, color: 'rgba(26,42,58,0.4)', fontStyle: 'italic', padding: '4px 0' }}>Tap for details</div>
@@ -153,8 +157,9 @@ export default function EventPlanning() {
         <div style={{ marginBottom: 10 }}>
           <TopBar />
         </div>
-        <div style={{ marginBottom: 14 }}>
+        <div style={{ marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
           <button onClick={() => navigate('/')} style={{ fontSize: 13, fontWeight: 700, color: colors.deep, display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
+          <AddListingButton categorySlug="event-services" label="vendor" />
         </div>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1C2B3A', marginBottom: 2 }}>💐 Catering & Event Services</h1>
         <p style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)' }}>{items.length} vendors for your event</p>

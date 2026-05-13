@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import BottomNav from '../components/BottomNav'
+import AddListingButton from '../components/AddListingButton'
 import TopBar from '../components/TopBar'
 
 const AREAS = ['All', 'East Bay', 'South Bay', 'Peninsula', 'San Francisco', 'North Bay']
@@ -266,8 +267,9 @@ export default function Jummah() {
         <div style={{ marginBottom: 10 }}>
           <TopBar />
         </div>
-        <div style={{ marginBottom: 14 }}>
+        <div style={{ marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
           <button onClick={() => navigate('/')} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
+          <AddListingButton categorySlug="mosques" label="mosque" />
         </div>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1C2B3A', marginBottom: 2 }}>🕌 Jummah Timings</h1>
         <p style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)' }}>

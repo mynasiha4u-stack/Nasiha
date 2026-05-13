@@ -49,7 +49,10 @@ export default function Account() {
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 100 }}>
       <div style={{ background: headerGradient, padding: '48px 20px 32px' }}>
-        <div style={{ marginBottom: 18 }}><TopBar /></div>
+        <div style={{ marginBottom: 10 }}><TopBar /></div>
+        <div style={{ marginBottom: 18 }}>
+          <button onClick={() => navigate('/')} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Home</button>
+        </div>
         <div style={{
           width: 64, height: 64, borderRadius: '50%',
           background: colors.brand, color: 'white',

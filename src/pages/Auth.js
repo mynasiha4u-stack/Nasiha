@@ -1,43 +1,106 @@
 import React, { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
+import { supabase } from '../lib/supabase'
 import TopBar from '../components/TopBar'
 import { colors, headerGradient } from '../theme'
 
+/**
+ * Two-step auth flow:
+ *
+ * Step 1 (email): user types email → we call check-email Edge Function
+ * Step 2 (depends on lookup result):
+ *   - "not_found"             → signup form (name + password + newsletter checkbox)
+ *   - "subscriber_no_password" → "Welcome back, set a password to start posting" (password only)
+ *   - "full_user"             → "Welcome back, log in" (password only)
+ */
 export default function Auth() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const initialMode = params.get('mode') === 'signup' ? 'signup' : 'login'
   const redirectTo = params.get('redirect') || '/'
-
   const { signIn, signUp, signInWithGoogle } = useAuth()
-  const [mode, setMode] = useState(initialMode)
+
+  // Step state
+  const [step, setStep] = useState('email')  // 'email' or 'password'
+  const [lookup, setLookup] = useState(null)  // result from check-email: {status, display_name}
+
+  // Form fields
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
+  const [newsletter, setNewsletter] = useState(true)  // default ON for new signups
+
+  // UI state
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
 
-  const handleSubmit = async (e) => {
+  // Step 1: email lookup
+  const handleEmailContinue = async (e) => {
+    e?.preventDefault()
+    setError('')
+    setInfo('')
+    if (!email.includes('@')) { setError('Please enter a valid email.'); return }
+    setSubmitting(true)
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('check-email', {
+        body: { email: email.toLowerCase().trim() },
+      })
+      if (fnError) {
+        // If the lookup function fails, fall back to treating as new
+        console.warn('check-email failed:', fnError)
+        setLookup({ status: 'not_found' })
+      } else {
+        setLookup(data)
+      }
+      setStep('password')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  // Step 2: handle the appropriate action based on lookup
+  const handleStep2 = async (e) => {
     e.preventDefault()
     setError('')
     setInfo('')
     setSubmitting(true)
     try {
-      if (mode === 'signup') {
-        if (password.length < 6) {
-          setError('Password must be at least 6 characters.')
-          return
-        }
-        const { error } = await signUp(email, password, displayName)
-        if (error) { setError(error.message); return }
-        setInfo('Check your email to confirm your account, then come back and sign in.')
-      } else {
+      if (lookup?.status === 'full_user') {
+        // Just log in
         const { error } = await signIn(email, password)
         if (error) { setError(error.message); return }
         navigate(redirectTo)
+        return
       }
+
+      if (lookup?.status === 'subscriber_no_password') {
+        // User exists from newsletter signup — they need to set a password.
+        // Use Supabase's password reset flow which functions as a "set initial password" flow.
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth`,
+        })
+        if (error) { setError(error.message); return }
+        setInfo(`We sent a link to ${email} — click it to set your password and finish creating your account.`)
+        return
+      }
+
+      // not_found → new signup
+      if (password.length < 6) { setError('Password must be at least 6 characters.'); return }
+      if (!displayName.trim()) { setError('Please enter your name.'); return }
+
+      const { data, error } = await signUp(email, password, displayName)
+      if (error) { setError(error.message); return }
+
+      // If they checked the newsletter box, subscribe them
+      if (newsletter && data?.user) {
+        // Fire-and-forget — don't block signup on Beehiiv hiccups
+        supabase.functions.invoke('subscribe-newsletter', {
+          body: { email, source: 'signup_flow' },
+        }).catch(e => console.warn('Newsletter signup failed:', e))
+      }
+
+      setInfo('Check your email to confirm your account, then come back and log in.')
     } finally {
       setSubmitting(false)
     }
@@ -47,8 +110,19 @@ export default function Auth() {
     setError('')
     const { error } = await signInWithGoogle()
     if (error) setError(error.message)
-    // Google redirects away — no need to navigate
   }
+
+  const goBackToEmail = () => {
+    setStep('email')
+    setLookup(null)
+    setPassword('')
+    setDisplayName('')
+    setError('')
+    setInfo('')
+  }
+
+  // Determine title and subhead based on step + lookup
+  const { title, subhead } = getHeading(step, lookup)
 
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh' }}>
@@ -57,99 +131,147 @@ export default function Auth() {
           <TopBar />
         </div>
         <div style={{ marginBottom: 14 }}>
-          <button onClick={() => navigate(-1)} style={{ fontSize: 13, fontWeight: 700, color: colors.deep, display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
+          <button onClick={() => step === 'password' ? goBackToEmail() : navigate(-1)} style={{ fontSize: 13, fontWeight: 700, color: colors.deep, display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
         </div>
-        <h1 style={{ fontSize: 28, fontWeight: 800, color: '#1C2B3A', marginBottom: 4 }}>
-          {mode === 'signup' ? 'Join Nasiha' : 'Welcome back'}
-        </h1>
-        <p style={{ fontSize: 13, color: 'rgba(28,43,58,0.7)' }}>
-          {mode === 'signup' ? 'Create an account to post listings, contact vendors, and more.' : 'Log in to your account.'}
-        </p>
+        <h1 style={{ fontSize: 28, fontWeight: 800, color: '#1C2B3A', marginBottom: 4 }}>{title}</h1>
+        <p style={{ fontSize: 13, color: 'rgba(28,43,58,0.7)' }}>{subhead}</p>
       </div>
 
       <div style={{ padding: '20px 20px 40px' }}>
-        {/* Google sign-in */}
-        <button onClick={handleGoogle} type="button" style={{
-          width: '100%', padding: '13px 0',
-          background: 'white', border: '1.5px solid rgba(0,0,0,0.12)',
-          borderRadius: 12, cursor: 'pointer',
-          fontSize: 14, fontWeight: 700, color: '#1C2B3A',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-          marginBottom: 14,
-        }}>
-          <GoogleIcon /> Continue with Google
-        </button>
+        {step === 'email' && (
+          <>
+            <button onClick={handleGoogle} type="button" style={googleBtnStyle}>
+              <GoogleIcon /> Continue with Google
+            </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-          <div style={{ flex: 1, height: 1, background: 'rgba(0,0,0,0.1)' }} />
-          <span style={{ fontSize: 11, color: '#6A7A8A', fontWeight: 600 }}>OR</span>
-          <div style={{ flex: 1, height: 1, background: 'rgba(0,0,0,0.1)' }} />
-        </div>
+            <div style={dividerStyle}>
+              <div style={{ flex: 1, height: 1, background: 'rgba(0,0,0,0.1)' }} />
+              <span style={{ fontSize: 11, color: '#6A7A8A', fontWeight: 600 }}>OR</span>
+              <div style={{ flex: 1, height: 1, background: 'rgba(0,0,0,0.1)' }} />
+            </div>
 
-        <form onSubmit={handleSubmit}>
-          {mode === 'signup' && (
-            <Field label="Your name">
-              <input
-                type="text"
-                value={displayName}
-                onChange={e => setDisplayName(e.target.value)}
-                placeholder="What should we call you?"
-                style={inputStyle}
-              />
-            </Field>
-          )}
+            <form onSubmit={handleEmailContinue}>
+              <Field label="Email">
+                <input
+                  type="email"
+                  required
+                  autoFocus
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  style={inputStyle}
+                />
+              </Field>
 
-          <Field label="Email">
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              style={inputStyle}
-            />
-          </Field>
+              {error && <ErrorMsg>{error}</ErrorMsg>}
 
-          <Field label="Password">
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder={mode === 'signup' ? 'At least 6 characters' : ''}
-              style={inputStyle}
-            />
-          </Field>
+              <button type="submit" disabled={submitting} style={primaryBtnStyle}>
+                {submitting ? '...' : 'Continue'}
+              </button>
+            </form>
+          </>
+        )}
 
-          {error && <div style={{ color: '#9A3A3A', fontSize: 12, marginBottom: 12, fontWeight: 600 }}>{error}</div>}
-          {info && <div style={{ color: '#0F766E', fontSize: 12, marginBottom: 12, fontWeight: 600, background: '#E0F7F5', padding: 12, borderRadius: 10 }}>{info}</div>}
+        {step === 'password' && (
+          <form onSubmit={handleStep2}>
+            <div style={{ background: 'white', padding: '10px 14px', borderRadius: 10, marginBottom: 16, fontSize: 13, color: '#3A4A5A', border: '1px solid rgba(0,0,0,0.06)' }}>
+              📧 {email}
+            </div>
 
-          <button type="submit" disabled={submitting} style={{
-            width: '100%', padding: '13px 0',
-            background: colors.brand, color: 'white', border: 'none',
-            borderRadius: 12, fontSize: 14, fontWeight: 800,
-            cursor: submitting ? 'wait' : 'pointer',
-            opacity: submitting ? 0.7 : 1,
-            marginBottom: 14,
-          }}>
-            {submitting ? '...' : (mode === 'signup' ? 'Create account' : 'Log in')}
-          </button>
-        </form>
+            {lookup?.status === 'not_found' && (
+              <>
+                <Field label="Your name">
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    value={displayName}
+                    onChange={e => setDisplayName(e.target.value)}
+                    placeholder="What should we call you?"
+                    style={inputStyle}
+                  />
+                </Field>
+                <Field label="Password">
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="At least 6 characters"
+                    style={inputStyle}
+                  />
+                </Field>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={newsletter}
+                    onChange={e => setNewsletter(e.target.checked)}
+                    style={{ width: 18, height: 18, accentColor: colors.brand, cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: 13, color: '#3A4A5A' }}>
+                    Subscribe to the weekly Nasiha newsletter
+                  </span>
+                </label>
+              </>
+            )}
 
-        <div style={{ textAlign: 'center', fontSize: 13, color: '#3A4A5A' }}>
-          {mode === 'signup' ? (
-            <>Already have an account?{' '}
-              <button onClick={() => { setMode('login'); setError('') }} style={linkStyle}>Log in</button>
-            </>
-          ) : (
-            <>New to Nasiha?{' '}
-              <button onClick={() => { setMode('signup'); setError('') }} style={linkStyle}>Create an account</button>
-            </>
-          )}
-        </div>
+            {lookup?.status === 'full_user' && (
+              <Field label="Password">
+                <input
+                  type="password"
+                  required
+                  autoFocus
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  style={inputStyle}
+                />
+              </Field>
+            )}
+
+            {/* No password field for subscriber_no_password — they'll get an email */}
+
+            {error && <ErrorMsg>{error}</ErrorMsg>}
+            {info && <InfoMsg>{info}</InfoMsg>}
+
+            <button type="submit" disabled={submitting} style={primaryBtnStyle}>
+              {submitting ? '...' : getStep2ButtonLabel(lookup)}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   )
+}
+
+function getHeading(step, lookup) {
+  if (step === 'email') {
+    return {
+      title: 'Welcome to Nasiha',
+      subhead: 'Sign in or create your account to post listings.',
+    }
+  }
+  if (lookup?.status === 'full_user') {
+    return {
+      title: `Welcome back${lookup.display_name ? `, ${lookup.display_name}` : ''}`,
+      subhead: 'Enter your password to log in.',
+    }
+  }
+  if (lookup?.status === 'subscriber_no_password') {
+    return {
+      title: 'One more step',
+      subhead: `You're already on our newsletter. Set a password to start posting.`,
+    }
+  }
+  return {
+    title: 'Create your account',
+    subhead: 'Just a few details to get you started.',
+  }
+}
+
+function getStep2ButtonLabel(lookup) {
+  if (lookup?.status === 'full_user') return 'Log in'
+  if (lookup?.status === 'subscriber_no_password') return 'Send me a link'
+  return 'Create account'
 }
 
 function Field({ label, children }) {
@@ -159,6 +281,13 @@ function Field({ label, children }) {
       {children}
     </div>
   )
+}
+
+function ErrorMsg({ children }) {
+  return <div style={{ color: '#9A3A3A', fontSize: 12, marginBottom: 12, fontWeight: 600 }}>{children}</div>
+}
+function InfoMsg({ children }) {
+  return <div style={{ color: '#0F766E', fontSize: 12, marginBottom: 12, fontWeight: 600, background: '#E0F7F5', padding: 12, borderRadius: 10 }}>{children}</div>
 }
 
 const inputStyle = {
@@ -172,9 +301,24 @@ const inputStyle = {
   boxSizing: 'border-box',
 }
 
-const linkStyle = {
-  background: 'none', border: 'none', cursor: 'pointer',
-  color: colors.brand, fontSize: 13, fontWeight: 700, padding: 0,
+const primaryBtnStyle = {
+  width: '100%', padding: '13px 0',
+  background: colors.brand, color: 'white', border: 'none',
+  borderRadius: 12, fontSize: 14, fontWeight: 800,
+  cursor: 'pointer',
+}
+
+const googleBtnStyle = {
+  width: '100%', padding: '13px 0',
+  background: 'white', border: '1.5px solid rgba(0,0,0,0.12)',
+  borderRadius: 12, cursor: 'pointer',
+  fontSize: 14, fontWeight: 700, color: '#1C2B3A',
+  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+  marginBottom: 14,
+}
+
+const dividerStyle = {
+  display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14,
 }
 
 function GoogleIcon() {

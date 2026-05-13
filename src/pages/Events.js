@@ -343,6 +343,29 @@ function FiltersPanel({ activeTypes, activeAudiences, activeMosques, onTypesChan
 function NewsletterStrip() {
   const [email, setEmail] = useState('')
   const [done, setDone] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSubmit = async () => {
+    setError('')
+    if (!email || !email.includes('@')) { setError('Please enter a valid email.'); return }
+    setSubmitting(true)
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('subscribe-newsletter', {
+        body: { email: email.toLowerCase().trim(), source: 'events_page' },
+      })
+      if (fnError || data?.ok === false) {
+        setError(data?.error || fnError?.message || 'Something went wrong. Try again.')
+        return
+      }
+      setDone(true)
+    } catch (e) {
+      setError('Something went wrong. Try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   return (
     <div style={{
       background: 'linear-gradient(135deg, #1C2B3A 0%, #2D4458 100%)',
@@ -350,7 +373,9 @@ function NewsletterStrip() {
       boxShadow: '0 4px 16px rgba(28,43,58,0.15)',
     }}>
       {done ? (
-        <div style={{ textAlign: 'center', color: 'white', fontSize: 14, fontWeight: 700, padding: '4px 0' }}>✅ You're in. Top events coming Monday.</div>
+        <div style={{ textAlign: 'center', color: 'white', fontSize: 14, fontWeight: 700, padding: '4px 0' }}>
+          ✅ You're in. Check your inbox to confirm.
+        </div>
       ) : (
         <>
           <div style={{ fontSize: 17, fontWeight: 800, color: 'white', marginBottom: 6, lineHeight: 1.25 }}>
@@ -358,13 +383,27 @@ function NewsletterStrip() {
           </div>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginBottom: 14 }}>Free, every Monday. No spam, just what's worth showing up for.</div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <input value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com"
-              style={{ flex: 1, borderRadius: 10, border: 'none', padding: '11px 12px', fontSize: 14, outline: 'none' }} />
-            <button onClick={() => email && setDone(true)}
-              style={{ background: '#E8860A', border: 'none', borderRadius: 10, padding: '11px 18px', color: 'white', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>
-              Get them
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="your@email.com"
+              disabled={submitting}
+              style={{ flex: 1, borderRadius: 10, border: 'none', padding: '11px 12px', fontSize: 14, outline: 'none' }}
+            />
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              style={{
+                background: '#E8860A', border: 'none', borderRadius: 10,
+                padding: '11px 18px', color: 'white', fontWeight: 800,
+                fontSize: 14, cursor: submitting ? 'wait' : 'pointer',
+                opacity: submitting ? 0.7 : 1,
+              }}>
+              {submitting ? '...' : 'Get them'}
             </button>
           </div>
+          {error && <div style={{ fontSize: 12, color: '#FECACA', marginTop: 8, fontWeight: 600 }}>{error}</div>}
         </>
       )}
     </div>

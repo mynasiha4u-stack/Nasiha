@@ -40,14 +40,27 @@ export default function MyListings() {
       ;(cats || []).forEach(c => { catMap[c.id] = c })
       setCategories(catMap)
 
-      // Load user's listings (RLS lets them see their own regardless of status)
-      // .range(0, 9999) overrides Supabase's default 1000-row cap.
-      const { data } = await supabase.from('content')
-        .select('id, name, status, category_id, submitted_at, reviewed_at, review_notes, url_slug, image_url, event_date, address')
-        .eq('owner_id', user.id)
-        .order('submitted_at', { ascending: false })
-        .range(0, 9999)
-      setListings(data || [])
+      // Load user's listings, paginating to bypass Supabase's hard 1000-row
+      // per-request cap. Loop fetching 1000 rows at a time until we have all.
+      let all = []
+      let offset = 0
+      const chunkSize = 1000
+      while (true) {
+        const { data: chunk, error } = await supabase.from('content')
+          .select('id, name, status, category_id, submitted_at, reviewed_at, review_notes, url_slug, image_url, event_date, address')
+          .eq('owner_id', user.id)
+          .order('submitted_at', { ascending: false })
+          .range(offset, offset + chunkSize - 1)
+        if (error) {
+          console.warn('Failed to load listings chunk:', error)
+          break
+        }
+        if (!chunk || chunk.length === 0) break
+        all = all.concat(chunk)
+        if (chunk.length < chunkSize) break  // last page
+        offset += chunkSize
+      }
+      setListings(all)
       setLoading(false)
     }
     load()

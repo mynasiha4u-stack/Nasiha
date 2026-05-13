@@ -11,6 +11,7 @@ const STATUS_COLORS = {
   published: { bg: '#D1FAE5', color: '#065F46', label: '✅ Published' },
   rejected:  { bg: '#FEE2E2', color: '#991B1B', label: '✕ Rejected' },
   approved:  { bg: '#D1FAE5', color: '#065F46', label: '✅ Published' },
+  paused:    { bg: '#E5E7EB', color: '#374151', label: '⏸ Paused' },
 }
 
 export default function MyListings() {
@@ -53,6 +54,31 @@ export default function MyListings() {
     const { error } = await supabase.from('content').delete().eq('id', listing.id)
     if (error) { alert(`Couldn't delete: ${error.message}`); return }
     setListings(prev => prev.filter(l => l.id !== listing.id))
+  }
+
+  // Toggle pause: published → paused (hidden from public), paused → published
+  // 'paused' is a non-standard status we treat as 'hidden'; admin doesn't see these in review queue
+  const handleTogglePause = async (listing) => {
+    const newStatus = listing.status === 'paused' ? 'published' : 'paused'
+    const { error } = await supabase.from('content').update({ status: newStatus }).eq('id', listing.id)
+    if (error) { alert(`Couldn't ${newStatus === 'paused' ? 'pause' : 'unpause'}: ${error.message}`); return }
+    setListings(prev => prev.map(l => l.id === listing.id ? { ...l, status: newStatus } : l))
+  }
+
+  // Share: copy public URL to clipboard
+  const handleShare = async (listing) => {
+    const cat = categories[listing.category_id]
+    if (!cat?.slug) { alert('Cannot share — category missing'); return }
+    const slugForUrl = listing.url_slug || listing.id
+    const url = `${window.location.origin}/${cat.slug}/${slugForUrl}`
+    // Try clipboard API first; fall back to a prompt
+    try {
+      await navigator.clipboard.writeText(url)
+      alert('Link copied to clipboard!')
+    } catch {
+      // Fallback for older browsers
+      window.prompt('Copy this link:', url)
+    }
   }
 
   const filtered = listings.filter(l => {
@@ -114,7 +140,7 @@ export default function MyListings() {
             <div style={{ background: 'white', borderRadius: 12, padding: 14, marginBottom: 14, fontSize: 12, color: '#3A4A5A', border: '1px solid rgba(0,0,0,0.06)' }}>
               <strong>Admin note:</strong> You own {listings.length} listings (most are seeded data). Use the filter chips above to narrow to specific statuses.
             </div>
-            <ListingRows listings={filtered.slice(0, 50)} categories={categories} onDelete={handleDelete} onEdit={(l) => navigate(`/submit?edit=${l.id}`)} />
+            <ListingRows listings={filtered.slice(0, 50)} categories={categories} onDelete={handleDelete} onEdit={(l) => navigate(`/submit?edit=${l.id}`)} onDuplicate={(l) => navigate(`/submit?duplicate=${l.id}`)} onTogglePause={handleTogglePause} onShare={handleShare} />
             {filtered.length > 50 && (
               <div style={{ textAlign: 'center', padding: 16, color: '#6A7A8A', fontSize: 12 }}>
                 Showing first 50 of {filtered.length}. Full admin tools coming soon.
@@ -132,7 +158,7 @@ export default function MyListings() {
             </div>
           </div>
         ) : (
-          <ListingRows listings={filtered} categories={categories} onDelete={handleDelete} onEdit={(l) => navigate(`/submit?edit=${l.id}`)} />
+          <ListingRows listings={filtered} categories={categories} onDelete={handleDelete} onEdit={(l) => navigate(`/submit?edit=${l.id}`)} onDuplicate={(l) => navigate(`/submit?duplicate=${l.id}`)} onTogglePause={handleTogglePause} onShare={handleShare} />
         )}
       </div>
 
@@ -141,12 +167,14 @@ export default function MyListings() {
   )
 }
 
-function ListingRows({ listings, categories, onDelete, onEdit }) {
+function ListingRows({ listings, categories, onDelete, onEdit, onDuplicate, onTogglePause, onShare }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {listings.map(l => {
         const cat = categories[l.category_id]
         const status = STATUS_COLORS[l.status] || STATUS_COLORS.pending
+        const isPublished = l.status === 'published' || l.status === 'approved'
+        const isPaused = l.status === 'paused'
         return (
           <div key={l.id} style={{
             background: 'white', borderRadius: 12, padding: 14,
@@ -176,8 +204,15 @@ function ListingRows({ listings, categories, onDelete, onEdit }) {
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               <button onClick={() => onEdit(l)} style={smallBtn}>Edit</button>
+              {(isPublished || isPaused) && (
+                <button onClick={() => onTogglePause(l)} style={smallBtn}>
+                  {isPaused ? 'Unpause' : 'Pause'}
+                </button>
+              )}
+              <button onClick={() => onDuplicate(l)} style={smallBtn}>Duplicate</button>
+              {isPublished && <button onClick={() => onShare(l)} style={smallBtn}>Share</button>}
               <button onClick={() => onDelete(l)} style={{ ...smallBtn, color: '#991B1B' }}>Delete</button>
             </div>
           </div>

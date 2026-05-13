@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 import TopBar from '../components/TopBar'
 import BottomNav from '../components/BottomNav'
+import ImageUpload from '../components/ImageUpload'
 import { colors, headerGradient } from '../theme'
 
 // Map slug → friendly label, emoji, and which fields to show
@@ -33,6 +34,9 @@ export default function SubmitListing() {
   const [params] = useSearchParams()
   const { user, loading: authLoading } = useAuth()
 
+  const editId = params.get('edit')  // if present, we're editing not creating
+  const duplicateId = params.get('duplicate')  // if present, prefill from existing listing (creates new)
+
   // Pre-select category from URL param if present (e.g. /submit?cat=lawyers)
   const initialCat = CATEGORIES.find(c => c.slug === params.get('cat'))?.slug || ''
 
@@ -46,6 +50,7 @@ export default function SubmitListing() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [loadingExisting, setLoadingExisting] = useState(!!editId || !!duplicateId)
 
   // Redirect to auth if not logged in
   useEffect(() => {
@@ -53,6 +58,51 @@ export default function SubmitListing() {
       navigate(`/auth?redirect=${encodeURIComponent('/submit')}`)
     }
   }, [authLoading, user, navigate])
+
+  // Load existing listing if editing or duplicating
+  useEffect(() => {
+    if (!user) return
+    const idToLoad = editId || duplicateId
+    if (!idToLoad) return
+
+    async function load() {
+      const { data, error } = await supabase
+        .from('content')
+        .select('*, categories(slug)')
+        .eq('id', idToLoad)
+        .single()
+
+      if (error || !data) {
+        setError('Could not load that listing.')
+        setLoadingExisting(false)
+        return
+      }
+      // Set category from the joined slug
+      if (data.categories?.slug) setCategorySlug(data.categories.slug)
+      // Fill form fields from existing data
+      setForm({
+        name: duplicateId ? `${data.name || ''} (copy)` : (data.name || ''),
+        description: data.description || '',
+        address: data.address || '',
+        metro: data.metro || 'Bay Area',
+        phone: data.phone || '',
+        email: data.email || '',
+        website: data.website || '',
+        instagram: data.instagram || '',
+        facebook: data.facebook || '',
+        image_url: data.image_url || '',
+        hours: data.hours || '',
+        delivery: data.delivery || '',
+        specialty: data.specialty || '',
+        grades: data.grades || '',
+        event_date: data.event_date || '',
+        event_time: data.event_time || '',
+        event_end_time: data.event_end_time || '',
+      })
+      setLoadingExisting(false)
+    }
+    load()
+  }, [user, editId, duplicateId])
 
   const cat = CATEGORIES.find(c => c.slug === categorySlug)
   const set = (key) => (e) => {
@@ -72,15 +122,8 @@ export default function SubmitListing() {
       const { data: catRow } = await supabase.from('categories').select('id').eq('slug', categorySlug).single()
       if (!catRow) { setError('Category not found.'); setSubmitting(false); return }
 
-      // Build the insert payload — only include fields the category cares about
+      // Build the insert/update payload — only include fields the category cares about
       const payload = {
-        content_type: 'listing',
-        category_id: catRow.id,
-        status: 'pending',
-        owner_id: user.id,
-        submitted_by: user.email,
-        submitted_at: new Date().toISOString(),
-        url_slug: makeSlug(form.name),
         name: form.name,
         description: form.description || null,
       }
@@ -98,19 +141,36 @@ export default function SubmitListing() {
           payload[f] = fieldMap[f]
         }
       })
-      // Always include metro
       payload.metro = form.metro
 
-      const { error: insertError } = await supabase.from('content').insert(payload)
-      if (insertError) {
-        setError(`Couldn't submit: ${insertError.message}`)
-        setSubmitting(false)
-        return
+      if (editId) {
+        // EDIT: update the existing row, keep its status as-is (admin can re-review if they want)
+        const { error: updateError } = await supabase
+          .from('content').update(payload).eq('id', editId)
+        if (updateError) {
+          setError(`Couldn't update: ${updateError.message}`)
+          setSubmitting(false)
+          return
+        }
+      } else {
+        // CREATE (or DUPLICATE): full insert with pending status + owner
+        const createPayload = {
+          ...payload,
+          content_type: 'listing',
+          category_id: catRow.id,
+          status: 'pending',
+          owner_id: user.id,
+          submitted_by: user.email,
+          submitted_at: new Date().toISOString(),
+          url_slug: makeSlug(form.name),
+        }
+        const { error: insertError } = await supabase.from('content').insert(createPayload)
+        if (insertError) {
+          setError(`Couldn't submit: ${insertError.message}`)
+          setSubmitting(false)
+          return
+        }
       }
-
-      // Save extra attributes (specialty, grades, hours, delivery) since they're attributes not columns
-      // We'll handle those in a v2 — for now, store in description prefix
-      // TODO: insert into attributes table for specialty, grades, etc
 
       setSuccess(true)
     } catch (e) {
@@ -119,10 +179,18 @@ export default function SubmitListing() {
     }
   }
 
-  if (authLoading) {
+  if (authLoading || loadingExisting) {
     return <div style={{ padding: 40, textAlign: 'center', color: '#6A7A8A' }}>Loading…</div>
   }
   if (!user) return null // redirect in progress
+
+  const pageMode = editId ? 'edit' : duplicateId ? 'duplicate' : 'create'
+  const pageTitle = { edit: 'Edit listing', duplicate: 'Duplicate listing', create: 'Submit a listing' }[pageMode]
+  const pageSubhead = {
+    edit: 'Update your listing details. Changes save immediately.',
+    duplicate: 'Make a copy of this listing with the details prefilled.',
+    create: 'Add your business, event, or service to Nasiha. We review every submission before it goes live.',
+  }[pageMode]
 
   if (success) {
     return (
@@ -132,14 +200,19 @@ export default function SubmitListing() {
         </div>
         <div style={{ padding: '60px 30px', textAlign: 'center' }}>
           <div style={{ fontSize: 56, marginBottom: 16 }}>✅</div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1C2B3A', marginBottom: 8 }}>Submitted for review</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1C2B3A', marginBottom: 8 }}>
+            {pageMode === 'edit' ? 'Listing updated' : 'Submitted for review'}
+          </h1>
           <p style={{ fontSize: 14, color: '#3A4A5A', lineHeight: 1.5, marginBottom: 24 }}>
-            Thanks! Your {cat.label.toLowerCase()} listing will appear once it's reviewed (usually within 24 hours).
-            You can track its status in My Listings.
+            {pageMode === 'edit'
+              ? 'Your changes are saved.'
+              : `Thanks! Your ${cat.label.toLowerCase()} listing will appear once it's reviewed (usually within 24 hours). You can track its status in My Listings.`}
           </p>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
             <button onClick={() => navigate('/my-listings')} style={primaryBtn}>View My Listings</button>
-            <button onClick={() => { setSuccess(false); setForm({ name: '', description: '', address: '', metro: 'Bay Area', phone: '', email: '', website: '', instagram: '', facebook: '', image_url: '', hours: '', delivery: '', specialty: '', grades: '', event_date: '', event_time: '', event_end_time: '' }); setCategorySlug('') }} style={secondaryBtn}>Submit another</button>
+            {pageMode !== 'edit' && (
+              <button onClick={() => { setSuccess(false); setForm({ name: '', description: '', address: '', metro: 'Bay Area', phone: '', email: '', website: '', instagram: '', facebook: '', image_url: '', hours: '', delivery: '', specialty: '', grades: '', event_date: '', event_time: '', event_end_time: '' }); setCategorySlug('') }} style={secondaryBtn}>Submit another</button>
+            )}
           </div>
         </div>
         <BottomNav />
@@ -154,9 +227,9 @@ export default function SubmitListing() {
         <div style={{ marginBottom: 14 }}>
           <button onClick={() => navigate(-1)} style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 999 }}>← Back</button>
         </div>
-        <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1C2B3A', marginBottom: 4 }}>Submit a listing</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1C2B3A', marginBottom: 4 }}>{pageTitle}</h1>
         <p style={{ fontSize: 13, color: 'rgba(28,43,58,0.7)' }}>
-          Add your business, event, or service to Nasiha. We review every submission before it goes live.
+          {pageSubhead}
         </p>
       </div>
 
@@ -279,8 +352,8 @@ export default function SubmitListing() {
             )}
 
             {cat.fields.includes('image_url') && (
-              <Field label="Image URL (optional)">
-                <input value={form.image_url} onChange={set('image_url')} placeholder="https://..." style={inputStyle} />
+              <Field label="Photo (optional)">
+                <ImageUpload value={form.image_url} onChange={(url) => setForm(f => ({ ...f, image_url: url }))} />
               </Field>
             )}
 
@@ -293,7 +366,7 @@ export default function SubmitListing() {
             {error && <div style={{ color: '#9A3A3A', fontSize: 12, marginBottom: 12, fontWeight: 600 }}>{error}</div>}
 
             <button type="submit" disabled={submitting} style={{ ...primaryBtn, width: '100%', marginTop: 8 }}>
-              {submitting ? 'Submitting...' : 'Submit for review'}
+              {submitting ? 'Saving...' : pageMode === 'edit' ? 'Save changes' : 'Submit for review'}
             </button>
           </>
         )}

@@ -333,6 +333,7 @@ function AuthButton() {
               <div style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A' }}>{profile?.display_name || user.email}</div>
               <div style={{ fontSize: 11, color: '#6A7A8A', marginTop: 2 }}>{user.email}</div>
             </div>
+            <button onClick={() => { setOpen(false); navigate('/account') }} style={menuItemStyle}>Account</button>
             <button onClick={() => { setOpen(false); navigate('/my-listings') }} style={menuItemStyle}>My listings</button>
             {profile?.is_admin && (
               <button onClick={() => { setOpen(false); navigate('/admin/review') }} style={{ ...menuItemStyle, color: colors.brand, fontWeight: 800 }}>⚖️ Admin · Review</button>

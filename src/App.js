@@ -9,6 +9,9 @@ import MosqueDetail from './pages/MosqueDetail'
 import Events, { EventDetailPage } from './pages/Events'
 import Admin from './pages/Admin'
 import Auth from './pages/Auth'
+import Account from './pages/Account'
+import ProfileSettings from './pages/ProfileSettings'
+import EmailPreferences from './pages/EmailPreferences'
 import AdminReview from './pages/AdminReview'
 import SubmitListing from './pages/SubmitListing'
 import MyListings from './pages/MyListings'
@@ -29,6 +32,9 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/account" element={<Account />} />
+          <Route path="/account/profile" element={<ProfileSettings />} />
+          <Route path="/account/email" element={<EmailPreferences />} />
           <Route path="/submit" element={<SubmitListing />} />
           <Route path="/my-listings" element={<MyListings />} />
           <Route path="/admin/review" element={<AdminReview />} />

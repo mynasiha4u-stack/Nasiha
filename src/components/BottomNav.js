@@ -14,8 +14,8 @@ export default function BottomNav() {
   const { user } = useAuth()
 
   // Account tab handles its own routing based on auth state
-  const accountActive = pathname === '/my-listings' || pathname === '/auth' || pathname === '/account'
-  const accountTarget = user ? '/my-listings' : '/auth?mode=login'
+  const accountActive = pathname === '/account' || pathname.startsWith('/account/') || pathname === '/my-listings' || pathname === '/admin/review' || pathname === '/auth'
+  const accountTarget = user ? '/account' : '/auth?mode=login'
   const accountLabel = user ? 'Account' : 'Sign in'
   const accountIcon = user ? '👤' : '→'
 

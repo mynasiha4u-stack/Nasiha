@@ -95,7 +95,12 @@ export default function AdminReview() {
         })
         .eq('id', listing.id)
       if (error) { alert(`Couldn't approve: ${error.message}`); return }
-      // Remove from current list
+
+      // Fire email notification (fire-and-forget — don't block UI)
+      supabase.functions.invoke('send-notification-email', {
+        body: { type: 'approved', listing_id: listing.id },
+      }).catch(e => console.warn('Email notification failed:', e))
+
       setListings(prev => prev.filter(l => l.id !== listing.id))
     } finally {
       setActionInProgress(null)
@@ -103,7 +108,7 @@ export default function AdminReview() {
   }
 
   const handleReject = async (listing) => {
-    const reason = prompt(`Why are you rejecting "${listing.name}"?\n\nThis reason will be visible to the submitter.`)
+    const reason = prompt(`Why are you rejecting "${listing.name}"?\n\nThis reason will be shown to the submitter via email and in their dashboard.`)
     if (reason === null) return  // cancelled
     if (!reason.trim()) {
       if (!confirm('No reason given. Reject anyway?')) return
@@ -118,6 +123,12 @@ export default function AdminReview() {
         })
         .eq('id', listing.id)
       if (error) { alert(`Couldn't reject: ${error.message}`); return }
+
+      // Fire rejection email
+      supabase.functions.invoke('send-notification-email', {
+        body: { type: 'rejected', listing_id: listing.id, reason: reason.trim() },
+      }).catch(e => console.warn('Email notification failed:', e))
+
       setListings(prev => prev.filter(l => l.id !== listing.id))
     } finally {
       setActionInProgress(null)

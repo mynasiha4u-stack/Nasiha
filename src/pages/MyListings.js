@@ -39,10 +39,12 @@ export default function MyListings() {
       setCategories(catMap)
 
       // Load user's listings (RLS lets them see their own regardless of status)
+      // .range(0, 9999) overrides Supabase's default 1000-row cap.
       const { data } = await supabase.from('content')
         .select('id, name, status, category_id, submitted_at, reviewed_at, review_notes, url_slug, image_url, event_date, address')
         .eq('owner_id', user.id)
         .order('submitted_at', { ascending: false })
+        .range(0, 9999)
       setListings(data || [])
       setLoading(false)
     }

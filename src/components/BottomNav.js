@@ -1,15 +1,23 @@
 import React from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../lib/AuthContext'
 import { colors } from '../theme'
 
 const tabs = [
-  { path: '/',    icon: '🏠', label: 'Home' },
-  { path: '/map', icon: '🗺️', label: 'Map'  },
+  { path: '/',    icon: '🏠', label: 'Home',    matches: (p) => p === '/' },
+  { path: '/map', icon: '🗺️', label: 'Map',     matches: (p) => p === '/map' || p.endsWith('/map') },
 ]
 
 export default function BottomNav() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
+  const { user } = useAuth()
+
+  // Account tab handles its own routing based on auth state
+  const accountActive = pathname === '/my-listings' || pathname === '/auth' || pathname === '/account'
+  const accountTarget = user ? '/my-listings' : '/auth?mode=login'
+  const accountLabel = user ? 'Account' : 'Sign in'
+  const accountIcon = user ? '👤' : '→'
 
   return (
     <nav style={{
@@ -22,7 +30,7 @@ export default function BottomNav() {
       zIndex: 100,
     }}>
       {tabs.map(t => {
-        const active = pathname === t.path || (t.path !== '/' && pathname.startsWith(t.path))
+        const active = t.matches(pathname)
         return (
           <button key={t.path} onClick={() => navigate(t.path)} style={{
             flex: 1, display: 'flex', flexDirection: 'column',
@@ -35,6 +43,17 @@ export default function BottomNav() {
           </button>
         )
       })}
+
+      {/* Account tab — third position */}
+      <button onClick={() => navigate(accountTarget)} style={{
+        flex: 1, display: 'flex', flexDirection: 'column',
+        alignItems: 'center', gap: 2, padding: '8px 0 7px',
+        background: 'none', border: 'none', cursor: 'pointer',
+      }}>
+        <span style={{ fontSize: 22 }}>{accountIcon}</span>
+        <span style={{ fontSize: 10, fontWeight: 700, color: accountActive ? colors.brand : colors.textMuted }}>{accountLabel}</span>
+        {accountActive && <div style={{ width: 4, height: 4, borderRadius: '50%', background: colors.brand }} />}
+      </button>
     </nav>
   )
 }

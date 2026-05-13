@@ -2,6 +2,7 @@ import { colors, headerGradient, card, radius } from '../theme'
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { isValidImageUrl } from '../lib/imageUrl'
 import BottomNav from '../components/BottomNav'
 import AddListingButton from '../components/AddListingButton'
 import TopBar from '../components/TopBar'
@@ -12,20 +13,6 @@ const MOSQUES = ['MCC East Bay', 'MCA Santa Clara', 'ICF Fremont', 'SRVIC San Ra
 
 const TYPE_COLOR = { bg: '#e8943a', color: 'white' }
 const AUDIENCE_COLOR = { bg: '#9b87c4', color: 'white' }
-
-// True only for URLs that look like an actual image (not an Instagram/Facebook link, etc).
-function isValidImageUrl(url) {
-  if (!url || typeof url !== 'string') return false
-  const lower = url.toLowerCase().trim()
-  if (!lower.startsWith('http')) return false
-  // Common image extensions
-  if (/\.(jpg|jpeg|png|gif|webp|avif|svg)(\?|#|$)/i.test(lower)) return true
-  // Known image-hosting paths (Supabase storage, common CDNs)
-  if (lower.includes('supabase.co/storage') || lower.includes('cloudinary.com') || lower.includes('imgur.com')) return true
-  // Skip Instagram/Facebook/site URLs that aren't images
-  if (/instagram\.com|facebook\.com|twitter\.com|x\.com|tiktok\.com|youtube\.com|linkedin\.com/.test(lower)) return false
-  return false  // unknown → don't risk a broken img tag
-}
 
 // Strip HTML tags and decode common entities for clean display in <div>{text}</div>
 function stripHtml(html) {

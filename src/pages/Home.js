@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
+import { isValidImageUrl } from '../lib/imageUrl'
 import BottomNav from '../components/BottomNav'
 import { colors, headerGradient, card, radius } from '../theme'
 
@@ -207,7 +208,9 @@ export default function Home() {
             </div>
 
             <div style={{ display: 'flex', gap: 12, overflowX: 'auto', scrollbarWidth: 'none', marginBottom: 28, paddingBottom: 4 }}>
-              {events.map(ev => (
+              {events.map(ev => {
+                const imageUrl = isValidImageUrl(ev.image_url) ? ev.image_url : null
+                return (
                 <div key={ev.id} onClick={() => navigate(`/events/${ev.url_slug}`)} style={{
                   flexShrink: 0, width: 200, background: 'white',
                   borderRadius: radius.lg, overflow: 'hidden',
@@ -215,10 +218,16 @@ export default function Home() {
                   cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
                 }}>
                   <div style={{
-                    height: 100,
-                    background: ev.image_url ? `url(${ev.image_url}) center/cover` : headerGradient,
                     position: 'relative',
+                    height: 100,
+                    background: imageUrl ? '#f0edf8' : 'linear-gradient(135deg, #FFE8DC 0%, #FED7BB 100%)',
+                    overflow: 'hidden',
                   }}>
+                    {imageUrl
+                      ? <img src={imageUrl} alt={ev.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: 44, opacity: 0.35, lineHeight: 1 }}>📅</span>
+                        </div>}
                     {ev.event_host && (
                       <div style={{
                         position: 'absolute', top: 8, left: 8,
@@ -233,7 +242,8 @@ export default function Home() {
                     <div style={{ fontSize: 11, color: colors.textSecondary, fontWeight: 500 }}>{formatDate(ev.event_date)}</div>
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           </>
         )}

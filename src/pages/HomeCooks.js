@@ -249,7 +249,7 @@ export default function HomeCooks() {
   const [search, setSearch] = useState('')
   const [cuisineFilter, setCuisineFilter] = useState(new Set())
   const [serviceFilter, setServiceFilter] = useState(new Set())
-  const [sortBy, setSortBy] = useState('nearest') // 'nearest' | 'featured'
+  const [sortBy, setSortBy] = useState('nearest') // 'nearest' | 'az'
   // detectedCity: city name from geolocation+reverse-geocode (cached in localStorage)
   const [detectedCity, setDetectedCity] = useState(null)
   // selectedCity: user's active city — defaults to detected, can be overridden via dropdown
@@ -364,30 +364,24 @@ export default function HomeCooks() {
     return { ...item, _dist: dist }
   }), [filtered, anchor])
 
-  // Sort
+  // Sort — featured rows always pinned to the top regardless of mode; rest follows sortBy.
   const sorted = useMemo(() => {
     const arr = [...annotated]
-    if (sortBy === 'featured') {
-      return arr.sort((a, b) => {
-        if (!!a.featured !== !!b.featured) return a.featured ? -1 : 1
-        return (a.name || '').localeCompare(b.name || '')
-      })
-    }
-    // Near Me — sort by distance to selected city (ties → A–Z). No anchor → A–Z.
-    if (!anchor) return arr.sort((a, b) => (a.name || '').localeCompare(b.name || ''))
-    return arr.sort((a, b) => {
-      const da = a._dist
-      const db = b._dist
-      if (da == null && db == null) return (a.name || '').localeCompare(b.name || '')
+    const byName = (a, b) => (a.name || '').localeCompare(b.name || '')
+    const byDist = (a, b) => {
+      const da = a._dist, db = b._dist
+      if (da == null && db == null) return byName(a, b)
       if (da == null) return 1
       if (db == null) return -1
-      if (da === db) return (a.name || '').localeCompare(b.name || '')
+      if (da === db) return byName(a, b)
       return da - db
+    }
+    const compare = (sortBy === 'nearest' && anchor) ? byDist : byName
+    return arr.sort((a, b) => {
+      if (!!a.featured !== !!b.featured) return a.featured ? -1 : 1
+      return compare(a, b)
     })
   }, [annotated, sortBy, anchor])
-
-  // Featured strip — only show when there's at least one featured row matching filters
-  const featuredPicks = useMemo(() => annotated.filter(i => i.featured), [annotated])
 
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#F7F3EE', minHeight: '100vh', paddingBottom: 100 }}>
@@ -427,11 +421,11 @@ export default function HomeCooks() {
           />
         </div>
 
-        {/* Sort toggle: Near Me / Featured */}
+        {/* Sort toggle: Near Me / A–Z (featured rows always pinned at top in both) */}
         <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 3, border: `1px solid ${colors.border}`, marginBottom: 10 }}>
           {[
-            { key: 'nearest',  label: '📍 Near Me' },
-            { key: 'featured', label: '✨ Featured' },
+            { key: 'nearest', label: '📍 Near Me' },
+            { key: 'az',      label: 'A–Z' },
           ].map(s => (
             <button key={s.key} onClick={() => setSortBy(s.key)} style={{
               flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
@@ -460,41 +454,6 @@ export default function HomeCooks() {
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A' }}>Pick a city to sort by proximity</div>
               <div style={{ fontSize: 12, color: '#3A4A5A', marginTop: 2 }}>Location access was denied — choose a city above.</div>
-            </div>
-          </div>
-        )}
-
-        {/* MyNasiha Picks band — only when there are featured rows */}
-        {!loading && featuredPicks.length > 0 && (
-          <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#1C2B3A', marginBottom: 6, letterSpacing: 0.2 }}>
-              ✨ MyNasiha Picks
-            </div>
-            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
-              {featuredPicks.map(item => (
-                <div
-                  key={item.id}
-                  onClick={() => item.url_slug && navigate(`/home-cooked-food-catering/${item.url_slug}`)}
-                  style={{
-                    flex: '0 0 220px', background: 'white', borderRadius: 14,
-                    border: '1px solid rgba(0,0,0,0.06)', padding: 12, cursor: 'pointer',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                    display: 'flex', flexDirection: 'column', gap: 6,
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{
-                      width: 36, height: 36, borderRadius: 8,
-                      background: 'linear-gradient(135deg, #FFE8DC 0%, #FED7BB 100%)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0,
-                    }}>🍲</div>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: '#1C2B3A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
-                  </div>
-                  {item.service_area && (
-                    <div style={{ fontSize: 11, color: '#4a5a6a' }}>📍 {item.service_area}</div>
-                  )}
-                </div>
-              ))}
             </div>
           </div>
         )}

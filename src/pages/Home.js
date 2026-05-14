@@ -12,7 +12,7 @@ const CATEGORIES = [
   { icon: '📅', label: 'Upcoming Events',              path: '/events' },
   { icon: '💐', label: 'Desserts, Catering & Events',  path: '/desserts-catering-event-planning' },
   { icon: '👶', label: 'Childcare',                    path: '/childcare' },
-  { icon: '👨‍🍳', label: 'Home Cooks',                  path: '/directory?cat=home-cooked-food' },
+  { icon: '👨‍🍳', label: 'Home Cooks',                  path: '/home-cooked-food-catering' },
   { icon: '🏫', label: 'Full Time Islamic Schools',    path: '/full-time-islamic-schools' },
   { icon: '⚖️', label: 'Lawyers',                      path: '/lawyers' },
 ]

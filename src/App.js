@@ -16,6 +16,7 @@ import AdminReview from './pages/AdminReview'
 import SubmitListing from './pages/SubmitListing'
 import MyListings from './pages/MyListings'
 import EventPlanning, { EventVendorDetail } from './pages/EventPlanning'
+import HomeCooks, { HomeCookDetail } from './pages/HomeCooks'
 import Childcare, { ChildcareDetail } from './pages/Childcare'
 import ChildcareMap from './pages/ChildcareMap'
 import JummahMap from './pages/JummahMap'
@@ -62,6 +63,9 @@ export default function App() {
           {/* Old URL kept as alias so existing bookmarks/links don't break */}
           <Route path="/event-planning" element={<EventPlanning />} />
           <Route path="/event-planning/:slug" element={<EventVendorDetail />} />
+          {/* Home Cooks */}
+          <Route path="/home-cooked-food-catering" element={<HomeCooks />} />
+          <Route path="/home-cooked-food-catering/:slug" element={<HomeCookDetail />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

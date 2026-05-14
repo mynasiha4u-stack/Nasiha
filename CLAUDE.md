@@ -51,7 +51,7 @@ Nasiha is a **community marketplace, not a curated directory.** Anyone signs up 
 - `/lawyers` + `/lawyers/:slug`
 - `/full-time-islamic-schools` + `/full-time-islamic-schools/:slug`
 - `/desserts-catering-event-planning` + `/:slug` — Combined catering + desserts via tags column
-- `/home-cooked-food-catering` + `/:slug` — Home cooks (needs feature-parity rebuild — see Active Work)
+- `/home-cooked-food-catering` + `/:slug` — Home cooks (Near Me + Featured sort, ✨ MyNasiha Picks band, city-level only, no map)
 - `/map` — Main map with category filters
 
 ## Current DB Counts (approximate)
@@ -106,7 +106,7 @@ All listings share one `content` table with `category_id`. Key columns:
 - `tags TEXT[]` (Migration 5) — multi-category labels (e.g. ['desserts', 'event-services'])
 - `featured BOOLEAN` — drives "MyNasiha Pick" surface (planned)
 - `location_area` — Peninsula / East Bay / South Bay / Fremont / etc.
-- `service_area` — TBD, planned for home cooks (text describing cities they serve)
+- `service_area` — for home cooks, the city the cook is based in (e.g. "Fremont", "San Jose"). **City-level only, never a street address — privacy by design.** Drives the "📍 Based in {city}" card display and the Near Me proximity sort on `/home-cooked-food-catering`. Populated for all 65 published home cooks by Migrations 7/8/8b.
 
 Related tables:
 - `categories` — slug, name
@@ -138,10 +138,15 @@ MCC East Bay, ICF Fremont, SRVIC San Ramon, WVMA Los Gatos (iCal); MCA Santa Cla
 ## Storage
 - Bucket `listing-images` — 5MB max per upload, public SELECT, authenticated INSERT/DELETE namespaced to `user.id`
 
-## Pending SQL Migrations (not yet run by Nas)
-- `migration_5_tags_and_merge.sql` — adds `tags TEXT[]` column, backfills from category slugs, merges 66Strawberries + Ladle n Wok duplicates with combined detailed descriptions tagged `['desserts', 'event-services']`
-- `migration_6_homecook_attributes.sql` — backfills 123 cuisine/service tags for 83 home cooks from CSV `filters` column
-- `migration_step2_drop_old_columns.sql` — drops legacy `location_address` / `location_area` columns. **Deferred — do not run until verified safe.**
+## SQL Migrations
+
+**Run / done:**
+- `migration_5_tags_and_merge.sql` — added `tags TEXT[]` column, backfilled from category slugs, merged 66Strawberries + Ladle n Wok duplicates tagged `['desserts', 'event-services']`
+- `migration_6_homecook_attributes.sql` — backfilled 123 cuisine/service tags for 83 home cooks from CSV `filters` column
+- `migration_7` / `migration_8` / `migration_8b` — added `service_area` column and backfilled it for all 65 published home cooks (city-level only)
+
+**Deferred:**
+- `migration_step2_drop_old_columns.sql` — drops legacy `location_address` / `location_area` columns. **Do not run until verified safe.**
 
 ## Working Preferences (CRITICAL)
 - **One step at a time.** No multi-step sequences. Each instruction is one literal action.
@@ -158,13 +163,12 @@ MCC East Bay, ICF Fremont, SRVIC San Ramon, WVMA Los Gatos (iCal); MCA Santa Cla
 
 ## What's Pending Right Now (Active Work)
 
-### Home Cooks page — half built, needs feature-parity rebuild
-- Add `service_area` column to content, backfill existing 83 from `location_area`
-- Featured / MyNasiha Pick section at top using `featured` boolean
-- All contact info on cards (phone/email/website/IG/FB/WhatsApp — graceful degradation)
-- A-Z sort + Featured sort (**no map / distance** — home cooks don't have addresses by design for privacy)
-- Submit form: Google Places picker for service area on new submissions
-- Strip "Delivery Offered: No. On Site Prep: No." trailing text from description preview on cards (info already in tag pills)
+### Home page — quick fixes (next up, not started)
+- **Upcoming events row → horizontal scroll** with a half-card peeking on the right edge, so scrollability is visually obvious
+- **Featured section lower on the home page** mixing featured restaurant / home cook / caterer — the page currently feels blank. Depends on listings having `featured = true`, which almost none do yet, so this surface will be empty until Nas flips the flag on a few.
+
+### Home Cooks — submit form `service_area` capture
+The only remaining item from the Home Cooks rebuild. New submissions via `/submit?cat=home-cooked-food` don't yet collect `service_area`; add a Google Places city picker so submitter picks a city (city-level only, never street address). All existing cards / sort / Picks / contact buttons already work — see the "Decided — don't re-litigate" note below.
 
 ### Chat — the headline feature (next major build)
 - pgvector extension on Supabase + embeddings for all ~7,500 listings
@@ -241,7 +245,12 @@ Source: `/mnt/user-data/uploads/Halal_Map.kml`. Big import job, needs dedup agai
 ## Notes on the Catering/Event Planning Merge
 The `desserts-catering-event-planning` page queries BOTH `dessert-catering` and `event-services` categories combined. Two vendors had duplicates (one row in each category): **66Strawberries** and **Ladle n Wok** — these were merged in Migration 5 into single rows under `event-services` with combined detailed descriptions, tagged `['desserts', 'event-services']`. All other vendors keep their original single category but get a tag matching their category slug — so the knowledge graph still knows which vendors are primarily desserts vs event services.
 
+## Decided — don't re-litigate
+
+- **Home cooks: city-level location only, never street address.** Privacy by design. `service_area` holds the city (e.g. "Fremont"), and `display_lat/display_lng` are the city centroid, not the cook's actual home. There is no map page for home cooks for the same reason. ~20 home cooks did originally provide full street addresses in their submissions; the plan (not built) is to store those in a private, never-displayed column for more precise distance sorting in chat — but **the user-facing surface stays city-only forever.**
+
 ## Recent Commits (top of main, newest first)
+- `0868dc0` — Home Cooks rebuild: Near Me/Featured sort, Google reverse-geocode city detect cached in localStorage, city dropdown override, ✨ MyNasiha Picks band, "Based in {city}" + distance chips, all six contact buttons, description trailer stripping
 - `c271ca1` — Home Cooks page + Migration 6 to backfill cuisine/service tags
 - `68b157d` — Add search bar to Events page (was the only one missing)
 - `0c9b0b4` — EventPlanning: shorter filter labels (Type/Service/Delivery)

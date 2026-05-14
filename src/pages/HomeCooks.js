@@ -27,8 +27,6 @@ const SERVICE_OPTIONS = [
 
 const ALL_TAGS = [...CUISINE_OPTIONS, ...SERVICE_OPTIONS]
 
-const CITY_CACHE_KEY = 'nasiha:user_city_v1'
-
 function distanceMiles(lat1, lng1, lat2, lng2) {
   const R = 3958.8
   const dLat = (lat2 - lat1) * Math.PI / 180
@@ -49,23 +47,6 @@ function stripStructuredTrailers(text) {
     .replace(/&#8217;/g, "'")
     .replace(/\s+/g, ' ')
     .trim()
-}
-
-async function reverseGeocodeCity(lat, lng) {
-  const key = process.env.REACT_APP_GOOGLE_MAPS_API_KEY
-  if (!key) return null
-  try {
-    const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${key}`)
-    const data = await res.json()
-    if (data.status !== 'OK' || !data.results?.length) return null
-    for (const result of data.results) {
-      const locality = (result.address_components || []).find(c => c.types.includes('locality'))
-      if (locality) return locality.long_name
-    }
-    return null
-  } catch {
-    return null
-  }
 }
 
 function CityPicker({ cities, value, onChange, detected }) {
@@ -147,7 +128,7 @@ function ContactButton({ href, external, children, style }) {
   )
 }
 
-function HomeCookCard({ item, onTap, distance, picksBadge }) {
+function HomeCookCard({ item, onTap, picksBadge }) {
   const visibleTags = (item.types || [])
     .filter(t => ALL_TAGS.find(f => f.key === t))
     .sort((a, b) => ALL_TAGS.findIndex(f => f.key === a) - ALL_TAGS.findIndex(f => f.key === b))
@@ -190,14 +171,9 @@ function HomeCookCard({ item, onTap, distance, picksBadge }) {
               <span style={{ fontSize: 9, fontWeight: 800, color: '#9A6D00', background: '#FFF3CD', padding: '2px 6px', borderRadius: 999, letterSpacing: 0.2 }}>✨ PICK</span>
             )}
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 4 }}>
-            {item.service_area && (
-              <div style={{ fontSize: 12, color: '#4a5a6a', fontWeight: 500 }}>📍 Based in {item.service_area}</div>
-            )}
-            {distance != null && (
-              <div style={{ fontSize: 12, color: colors.brand, fontWeight: 700 }}>{distance.toFixed(1)} mi</div>
-            )}
-          </div>
+          {item.service_area && (
+            <div style={{ fontSize: 12, color: '#4a5a6a', fontWeight: 500, marginBottom: 4 }}>📍 Based in {item.service_area}</div>
+          )}
           {preview && (
             <div style={{
               fontSize: 12, color: '#6A7A8A', lineHeight: 1.4,
@@ -250,9 +226,11 @@ export default function HomeCooks() {
   const [cuisineFilter, setCuisineFilter] = useState(new Set())
   const [serviceFilter, setServiceFilter] = useState(new Set())
   const [sortBy, setSortBy] = useState('nearest') // 'nearest' | 'az'
-  // detectedCity: city name from geolocation+reverse-geocode (cached in localStorage)
+  // Raw user coords from geolocation — used directly as the proximity anchor.
+  const [userCoords, setUserCoords] = useState(null)
+  // detectedCity: nearest known service_area city to the user's coords.
   const [detectedCity, setDetectedCity] = useState(null)
-  // selectedCity: user's active city — defaults to detected, can be overridden via dropdown
+  // selectedCity: user's active city — defaults to detected, can be overridden via dropdown.
   const [selectedCity, setSelectedCity] = useState(null)
   const [locationDenied, setLocationDenied] = useState(false)
 
@@ -287,37 +265,38 @@ export default function HomeCooks() {
     load()
   }, [])
 
-  // Detect user's city — cache in localStorage so we don't ping Google repeatedly
+  // Get raw user coords from the browser. Same approach as every other category —
+  // no reverse-geocoding REST call, so this isn't blocked by Geocoding API config.
   useEffect(() => {
-    try {
-      const cached = localStorage.getItem(CITY_CACHE_KEY)
-      if (cached) {
-        const parsed = JSON.parse(cached)
-        if (parsed && parsed.name) {
-          setDetectedCity(parsed.name)
-          setSelectedCity(prev => prev || parsed.name)
-          return
-        }
-      }
-    } catch { /* ignore */ }
-
     if (!navigator.geolocation) { setLocationDenied(true); return }
     navigator.geolocation.getCurrentPosition(
-      async pos => {
-        const { latitude: lat, longitude: lng } = pos.coords
-        const city = await reverseGeocodeCity(lat, lng)
-        if (city) {
-          try { localStorage.setItem(CITY_CACHE_KEY, JSON.stringify({ name: city, lat, lng })) } catch { /* ignore */ }
-          setDetectedCity(city)
-          setSelectedCity(prev => prev || city)
-        } else {
-          setLocationDenied(true)
-        }
-      },
+      pos => setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       () => setLocationDenied(true),
-      { timeout: 8000 }
+      { timeout: 8000, maximumAge: 5 * 60 * 1000 }
     )
   }, [])
+
+  // Once we have coords + items, derive the nearest service_area city for display.
+  // (Each home cook's display_lat/lng is the centroid of their city, so this works.)
+  useEffect(() => {
+    if (!userCoords || items.length === 0) return
+    const centroids = new Map()
+    items.forEach(i => {
+      if (i.service_area && i.display_lat && i.display_lng && !centroids.has(i.service_area)) {
+        centroids.set(i.service_area, { lat: i.display_lat, lng: i.display_lng })
+      }
+    })
+    let nearest = null
+    let minD = Infinity
+    for (const [city, c] of centroids) {
+      const d = distanceMiles(userCoords.lat, userCoords.lng, c.lat, c.lng)
+      if (d < minD) { minD = d; nearest = city }
+    }
+    if (nearest) {
+      setDetectedCity(nearest)
+      setSelectedCity(prev => prev || nearest)
+    }
+  }, [userCoords, items])
 
   // Distinct service-area cities from the data (sorted alphabetically)
   const cityOptions = useMemo(() => {
@@ -326,14 +305,17 @@ export default function HomeCooks() {
     return [...set].sort((a, b) => a.localeCompare(b))
   }, [items])
 
-  // Coordinates of the selectedCity — taken from any home cook in that city.
-  // (Home cooks store city-level lat/lng under display_lat/display_lng.)
+  // Proximity anchor for sorting.
+  // Default: user's raw coords (most precise). If they override via picker, switch
+  // to that city's centroid (looked up from any home cook in that city).
   const anchor = useMemo(() => {
-    if (!selectedCity) return null
-    const match = items.find(i => i.service_area === selectedCity && i.display_lat && i.display_lng)
-    if (match) return { lat: match.display_lat, lng: match.display_lng }
+    if ((!selectedCity || selectedCity === detectedCity) && userCoords) return userCoords
+    if (selectedCity) {
+      const match = items.find(i => i.service_area === selectedCity && i.display_lat && i.display_lng)
+      if (match) return { lat: match.display_lat, lng: match.display_lng }
+    }
     return null
-  }, [selectedCity, items])
+  }, [userCoords, selectedCity, detectedCity, items])
 
   // Filter: search + cuisine + service
   const filtered = useMemo(() => items.filter(item => {
@@ -470,7 +452,6 @@ export default function HomeCooks() {
             <HomeCookCard
               key={item.id}
               item={item}
-              distance={sortBy === 'nearest' ? item._dist : null}
               picksBadge={!!item.featured}
               onTap={() => item.url_slug && navigate(`/home-cooked-food-catering/${item.url_slug}`)}
             />

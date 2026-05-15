@@ -129,12 +129,25 @@ AS $$
 DECLARE
   k              CONSTANT INT := 60;            -- RRF constant
   candidate_pool CONSTANT INT := GREATEST(match_count * 5, 50);
-  tsq            tsquery := CASE
-                              WHEN query_text IS NOT NULL AND length(trim(query_text)) > 0
-                              THEN websearch_to_tsquery('english', query_text)
-                              ELSE NULL
-                            END;
+  plain_q        TEXT;
+  tsq            tsquery;
 BEGIN
+  -- Build the FTS query as an OR-of-tokens rather than the default AND.
+  -- Hybrid retrieval wants lexical *recall* here — RRF + vector sim decide ranking.
+  -- AND semantics drop too many obvious matches (e.g. "biryani in Fremont" would
+  -- require both tokens in a single listing, missing "Biryani Corner" because it
+  -- doesn't say Fremont in name/description).
+  IF query_text IS NULL OR length(trim(query_text)) = 0 THEN
+    tsq := NULL;
+  ELSE
+    plain_q := plainto_tsquery('english', query_text)::text;
+    IF length(plain_q) > 0 THEN
+      tsq := to_tsquery('english', regexp_replace(plain_q, ' & ', ' | ', 'g'));
+    ELSE
+      tsq := NULL;
+    END IF;
+  END IF;
+
   RETURN QUERY
   WITH vec_ranked AS (
     SELECT

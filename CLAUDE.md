@@ -184,6 +184,43 @@ The headline strategic bet. Don't treat any phase as the end state — each phas
 - **Nightly re-embed cron** (GitHub Actions, runs after iCal sync) — incremental via SHA-256 `source_hash` so only new/changed listings get re-embedded. Same automation pattern as `sync-events.js`.
 - **`chat_conversations` + `chat_messages` tables** exist but are unused in Phase 1; Phase 2 will start writing to them.
 
+### Phase 1.5 — Editorial content layer
+Blog articles / guides get embedded into retrieval alongside listings so the chat can cite editorial perspective ("according to Nasiha's guide to East Bay home cooks…") and not just match raw listings. Articles also double as SEO pages at `/guides/{slug}`.
+
+**Critical distinction — articles come in three flavors and the chat MUST treat them differently:**
+
+| `source_type` | What it is | Citation behavior |
+|---|---|---|
+| `nasiha` | Written or commissioned by Nasiha | Cited as **"Nasiha's guide says…"** — builds Nasiha's editorial voice and credibility |
+| `third_party` | Outside sources (Eater, KQED, established Muslim food blogs, etc.) | Cited as **"According to {source_name}…"** with a link out. **Never blurred with Nasiha's voice.** Borrows credibility without claiming authorship. |
+| `community` | User-submitted guides (later) | Lowest trust by default; cited as **"A community contributor wrote…"** |
+
+**Schema (rough):**
+```
+articles (
+  id, title, slug, body_markdown,
+  source_type ('nasiha' | 'third_party' | 'community'),
+  source_name TEXT,         -- e.g. 'Eater', NULL for nasiha
+  source_url TEXT,          -- required for third_party
+  author TEXT,
+  trust_tier INT,           -- 1 = top editorial, 2 = solid, 3 = community
+  related_category_slugs TEXT[],
+  related_listing_ids UUID[],
+  status, published_at
+)
+```
+
+**Retrieval changes:**
+- Articles get embedded into `content_embeddings` (or a parallel `article_embeddings` table — TBD)
+- Hybrid retrieval returns a **mix of listings + articles**, ranked together
+- `trust_tier` influences ranking — higher-tier sources surface first when relevant
+- System prompt updated to cite article sources correctly and **never present third-party opinion as Nasiha's voice**
+
+**Operational notes:**
+- For **third-party content, store a Nasiha-written summary** (not the full original text — copyright + honest attribution). Link out to the original.
+- **First pass is curated** — articles added manually by Nas.
+- **Auto-discovery of articles** (RSS feeds, sitemap crawling of trusted publications) becomes part of Phase 5's discovery pipeline later.
+
 ### Phase 2 — Chat UI
 - Floating chat button on every page
 - Dedicated `/chat` route

@@ -170,35 +170,85 @@ MCC East Bay, ICF Fremont, SRVIC San Ramon, WVMA Los Gatos (iCal); MCA Santa Cla
 ### Home Cooks — submit form `service_area` capture
 The only remaining item from the Home Cooks rebuild. New submissions via `/submit?cat=home-cooked-food` don't yet collect `service_area`; add a Google Places city picker so submitter picks a city (city-level only, never street address). All existing cards / sort / Picks / contact buttons already work — see the "Decided — don't re-litigate" note below.
 
-### Chat — the headline feature (next major build)
-- pgvector extension on Supabase + embeddings for all ~7,500 listings
-- Hybrid retrieval: keyword (Postgres full-text) + vector (semantic)
-- Start with **Haiku 4.5** (~$0.002/turn, cheapest current-gen), easy swap to Sonnet/Opus if needed
-- Edge Function `chat-completion`: search Supabase → build context → call Anthropic API → stream response
-- UI: floating chat button on every page + dedicated `/chat` route + Event Planning page primer ("Tell me about your event and I'll help")
-- Conversation history saved for logged-in users (new `chat_conversations` + `chat_messages` tables)
-- System prompt: Nasiha persona, restrict to listings in knowledge graph, warm helpful tone, never invent details
+### Chat — see the "Chat & Data Enrichment Roadmap" section below
+Phase 1 (retrieval backend) is in progress. Phases 2-5 live in the new roadmap section. Don't pattern-match this to "build a chatbot" — it's a five-phase, multi-quarter plan culminating in a self-maintaining data layer.
+
+## Chat & Data Enrichment Roadmap
+
+The headline strategic bet. Don't treat any phase as the end state — each phase makes the next more valuable. The compounding insight is that **embedded text is the universal substrate**: Phases 3-5 all feed into the same embedded `document` that retrieval uses, so every enrichment becomes immediately searchable.
+
+### Phase 1 — Retrieval backend (current)
+- **pgvector** on Supabase + `content_embeddings` table (separate from `content`, see Schema decision B)
+- **Hybrid retrieval** via the `match_content()` Postgres function: vector kNN + Postgres FTS, combined with Reciprocal Rank Fusion
+- **`chat-completion` Edge Function**: embeds the query (OpenAI `text-embedding-3-small`), runs hybrid retrieval, builds a context block, streams from Anthropic Haiku 4.5
+- **Nightly re-embed cron** (GitHub Actions, runs after iCal sync) — incremental via SHA-256 `source_hash` so only new/changed listings get re-embedded. Same automation pattern as `sync-events.js`.
+- **`chat_conversations` + `chat_messages` tables** exist but are unused in Phase 1; Phase 2 will start writing to them.
+
+### Phase 2 — Chat UI
+- Floating chat button on every page
+- Dedicated `/chat` route
+- Conversation history persistence for logged-in users (writes `chat_conversations` + `chat_messages`)
+- Event Planning page primer: "Tell me about your event and I'll help"
+- Anonymous users: ephemeral session, no history saved
+
+### Phase 3 — Image / menu extraction (vision)
+- Vendors upload menu, price-list, or hours images on their listing (Submit form or claim flow)
+- Background job sends each image to Claude's vision model with a structured-extraction prompt: dishes, prices, hour ranges, notes
+- Extracted text stored on the listing (new column or related `listing_extracted` table)
+- **The extracted text becomes part of the embedded document** — chat can now answer "where can I get chicken karahi under $15"
+- Re-extract triggered only when an image changes (hash check, same incremental pattern as embeddings)
+
+### Phase 4 — AI enrichment from review aggregation
+- For each listing, pull Google reviews + Yelp reviews (and any imported community reviews from the future Reviews system)
+- Send to Claude with a tightly-scoped prompt: summarize "what it's known for," signature dishes, vibe, occasion fit, recurring complaints
+- Store as structured `ai_enriched_summary` on the listing — also feeds into the embedded document
+- **Why this matters strategically**: Google has reviews, Nasiha has *reviews distilled into searchable knowledge*. This is the single biggest differentiator over searching Google for halal food. Without this layer Nasiha is a directory; with it, Nasiha can answer "best biryani for a date night" because it knows *which* biryani spots are date-night-coded based on the body of reviews.
+- Re-run nightly only for listings whose review hash changed
+
+### Phase 5 — Continuous discovery pipeline
+The piece that makes the data layer self-maintaining. Without it the platform stays dependent on user submissions, which doesn't scale.
+
+**Reference point only** (not collaboration): a separate developer (Imran) has built a working production pipeline called "Halal Maniacs" — an Android app backed by Firecrawl + Apify + the Apify Google Maps Scraper actor + Python orchestration. His system auto-discovers, enriches, and dedupes halal restaurants state-by-state. He is not a collaborator and **Nasiha does not have access to his code or data.** His pipeline is mentioned only as a proof point that the approach works.
+
+**Nasiha will build its own independent equivalent** — a Python pipeline using:
+- **Firecrawl** for site crawling (restaurant websites, mosque pages, vendor sites)
+- **Apify**, specifically the **Google Maps Scraper actor**, for places data and metadata
+- A **dedup + enrichment layer** that normalizes against existing `content` rows, geocodes consistently, and routes new candidates through Phases 3/4 before they're embedded
+
+**Goals (in priority order):**
+1. **Continuous freshness** — catch new openings, closings, and hour changes promptly. *This is the deepest concern.* A pipeline that does a one-time data dump and goes silent doesn't solve the actual problem; restaurants open and close all the time and stale data is worse than no data.
+2. **Bay Area first**, then state-by-state expansion
+3. **Once a new listing enters the system**, Phases 3 and 4 auto-enrich it, then Phase 1's nightly re-embed picks it up — fully self-maintaining
+
+**Cost estimate**: $50–200/mo at scale (Firecrawl + Apify + occasional Claude vision/text calls)
+
+**Could be supplemented (not replaced) by**: a user "Report incorrect info" flow on every listing, surfacing reported drift to admin review.
+
+### Why all five phases together are the moat
+- Phase 1+2 alone = ChatGPT with a directory bolted on. Easy to copy.
+- Phase 3+4 added = the knowledge graph is *deeper* than any competitor's, because reviews and menus are distilled into searchable structured text.
+- Phase 5 added = the knowledge graph stays current automatically.
+
+Each layer compounds because they all flow into the same embedded document.
 
 ## Vault (Future Builds, in rough priority order)
 
-### AFTER chat — biggest feature, NOT YET BUILT
-**Scraping pipeline / data automation.** This is the missing strategic piece. Without it, Nasiha depends on user submissions which is fragile. With it, the knowledge graph grows on its own. **Nas has NOT built this yet — needs to be built.**
+### PARKED — Data Pipeline / Discovery
+The big strategic gap. The full plan lives in the **Chat & Data Enrichment Roadmap** above (Phase 5 covers the auto-discovery pipeline; review aggregation is Phase 4). This Vault entry catches the *adjacent* community-signal sources that aren't covered by the Google Maps / Firecrawl crawl in Phase 5.
 
-To build:
+Adjacent signal sources (longer tail, harder to automate, lower priority than Phase 5):
 - **WhatsApp scraping** — community group messages → new events, recommendations, openings
 - **Instagram scraping** — vendor posts, food pics → home cooks, new restaurants, event flyers
 - **Facebook group scraping** — Bay Area Muslim groups, classifieds, event invites
-- **Restaurant freshness pipeline** — track new openings, closures, hours changes (the continuous-update problem)
-- **Review aggregation** — Yelp/Google reviews → imported reviews (low weight in chat)
 - **AI normalization** — Claude classifies, dedupes, geocodes scraped content before it hits the knowledge graph
 
-Architecture options being considered:
-- (A) Collaborate with friend Imran ("Halal Maniacs" pipeline: Firecrawl + Apify + Google Maps Scraper + Python)
-- (B) Build own pipeline ($50-200/mo infra)
-- (C) Contractor
-- (D) User submissions + "Report incorrect info" (short-term only)
+Build options for Phase 5 + the adjacent signals above:
+- (A) **Nasiha-built Python pipeline** — most control, $50-200/mo infra. Likely path.
+- (B) **Contractor-built** — faster, costs ~$5-15k upfront depending on scope.
+- (C) **User submissions + "Report incorrect info"** — manual, doesn't scale, but cheap interim.
+- (D) **Hybrid** — short-term C while A is being built; long-term A.
 
-Plan: D + A short-term, B/C medium-term. Pick up post soft-launch.
+Plan: C as interim → A as the real solution. Pick up post soft-launch. **Imran's Halal Maniacs pipeline is a reference point only — not a collaboration path.**
 
 ### Reviews system
 - Three review types: `community` (regular users), `mynasiha_pick` (curated by Nas + trusted friend, weighted heavily in chat), `imported` (Yelp/Google scraped, low weight)

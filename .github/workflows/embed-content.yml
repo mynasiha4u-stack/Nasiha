@@ -1,0 +1,32 @@
+name: Re-embed content nightly
+
+# Runs after the daily iCal sync (0 13 UTC = 6 AM Pacific) so that newly-imported
+# events get embedded the same morning. Re-embed is incremental via source_hash —
+# unchanged rows are skipped, so the run is cheap (often < $0.001).
+
+on:
+  schedule:
+    - cron: '0 14 * * *'   # 14:00 UTC = 7 AM Pacific (after sync-events)
+  workflow_dispatch:        # also manually runnable from the Actions tab
+
+jobs:
+  embed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install supabase-js
+        run: npm install @supabase/supabase-js
+
+      - name: Run embedder (incremental)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/embed-content.js

@@ -74,23 +74,48 @@ function sha256(s) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// OpenAI embeddings — batched. Returns Float32 arrays.
+// OpenAI embeddings — batched. Retries transient errors (5xx, 429, network)
+// with exponential backoff: 1s, 2s, 4s, 8s, 16s. Real errors (auth, schema)
+// fail on first try.
 // ─────────────────────────────────────────────────────────────
 async function embedBatch(texts) {
-  const res = await fetch('https://api.openai.com/v1/embeddings', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${OPENAI_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ model: EMBED_MODEL, input: texts }),
-  })
-  if (!res.ok) {
+  const MAX_RETRIES = 5
+  let attempt = 0
+  while (true) {
+    let res
+    try {
+      res = await fetch('https://api.openai.com/v1/embeddings', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ model: EMBED_MODEL, input: texts }),
+      })
+    } catch (e) {
+      // Network blip — always retryable
+      if (attempt >= MAX_RETRIES) throw new Error(`Network error after ${MAX_RETRIES} retries: ${e.message}`)
+      const delay = 1000 * Math.pow(2, attempt)
+      process.stdout.write(`\n  network error, retrying in ${delay/1000}s...`)
+      await new Promise(r => setTimeout(r, delay))
+      attempt++
+      continue
+    }
+    if (res.ok) {
+      const data = await res.json()
+      return data.data.map(d => d.embedding)
+    }
     const body = await res.text()
-    throw new Error(`OpenAI ${res.status}: ${body}`)
+    // 5xx and 429 are retryable; 4xx (other) means our request is wrong, don't retry
+    const retryable = res.status >= 500 || res.status === 429
+    if (!retryable || attempt >= MAX_RETRIES) {
+      throw new Error(`OpenAI ${res.status}: ${body}`)
+    }
+    const delay = 1000 * Math.pow(2, attempt)
+    process.stdout.write(`\n  OpenAI ${res.status}, retrying in ${delay/1000}s...`)
+    await new Promise(r => setTimeout(r, delay))
+    attempt++
   }
-  const data = await res.json()
-  return data.data.map(d => d.embedding)
 }
 
 // pgvector literal format: '[0.123,0.456,...]'

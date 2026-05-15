@@ -25,6 +25,8 @@ import RestaurantsMap from './pages/RestaurantsMap'
 import Schools, { SchoolDetail } from './pages/Schools'
 import SchoolsMap from './pages/SchoolsMap'
 import Lawyers, { LawyerDetail } from './pages/Lawyers'
+import Chat from './pages/Chat'
+import ChatLauncher from './components/ChatLauncher'
 
 export default function App() {
   return (
@@ -66,7 +68,11 @@ export default function App() {
           {/* Home Cooks */}
           <Route path="/home-cooked-food-catering" element={<HomeCooks />} />
           <Route path="/home-cooked-food-catering/:slug" element={<HomeCookDetail />} />
+          {/* Chat */}
+          <Route path="/chat" element={<Chat />} />
         </Routes>
+        {/* Floating chat launcher — appears on every page except auth/admin/chat */}
+        <ChatLauncher />
       </BrowserRouter>
     </AuthProvider>
   )

@@ -173,6 +173,27 @@ export default function EventPlanning() {
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
+        {/* Plan-with-Nasiha primer — opens the chat drawer with a tailored prompt */}
+        <button
+          onClick={() => window.openNasihaChat && window.openNasihaChat({
+            draft: "I'm planning an event — help me find the right vendors. The event is "
+          })}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+            background: 'linear-gradient(135deg, #FFF3EB 0%, #FFE5D2 100%)',
+            border: '1px solid rgba(194,65,12,0.2)',
+            borderRadius: 12, padding: '12px 14px', marginBottom: 12,
+            cursor: 'pointer', textAlign: 'left',
+          }}
+        >
+          <span style={{ fontSize: 22 }}>✨</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: '#1C2B3A' }}>Plan with Nasiha</div>
+            <div style={{ fontSize: 11, color: '#6A7A8A', marginTop: 2 }}>Tell me about your event and I'll suggest vendors.</div>
+          </div>
+          <span style={{ fontSize: 14, color: colors.brand, fontWeight: 700 }}>→</span>
+        </button>
+
         {/* Search */}
         <div style={{ background: 'white', borderRadius: 12, border: '1px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', marginBottom: 12 }}>
           <span style={{ fontSize: 16 }}>🔍</span>

@@ -10,7 +10,19 @@
 //
 // REQUEST:
 //   POST /functions/v1/chat-completion
-//   { "message": "best biryani in Fremont", "match_count": 10, "category": null }
+//   {
+//     "message": "what about for vegetarians?",
+//     "history": [                                  // optional: prior turns for context
+//       { "role": "user",      "content": "best biryani in Fremont" },
+//       { "role": "assistant", "content": "..." }
+//     ],
+//     "match_count": 10,                            // optional, default 10
+//     "category": null                              // optional category_slug filter
+//   }
+//
+// IMPORTANT: retrieval ALWAYS runs on the latest `message` only, never on the history.
+// History is forwarded to Anthropic for conversational continuity but doesn't pollute
+// the embedding query — that's deliberate, otherwise follow-ups retrieve stale matches.
 //
 // RESPONSE: text/event-stream
 //   The very first SSE event is a custom "retrieval" event whose data is JSON:
@@ -102,7 +114,12 @@ serve(async (req) => {
     return new Response("ok", { headers: corsHeaders })
   }
 
-  let body: { message?: string; match_count?: number; category?: string }
+  let body: {
+    message?: string
+    history?: Array<{ role: "user" | "assistant"; content: string }>
+    match_count?: number
+    category?: string
+  }
   try {
     body = await req.json()
   } catch {
@@ -113,6 +130,10 @@ serve(async (req) => {
   if (!message) return json({ error: "message is required" }, 400)
   const matchCount = Math.min(Math.max(body.match_count ?? 10, 1), 25)
   const category = body.category || null
+  // Cap history at 10 turns (20 messages) so context stays bounded.
+  const history = Array.isArray(body.history)
+    ? body.history.filter(m => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string").slice(-20)
+    : []
 
   const supabaseAdmin = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -159,7 +180,10 @@ serve(async (req) => {
       max_tokens: 1024,
       stream: true,
       system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: userPrompt }],
+      messages: [
+        ...history,
+        { role: "user", content: userPrompt },
+      ],
     }),
   })
   if (!anthropicRes.ok || !anthropicRes.body) {

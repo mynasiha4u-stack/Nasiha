@@ -130,11 +130,13 @@ async function main() {
   }
   console.log(`  ${allRows.length} published rows.`)
 
-  // 3. Pull all attributes in one go, group by content_id
+  // 3. Pull all attributes in one go, group by content_id.
+  // CHUNK=100 — each UUID is ~45 chars URL-encoded; 500 IDs blew past Supabase's
+  // 16KB request-line limit. 100 is comfortably under.
   console.log('Fetching attributes...')
   const attrsById = new Map()
   const ids = allRows.map(r => r.id)
-  const CHUNK = 500
+  const CHUNK = 100
   for (let i = 0; i < ids.length; i += CHUNK) {
     const slice = ids.slice(i, i + CHUNK)
     const { data, error } = await supabase

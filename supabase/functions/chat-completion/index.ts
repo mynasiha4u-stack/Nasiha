@@ -69,7 +69,12 @@ RULES:
 - Keep responses concise — 2-4 short paragraphs or a tight bulleted list, not an essay.
 - Use the user's tone: casual if they're casual.
 - Never make up a URL. If you reference a listing the user can open, use the url_slug as provided.
-- Don't include the LISTINGS block or raw JSON in your reply.`
+- Don't include the LISTINGS block or raw JSON in your reply.
+
+MOSQUES — Jummah times rule:
+- For mosques, if a listing includes a "current_jummah_times" line, those are THE active prayer times for today's season. Use those.
+- The description field may contain older or seasonal times — IGNORE those in favor of current_jummah_times.
+- Do not label times as "summer" or "winter" to the user — just give the times.`
 
 async function embedQuery(text: string): Promise<number[]> {
   const apiKey = Deno.env.get("OPENAI_API_KEY")!
@@ -87,7 +92,7 @@ function toPgVector(arr: number[]): string {
   return "[" + arr.join(",") + "]"
 }
 
-function buildContextBlock(listings: any[]): string {
+function buildContextBlock(listings: any[], jummahByMosqueId: Map<string, string>): string {
   if (listings.length === 0) return "(no listings matched the query)"
   return listings
     .map((l, i) => {
@@ -100,6 +105,11 @@ function buildContextBlock(listings: any[]): string {
       if (l.website) lines.push(`website: ${l.website}`)
       if (l.instagram) lines.push(`instagram: ${l.instagram}`)
       if (l.url_slug) lines.push(`url_slug: ${l.url_slug}`)
+      // Mosques: inject live current-season Jummah times so the model can't
+      // accidentally cite stale times from a description that hardcodes them.
+      if (l.category_slug === "mosques" && jummahByMosqueId.has(l.id)) {
+        lines.push(`current_jummah_times: ${jummahByMosqueId.get(l.id)}`)
+      }
       if (l.description) {
         const desc = l.description.replace(/\s+/g, " ").slice(0, 400)
         lines.push(`about: ${desc}${l.description.length > 400 ? "…" : ""}`)
@@ -107,6 +117,55 @@ function buildContextBlock(listings: any[]): string {
       return lines.join("\n")
     })
     .join("\n---\n")
+}
+
+// Returns true if the current instant is in US Pacific Daylight Time (March–November).
+// Edge functions run on UTC; we ask Intl for the Pacific timezone abbreviation.
+function isPacificDST(): boolean {
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Los_Angeles",
+      timeZoneName: "short",
+    }).formatToParts(new Date())
+    const tz = parts.find(p => p.type === "timeZoneName")?.value
+    return tz === "PDT"
+  } catch {
+    // Conservative fallback: assume DST May–October so a deploy from a weird
+    // runtime doesn't silently flip everyone to winter times.
+    const m = new Date().getUTCMonth()
+    return m >= 2 && m <= 9
+  }
+}
+
+function formatJummahForSeason(times: any, isSummer: boolean): string | null {
+  if (!times || typeof times !== "object") return null
+  const prefix = isSummer ? "s" : "w"
+  const slots: string[] = []
+  for (let i = 1; i <= 4; i++) {
+    const j = times[`${prefix}${i}j`]
+    const iq = times[`${prefix}${i}iq`]
+    if (j) slots.push(iq ? `${j} (iqama ${iq})` : j)
+  }
+  return slots.length > 0 ? slots.join(", ") : null
+}
+
+// Fetch jummah_times for any mosques in the retrieved set and format them for the
+// current Pacific-time season.
+async function fetchJummahForMosques(supabase: any, listings: any[]): Promise<Map<string, string>> {
+  const mosqueIds = listings.filter(l => l.category_slug === "mosques").map(l => l.id)
+  if (mosqueIds.length === 0) return new Map()
+  const { data, error } = await supabase
+    .from("content")
+    .select("id, jummah_times")
+    .in("id", mosqueIds)
+  if (error || !data) return new Map()
+  const isSummer = isPacificDST()
+  const out = new Map<string, string>()
+  for (const r of data) {
+    const formatted = formatJummahForSeason(r.jummah_times, isSummer)
+    if (formatted) out.set(r.id, formatted)
+  }
+  return out
 }
 
 serve(async (req) => {
@@ -162,8 +221,13 @@ serve(async (req) => {
   }
   const listings = matches || []
 
+  // 2b. For mosques in the retrieved set, fetch jummah_times and format the live
+  // (current-season) times. This sidesteps the static description, which would
+  // otherwise cause the chat to cite winter times in summer (and vice versa).
+  const jummahByMosqueId = await fetchJummahForMosques(supabaseAdmin, listings)
+
   // 3. Build the context block
-  const contextBlock = buildContextBlock(listings)
+  const contextBlock = buildContextBlock(listings, jummahByMosqueId)
   const userPrompt = `User question: ${message}\n\nLISTINGS:\n${contextBlock}\n\nAnswer the user using only these listings.`
 
   // 4. Call Anthropic with streaming

@@ -196,9 +196,20 @@ Schema:
 }
 
 // Google Geocoding REST. Returns lat/lng of the first match, or null.
+// Captures error info in a module-level var so the request handler can include
+// it in the debug payload of the retrieval SSE event.
+interface GeocodeDebug {
+  status: string | null
+  error_message: string | null
+  exception: string | null
+}
+let lastGeocodeDebug: GeocodeDebug = { status: null, error_message: null, exception: null }
+
 async function geocodeLocation(location: string): Promise<{ lat: number; lng: number; formatted: string } | null> {
+  lastGeocodeDebug = { status: null, error_message: null, exception: null }
   const key = Deno.env.get("GOOGLE_MAPS_API_KEY")
   if (!key) {
+    lastGeocodeDebug.exception = "GOOGLE_MAPS_API_KEY not set"
     console.warn("GOOGLE_MAPS_API_KEY not set — geocoding skipped")
     return null
   }
@@ -206,6 +217,8 @@ async function geocodeLocation(location: string): Promise<{ lat: number; lng: nu
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location)}&key=${key}`
     const res = await fetch(url)
     const data = await res.json()
+    lastGeocodeDebug.status = data.status || `HTTP_${res.status}`
+    lastGeocodeDebug.error_message = data.error_message || null
     if (data.status !== "OK") {
       console.warn(`Geocode status=${data.status} for "${location}"; error_message=${data.error_message || "(none)"}`)
       return null
@@ -220,6 +233,7 @@ async function geocodeLocation(location: string): Promise<{ lat: number; lng: nu
     console.log(`Geocoded "${location}" → "${r.formatted_address}" (${loc.lat}, ${loc.lng})`)
     return { lat: loc.lat, lng: loc.lng, formatted: r.formatted_address || location }
   } catch (e) {
+    lastGeocodeDebug.exception = String(e)
     console.warn("Geocoding failed:", e)
     return null
   }
@@ -428,6 +442,9 @@ serve(async (req) => {
       intent_http_error: lastIntentDebug.http_error,
       geocode_attempted: !!intent.location,
       geocode_result: nearCoords ? nearCoords.formatted : null,
+      geocode_status: lastGeocodeDebug.status,
+      geocode_error: lastGeocodeDebug.error_message,
+      geocode_exception: lastGeocodeDebug.exception,
       google_key_set: !!Deno.env.get("GOOGLE_MAPS_API_KEY"),
     },
     listings: listings.map((l: any) => ({

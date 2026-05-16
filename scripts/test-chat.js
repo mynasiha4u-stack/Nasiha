@@ -99,6 +99,9 @@ async function main() {
           if (payload.debug.intent_http_error) console.log('  intent_http_error:', payload.debug.intent_http_error)
           console.log('  google_key_set:   ', payload.debug.google_key_set)
           console.log('  geocode_attempted:', payload.debug.geocode_attempted)
+          console.log('  geocode_status:   ', payload.debug.geocode_status)
+          if (payload.debug.geocode_error) console.log('  geocode_error:    ', payload.debug.geocode_error)
+          if (payload.debug.geocode_exception) console.log('  geocode_exception:', payload.debug.geocode_exception)
           console.log('  geocode_result:   ', payload.debug.geocode_result)
         }
         if (payload.location) {

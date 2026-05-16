@@ -92,6 +92,15 @@ async function main() {
     if (event === 'retrieval') {
       try {
         const payload = JSON.parse(data)
+        if (payload.debug) {
+          console.log('─── Debug ───')
+          console.log('  intent:           ', JSON.stringify(payload.debug.intent))
+          if (payload.debug.intent_raw) console.log('  intent_raw:       ', JSON.stringify(payload.debug.intent_raw).slice(0, 200))
+          if (payload.debug.intent_http_error) console.log('  intent_http_error:', payload.debug.intent_http_error)
+          console.log('  google_key_set:   ', payload.debug.google_key_set)
+          console.log('  geocode_attempted:', payload.debug.geocode_attempted)
+          console.log('  geocode_result:   ', payload.debug.geocode_result)
+        }
         if (payload.location) {
           const r = payload.location.radius_miles ? `, radius ${payload.location.radius_miles}mi` : ''
           console.log(`─── Near: ${payload.location.name}${r} ───`)

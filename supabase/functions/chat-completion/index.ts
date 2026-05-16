@@ -120,6 +120,16 @@ function parseIntentJSON(text: string): any {
   try { return JSON.parse(s.slice(first, last + 1)) } catch { return null }
 }
 
+// Module-level debug capture so the request handler can surface the last
+// intent-extraction result via the retrieval SSE event (test-chat prints it).
+// This is for development visibility while we tune the geo path.
+interface IntentDebug {
+  raw: string | null
+  parsed: any
+  http_error: string | null
+}
+let lastIntentDebug: IntentDebug = { raw: null, parsed: null, http_error: null }
+
 async function extractQueryIntent(message: string): Promise<QueryIntent> {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY")!
   const systemPrompt = `Extract structured intent from a user message about places. Output ONLY a single JSON object, no prose, no markdown fences.
@@ -130,6 +140,7 @@ Schema:
   "radius_miles": number | null, // if user says "within N miles" use N. If "within N minutes" use roughly N/2 (typical city driving). If user says "near X" without a number, return null. Cap at 30.
   "category": string | null      // EXACTLY one of: restaurants, mosques, home-cooked-food, childcare, lawyers, islamic-schools, dessert-catering, event-services, events. null if user is asking generically (e.g. "places", "spots", "food").
 }`
+  lastIntentDebug = { raw: null, parsed: null, http_error: null }
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -140,31 +151,31 @@ Schema:
       },
       body: JSON.stringify({
         model: CHAT_MODEL,
-        max_tokens: 200,
+        max_tokens: 300,
         system: systemPrompt,
-        // Prefill `{` — Anthropic continues the assistant turn from this string,
-        // which forces a JSON object as the first thing in the response. Eliminates
-        // the "Haiku added prose before the JSON" failure mode.
+        // Prefill `{` so Haiku continues into a JSON object on the first token.
         messages: [
           { role: "user", content: message },
           { role: "assistant", content: "{" },
         ],
-        stop_sequences: ["\n\n"],
       }),
     })
     if (!res.ok) {
-      console.warn("Intent extraction HTTP error:", res.status, await res.text())
+      const errText = await res.text()
+      lastIntentDebug.http_error = `${res.status}: ${errText.slice(0, 300)}`
+      console.warn("Intent extraction HTTP error:", res.status, errText)
       return { location: null, radius_miles: null, category: null }
     }
     const data = await res.json()
     const rawText = data.content?.[0]?.text || ""
-    // We pre-filled "{", so the response is the REST of the object — prepend it back.
     const fullText = "{" + rawText
+    lastIntentDebug.raw = fullText.slice(0, 500)
     const parsed = parseIntentJSON(fullText)
     if (!parsed) {
       console.warn("Intent extraction: could not parse JSON from:", JSON.stringify(fullText).slice(0, 200))
       return { location: null, radius_miles: null, category: null }
     }
+    lastIntentDebug.parsed = parsed
     const location = typeof parsed.location === "string" && parsed.location.length > 0 ? parsed.location : null
     const radius_miles = typeof parsed.radius_miles === "number" && parsed.radius_miles > 0
       ? Math.min(parsed.radius_miles, 30)
@@ -178,6 +189,7 @@ Schema:
     console.log("Intent extracted:", JSON.stringify({ location, radius_miles, category }))
     return { location, radius_miles, category }
   } catch (e) {
+    lastIntentDebug.http_error = String(e)
     console.warn("Intent extraction failed:", e)
     return { location: null, radius_miles: null, category: null }
   }
@@ -410,6 +422,14 @@ serve(async (req) => {
       lng: nearCoords.lng,
       radius_miles: intent.radius_miles,
     } : null,
+    debug: {
+      intent,
+      intent_raw: lastIntentDebug.raw,
+      intent_http_error: lastIntentDebug.http_error,
+      geocode_attempted: !!intent.location,
+      geocode_result: nearCoords ? nearCoords.formatted : null,
+      google_key_set: !!Deno.env.get("GOOGLE_MAPS_API_KEY"),
+    },
     listings: listings.map((l: any) => ({
       id: l.id,
       name: l.name,

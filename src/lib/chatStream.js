@@ -74,7 +74,10 @@ export function streamChat({ message, history = [], category = null, matchCount 
     if (!data) return
 
     if (event === 'retrieval') {
-      try { onRetrieval && onRetrieval(JSON.parse(data).listings || []) } catch { /* ignore */ }
+      try {
+        const payload = JSON.parse(data)
+        onRetrieval && onRetrieval(payload.listings || [], payload.location || null)
+      } catch { /* ignore */ }
       return
     }
     if (event === 'done') return

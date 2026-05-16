@@ -107,9 +107,9 @@ export default function ChatPanel({ initialDraft = '', existingConversationId = 
     abortRef.current = streamChat({
       message: text,
       history,
-      onRetrieval: (listings) => {
+      onRetrieval: (listings, location) => {
         setMessages(prev => prev.map(m =>
-          m.id === asstMsg.id ? { ...m, retrieval: listings, status: 'streaming' } : m
+          m.id === asstMsg.id ? { ...m, retrieval: listings, retrievalLocation: location, status: 'streaming' } : m
         ))
       },
       onDelta: (chunk) => {
@@ -257,6 +257,18 @@ function Message({ m, compact, onListingTap }) {
         {m.status === 'streaming' && m.content && <BlinkingCursor />}
       </div>
 
+      {!isUser && m.retrievalLocation && (
+        <div style={{
+          fontSize: 11, color: '#6A7A8A', display: 'flex', alignItems: 'center', gap: 4,
+          marginTop: -2,
+        }}>
+          📍 Near <span style={{ fontWeight: 700, color: '#1C2B3A' }}>{m.retrievalLocation.name}</span>
+          {m.retrievalLocation.radius_miles && (
+            <span> · within {m.retrievalLocation.radius_miles} mi</span>
+          )}
+        </div>
+      )}
+
       {!isUser && m.retrieval && m.retrieval.length > 0 && (
         <CitationStrip listings={m.retrieval} onTap={onListingTap} />
       )}
@@ -300,6 +312,7 @@ function CitationStrip({ listings, onTap }) {
       <div style={{ display: 'flex', gap: 8, paddingBottom: 4 }}>
         {listings.map(l => {
           const route = listingRoute(l)
+          const dist = typeof l.distance_miles === 'number' ? l.distance_miles : null
           return (
             <button
               key={l.id}
@@ -314,8 +327,11 @@ function CitationStrip({ listings, onTap }) {
               }}
             >
               <div style={{ fontSize: 12, fontWeight: 700, color: '#1C2B3A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.name}</div>
-              <div style={{ fontSize: 10, color: '#6A7A8A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {l.city ? `${categoryEmoji(l.category)} ${l.city}` : categoryEmoji(l.category)}
+              <div style={{ fontSize: 10, color: '#6A7A8A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span>{l.city ? `${categoryEmoji(l.category)} ${l.city}` : categoryEmoji(l.category)}</span>
+                {dist != null && (
+                  <span style={{ color: colors.brand, fontWeight: 700 }}>· {dist.toFixed(1)} mi</span>
+                )}
               </div>
             </button>
           )

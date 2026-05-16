@@ -92,6 +92,10 @@ async function main() {
     if (event === 'retrieval') {
       try {
         const payload = JSON.parse(data)
+        if (payload.location) {
+          const r = payload.location.radius_miles ? `, radius ${payload.location.radius_miles}mi` : ''
+          console.log(`─── Near: ${payload.location.name}${r} ───`)
+        }
         printRetrieval(payload.listings)
       } catch (e) {
         console.error('Bad retrieval payload:', data)
@@ -133,7 +137,8 @@ function printRetrieval(listings) {
     const v = l.vec_rank != null ? `v#${l.vec_rank}`.padStart(5) : '  -  '
     const f = l.fts_rank != null ? `f#${l.fts_rank}`.padStart(5) : '  -  '
     const s = (l.rrf_score != null ? l.rrf_score.toFixed(4) : '   -  ').padStart(7)
-    console.log(`  ${name.slice(0, 50)}  ${cat}  ${city}  ${v} ${f}  rrf=${s}`)
+    const d = (l.distance_miles != null ? `${l.distance_miles.toFixed(1)}mi` : '   -  ').padStart(7)
+    console.log(`  ${name.slice(0, 50)}  ${cat}  ${city}  ${d}  ${v} ${f}  rrf=${s}`)
   }
 }
 

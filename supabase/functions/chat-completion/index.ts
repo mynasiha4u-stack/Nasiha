@@ -33,8 +33,9 @@
 //   containing text. Final event is `event: done`.
 //
 // SECRETS expected in Supabase:
-//   OPENAI_API_KEY     — for embeddings
-//   ANTHROPIC_API_KEY  — for chat completion
+//   OPENAI_API_KEY        — for embeddings
+//   ANTHROPIC_API_KEY     — for chat completion + intent extraction
+//   GOOGLE_MAPS_API_KEY   — for geocoding location mentions
 //   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY — auto-provided
 //
 // CALL FROM FRONTEND (Phase 2):
@@ -71,6 +72,13 @@ RULES:
 - Never make up a URL. If you reference a listing the user can open, use the url_slug as provided.
 - Don't include the LISTINGS block or raw JSON in your reply.
 
+LOCATION + DISTANCE rules:
+- If a listing has "distance_miles", that's the radial (straight-line) distance from a location the user mentioned. Quote it naturally ("about 2 miles from there").
+- These are straight-line miles, NOT drive time. Don't claim a specific drive time unless the user gave you one. A reasonable rule of thumb: in town, 1 mile ≈ 2 minutes of driving.
+- If the user asked "within N minutes" or "within N miles", every listing returned is already within that radius — just present them in order, closest first.
+- If the user asked about a route (e.g. "on my way from A to B"), the distance is measured to the destination, not along the route. Be honest: "this is close to your destination" rather than claiming it's on the way.
+- Never recommend a place whose distance_miles exceeds the user's stated radius.
+
 MOSQUES — Jummah times rule:
 - For mosques, if a listing includes a "current_jummah_times" line, those are THE active prayer times for today's season. Use those.
 - The description field may contain older or seasonal times — IGNORE those in favor of current_jummah_times.
@@ -88,6 +96,80 @@ async function embedQuery(text: string): Promise<number[]> {
   return data.data[0].embedding
 }
 
+// Cheap Haiku call to extract structured intent (location, radius, category)
+// from the user's message. Runs in parallel with the embedding step.
+interface QueryIntent {
+  location: string | null
+  radius_miles: number | null
+  category: string | null
+}
+async function extractQueryIntent(message: string): Promise<QueryIntent> {
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY")!
+  const systemPrompt = `Extract structured intent from a user message about places. Output ONLY valid JSON, no prose, no markdown fences.
+
+Schema:
+{
+  "location": string | null,     // place/area/address mentioned. For "from X to Y" use Y (the destination). Examples: "Fremont", "near SFO", "12 Arundel Dr Hayward". null if no location mentioned.
+  "radius_miles": number | null, // if user says "within N miles" use N. If "within N minutes" use roughly N/2 (typical city driving). If user says "near X" without a number, return null. Cap at 30.
+  "category": string | null      // EXACTLY one of: restaurants, mosques, home-cooked-food, childcare, lawyers, islamic-schools, dessert-catering, event-services, events. null if user is asking generically (e.g. "places", "spots", "food").
+}`
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: CHAT_MODEL,
+        max_tokens: 200,
+        system: systemPrompt,
+        messages: [{ role: "user", content: message }],
+      }),
+    })
+    if (!res.ok) {
+      console.warn("Intent extraction HTTP error:", res.status, await res.text())
+      return { location: null, radius_miles: null, category: null }
+    }
+    const data = await res.json()
+    const text = (data.content?.[0]?.text || "{}").trim()
+    const parsed = JSON.parse(text)
+    return {
+      location: typeof parsed.location === "string" && parsed.location.length > 0 ? parsed.location : null,
+      radius_miles: typeof parsed.radius_miles === "number" && parsed.radius_miles > 0
+        ? Math.min(parsed.radius_miles, 30)
+        : null,
+      category: typeof parsed.category === "string" && parsed.category.length > 0 ? parsed.category : null,
+    }
+  } catch (e) {
+    console.warn("Intent extraction failed:", e)
+    return { location: null, radius_miles: null, category: null }
+  }
+}
+
+// Google Geocoding REST. Returns lat/lng of the first match, or null.
+async function geocodeLocation(location: string): Promise<{ lat: number; lng: number; formatted: string } | null> {
+  const key = Deno.env.get("GOOGLE_MAPS_API_KEY")
+  if (!key) {
+    console.warn("GOOGLE_MAPS_API_KEY not set — geocoding skipped")
+    return null
+  }
+  try {
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location)}&key=${key}`
+    const res = await fetch(url)
+    const data = await res.json()
+    if (data.status !== "OK" || !data.results?.length) return null
+    const r = data.results[0]
+    const loc = r.geometry?.location
+    if (!loc) return null
+    return { lat: loc.lat, lng: loc.lng, formatted: r.formatted_address || location }
+  } catch (e) {
+    console.warn("Geocoding failed:", e)
+    return null
+  }
+}
+
 function toPgVector(arr: number[]): string {
   return "[" + arr.join(",") + "]"
 }
@@ -100,6 +182,8 @@ function buildContextBlock(listings: any[], jummahByMosqueId: Map<string, string
       if (l.category_slug) lines.push(`category: ${l.category_slug}`)
       if (l.service_area) lines.push(`city: ${l.service_area}`)
       else if (l.address) lines.push(`address: ${l.address}`)
+      if (typeof l.distance_miles === "number")
+        lines.push(`distance_miles: ${l.distance_miles.toFixed(1)}`)
       if (l.phone) lines.push(`phone: ${l.phone}`)
       if (l.email) lines.push(`email: ${l.email}`)
       if (l.website) lines.push(`website: ${l.website}`)
@@ -199,21 +283,39 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   )
 
-  // 1. Embed the user query
+  // 1. Embed the user query + extract structured intent in parallel.
+  //    Intent extraction is a small Haiku call (~$0.001) that tells us if the
+  //    user mentioned a location and whether they specified a radius.
   let queryEmbedding: number[]
+  let intent: QueryIntent
   try {
-    queryEmbedding = await embedQuery(message)
+    [queryEmbedding, intent] = await Promise.all([
+      embedQuery(message),
+      extractQueryIntent(message),
+    ])
   } catch (e) {
-    console.error("Embed failed:", e)
-    return json({ error: "Embedding failed", detail: String(e) }, 500)
+    console.error("Embed/intent failed:", e)
+    return json({ error: "Pre-retrieval failed", detail: String(e) }, 500)
   }
 
-  // 2. Hybrid retrieval
+  // 1b. If a location was extracted, geocode it (Google) so we can pass coords
+  //     to match_content for distance-aware ranking.
+  let nearCoords: { lat: number; lng: number; formatted: string } | null = null
+  if (intent.location) {
+    nearCoords = await geocodeLocation(intent.location)
+  }
+
+  // 2. Hybrid retrieval (now with optional geographic bias).
+  //    category filter precedence: explicit param > extracted intent.
+  const effectiveCategory = category || intent.category
   const { data: matches, error: rpcErr } = await supabaseAdmin.rpc("match_content", {
     query_embedding: toPgVector(queryEmbedding),
     query_text: message,
     match_count: matchCount,
-    category_filter: category,
+    category_filter: effectiveCategory,
+    near_lat: nearCoords?.lat ?? null,
+    near_lng: nearCoords?.lng ?? null,
+    radius_miles: nearCoords ? intent.radius_miles : null,
   })
   if (rpcErr) {
     console.error("match_content RPC failed:", rpcErr)
@@ -259,12 +361,19 @@ serve(async (req) => {
   // 5. Stream: prepend a custom "retrieval" SSE event, then forward Anthropic's stream
   const encoder = new TextEncoder()
   const retrievalSummary = {
+    location: nearCoords ? {
+      name: nearCoords.formatted,
+      lat: nearCoords.lat,
+      lng: nearCoords.lng,
+      radius_miles: intent.radius_miles,
+    } : null,
     listings: listings.map((l: any) => ({
       id: l.id,
       name: l.name,
       category: l.category_slug,
       city: l.service_area,
       url_slug: l.url_slug,
+      distance_miles: l.distance_miles,
       vec_rank: l.vec_rank,
       fts_rank: l.fts_rank,
       rrf_score: l.rrf_score,

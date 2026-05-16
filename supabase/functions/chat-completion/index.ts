@@ -103,9 +103,26 @@ interface QueryIntent {
   radius_miles: number | null
   category: string | null
 }
+
+const VALID_CATEGORIES = new Set([
+  "restaurants", "mosques", "home-cooked-food", "childcare",
+  "lawyers", "islamic-schools", "dessert-catering", "event-services", "events",
+])
+
+function parseIntentJSON(text: string): any {
+  // Strip ``` or ```json fences if Haiku added them despite instructions
+  let s = text.trim()
+  s = s.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "").trim()
+  // Find the outermost { ... } even if there's leading prose
+  const first = s.indexOf("{")
+  const last = s.lastIndexOf("}")
+  if (first === -1 || last === -1 || last < first) return null
+  try { return JSON.parse(s.slice(first, last + 1)) } catch { return null }
+}
+
 async function extractQueryIntent(message: string): Promise<QueryIntent> {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY")!
-  const systemPrompt = `Extract structured intent from a user message about places. Output ONLY valid JSON, no prose, no markdown fences.
+  const systemPrompt = `Extract structured intent from a user message about places. Output ONLY a single JSON object, no prose, no markdown fences.
 
 Schema:
 {
@@ -125,7 +142,14 @@ Schema:
         model: CHAT_MODEL,
         max_tokens: 200,
         system: systemPrompt,
-        messages: [{ role: "user", content: message }],
+        // Prefill `{` — Anthropic continues the assistant turn from this string,
+        // which forces a JSON object as the first thing in the response. Eliminates
+        // the "Haiku added prose before the JSON" failure mode.
+        messages: [
+          { role: "user", content: message },
+          { role: "assistant", content: "{" },
+        ],
+        stop_sequences: ["\n\n"],
       }),
     })
     if (!res.ok) {
@@ -133,15 +157,26 @@ Schema:
       return { location: null, radius_miles: null, category: null }
     }
     const data = await res.json()
-    const text = (data.content?.[0]?.text || "{}").trim()
-    const parsed = JSON.parse(text)
-    return {
-      location: typeof parsed.location === "string" && parsed.location.length > 0 ? parsed.location : null,
-      radius_miles: typeof parsed.radius_miles === "number" && parsed.radius_miles > 0
-        ? Math.min(parsed.radius_miles, 30)
-        : null,
-      category: typeof parsed.category === "string" && parsed.category.length > 0 ? parsed.category : null,
+    const rawText = data.content?.[0]?.text || ""
+    // We pre-filled "{", so the response is the REST of the object — prepend it back.
+    const fullText = "{" + rawText
+    const parsed = parseIntentJSON(fullText)
+    if (!parsed) {
+      console.warn("Intent extraction: could not parse JSON from:", JSON.stringify(fullText).slice(0, 200))
+      return { location: null, radius_miles: null, category: null }
     }
+    const location = typeof parsed.location === "string" && parsed.location.length > 0 ? parsed.location : null
+    const radius_miles = typeof parsed.radius_miles === "number" && parsed.radius_miles > 0
+      ? Math.min(parsed.radius_miles, 30)
+      : null
+    let category: string | null = null
+    if (typeof parsed.category === "string" && VALID_CATEGORIES.has(parsed.category)) {
+      category = parsed.category
+    } else if (parsed.category && typeof parsed.category === "string") {
+      console.warn("Intent extraction: invalid category dropped:", parsed.category)
+    }
+    console.log("Intent extracted:", JSON.stringify({ location, radius_miles, category }))
+    return { location, radius_miles, category }
   } catch (e) {
     console.warn("Intent extraction failed:", e)
     return { location: null, radius_miles: null, category: null }
@@ -159,10 +194,18 @@ async function geocodeLocation(location: string): Promise<{ lat: number; lng: nu
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location)}&key=${key}`
     const res = await fetch(url)
     const data = await res.json()
-    if (data.status !== "OK" || !data.results?.length) return null
+    if (data.status !== "OK") {
+      console.warn(`Geocode status=${data.status} for "${location}"; error_message=${data.error_message || "(none)"}`)
+      return null
+    }
+    if (!data.results?.length) {
+      console.warn(`Geocode returned 0 results for "${location}"`)
+      return null
+    }
     const r = data.results[0]
     const loc = r.geometry?.location
     if (!loc) return null
+    console.log(`Geocoded "${location}" → "${r.formatted_address}" (${loc.lat}, ${loc.lng})`)
     return { lat: loc.lat, lng: loc.lng, formatted: r.formatted_address || location }
   } catch (e) {
     console.warn("Geocoding failed:", e)

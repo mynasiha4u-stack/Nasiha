@@ -50,21 +50,51 @@ if (!GOOGLE_KEY && !DRY_RUN) {
 const supabase = createClient(SUPABASE_URL, SERVICE_KEY)
 
 async function reverseGeocode(lat, lng) {
+  // Retry on OVER_QUERY_LIMIT and transient network failures with exponential
+  // backoff: 1s, 2s, 4s, 8s, 16s. Real errors (REQUEST_DENIED, ZERO_RESULTS,
+  // INVALID_REQUEST) fail immediately — retrying won't help those.
+  const MAX_RETRIES = 5
   const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_KEY}`
-  let res
-  try {
-    res = await fetch(url)
-  } catch (e) {
-    return { error: 'NETWORK', message: String(e) }
+  let attempt = 0
+  while (true) {
+    let res
+    try {
+      res = await fetch(url)
+    } catch (e) {
+      if (attempt >= MAX_RETRIES) return { error: 'NETWORK', message: String(e) }
+      const delay = 1000 * Math.pow(2, attempt)
+      process.stdout.write(`\n  network blip, retrying in ${delay/1000}s...`)
+      await new Promise(r => setTimeout(r, delay))
+      attempt++
+      continue
+    }
+    if (!res.ok) {
+      // 5xx is retryable; 4xx (other) is not.
+      if (res.status >= 500 && attempt < MAX_RETRIES) {
+        const delay = 1000 * Math.pow(2, attempt)
+        process.stdout.write(`\n  Google ${res.status}, retrying in ${delay/1000}s...`)
+        await new Promise(r => setTimeout(r, delay))
+        attempt++
+        continue
+      }
+      return { error: `HTTP_${res.status}`, message: await res.text().catch(() => '') }
+    }
+    const data = await res.json()
+    if (data.status === 'OVER_QUERY_LIMIT') {
+      if (attempt < MAX_RETRIES) {
+        const delay = 1000 * Math.pow(2, attempt)
+        process.stdout.write(`\n  OVER_QUERY_LIMIT, backing off ${delay/1000}s...`)
+        await new Promise(r => setTimeout(r, delay))
+        attempt++
+        continue
+      }
+      return { error: 'OVER_QUERY_LIMIT', message: data.error_message || '' }
+    }
+    if (data.status !== 'OK' || !data.results?.length) {
+      return { error: data.status || 'UNKNOWN', message: data.error_message || '' }
+    }
+    return { formatted: data.results[0].formatted_address }
   }
-  if (!res.ok) {
-    return { error: `HTTP_${res.status}`, message: await res.text().catch(() => '') }
-  }
-  const data = await res.json()
-  if (data.status !== 'OK' || !data.results?.length) {
-    return { error: data.status || 'UNKNOWN', message: data.error_message || '' }
-  }
-  return { formatted: data.results[0].formatted_address }
 }
 
 async function main() {

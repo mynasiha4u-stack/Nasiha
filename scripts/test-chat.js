@@ -106,7 +106,7 @@ async function main() {
         }
         if (payload.location) {
           const r = payload.location.radius_miles ? `, radius ${payload.location.radius_miles}mi` : ''
-          console.log(`─── Near: ${payload.location.name}${r} ───`)
+          console.log(`─── Near: ${payload.location.name}  @ (${payload.location.lat}, ${payload.location.lng})${r} ───`)
         }
         printRetrieval(payload.listings)
       } catch (e) {

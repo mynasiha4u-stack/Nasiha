@@ -57,6 +57,11 @@ const corsHeaders = {
 
 const EMBED_MODEL = "text-embedding-3-small"
 const CHAT_MODEL  = "claude-haiku-4-5-20251001"  // per CLAUDE.md
+// Bay Area drive-time proxy: ~2.5 min per mile typical mixed city/suburb.
+// Used both to convert user-stated minutes → search radius, and to surface
+// estimated minutes per listing in the context. NEVER claimed as real drive time —
+// system prompt frames it as an estimate.
+const MIN_PER_MILE = 2.5
 
 const SYSTEM_PROMPT = `You are Nasiha, a warm and helpful guide to Muslim life in the Bay Area.
 
@@ -73,11 +78,11 @@ RULES:
 - Don't include the LISTINGS block or raw JSON in your reply.
 
 LOCATION + DISTANCE rules:
-- If a listing has "distance_miles", that's the radial (straight-line) distance from a location the user mentioned. Quote it naturally ("about 2 miles from there").
-- These are straight-line miles, NOT drive time. Don't claim a specific drive time unless the user gave you one. A reasonable rule of thumb: in town, 1 mile ≈ 2 minutes of driving.
-- If the user asked "within N minutes" or "within N miles", every listing returned is already within that radius — just present them in order, closest first.
+- "distance_miles" is the straight-line (radial) distance from a location the user mentioned. Quote it naturally ("about 2 miles from there").
+- "estimate_minutes" is a Bay Area drive-time PROXY (~2.5 min/mile). Quote it as an estimate: "~7 min by car (estimate)" or "roughly 5-8 min depending on traffic." NEVER claim it as the actual drive time. If you mention minutes at all, the estimate framing is mandatory.
+- Results are already pre-sorted closest-first when a location is provided. Present them in that order. The user asked "5 within 10 minutes"; every result is already inside that. Just list them.
 - If the user asked about a route (e.g. "on my way from A to B"), the distance is measured to the destination, not along the route. Be honest: "this is close to your destination" rather than claiming it's on the way.
-- Never recommend a place whose distance_miles exceeds the user's stated radius.
+- For accurate real-time drive times the user should check Google Maps — you can mention this once if the user seems to need precision.
 
 MOSQUES — Jummah times rule:
 - For mosques, if a listing includes a "current_jummah_times" line, those are THE active prayer times for today's season. Use those.
@@ -137,7 +142,7 @@ async function extractQueryIntent(message: string): Promise<QueryIntent> {
 Schema:
 {
   "location": string | null,     // place/area/address mentioned. For "from X to Y" use Y (the destination). Examples: "Fremont", "near SFO", "12 Arundel Dr Hayward". null if no location mentioned.
-  "radius_miles": number | null, // if user says "within N miles" use N. If "within N minutes" use roughly N/2 (typical city driving). If user says "near X" without a number, return null. Cap at 30.
+  "radius_miles": number | null, // if user says "within N miles" use N. If "within N minutes" use roughly N/2.5 (Bay Area driving averages 2.5 min/mile). If user says "near X" without a number, return null. Cap at 30.
   "category": string | null      // EXACTLY one of: restaurants, mosques, home-cooked-food, childcare, lawyers, islamic-schools, dessert-catering, event-services, events. null if user is asking generically (e.g. "places", "spots", "food").
 }`
   lastIntentDebug = { raw: null, parsed: null, http_error: null }
@@ -251,8 +256,13 @@ function buildContextBlock(listings: any[], jummahByMosqueId: Map<string, string
       if (l.category_slug) lines.push(`category: ${l.category_slug}`)
       if (l.service_area) lines.push(`city: ${l.service_area}`)
       else if (l.address) lines.push(`address: ${l.address}`)
-      if (typeof l.distance_miles === "number")
+      if (typeof l.distance_miles === "number") {
         lines.push(`distance_miles: ${l.distance_miles.toFixed(1)}`)
+        // Drive-time estimate using the Bay Area proxy. Frame it as an estimate;
+        // see LOCATION+DISTANCE rules in the system prompt.
+        const estMin = Math.round(l.distance_miles * MIN_PER_MILE)
+        lines.push(`estimate_minutes: ${estMin}`)
+      }
       if (l.phone) lines.push(`phone: ${l.phone}`)
       if (l.email) lines.push(`email: ${l.email}`)
       if (l.website) lines.push(`website: ${l.website}`)

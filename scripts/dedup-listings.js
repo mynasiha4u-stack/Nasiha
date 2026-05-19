@@ -168,12 +168,33 @@ async function main() {
     const dups = g.filter(r => r.id !== canonical.id)
 
     try {
-      // 5a. Build patch for canonical: fields it's missing that any dup has
+      // 5a. Build patch for canonical.
+      //   - For most fields: if canonical's field is empty, copy from any dup that has it.
+      //   - For 'description' specifically: if canonical AND any dup both have text,
+      //     concatenate the dup texts onto the end (separated by blank lines), skipping
+      //     any dup text that is already contained in canonical (avoid duplication).
+      //     This preserves info instead of silently dropping the dup's description.
       const patch = {}
       for (const f of MERGE_FIELDS) {
-        if (!isEmpty(canonical[f])) continue
-        for (const d of dups) {
-          if (!isEmpty(d[f])) { patch[f] = d[f]; break }
+        if (isEmpty(canonical[f])) {
+          for (const d of dups) {
+            if (!isEmpty(d[f])) { patch[f] = d[f]; break }
+          }
+          continue
+        }
+        if (f === 'description') {
+          const parts = [canonical[f]]
+          for (const d of dups) {
+            if (isEmpty(d[f])) continue
+            const dt = d[f].trim()
+            // Skip if any existing part fully contains this text (or vice versa).
+            // This catches the common case of the same description copy-pasted twice.
+            if (parts.some(p => p.includes(dt) || dt.includes(p))) continue
+            parts.push(dt)
+          }
+          if (parts.length > 1) {
+            patch[f] = parts.join('\n\n')
+          }
         }
       }
       if (Object.keys(patch).length > 0) {

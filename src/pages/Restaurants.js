@@ -63,6 +63,14 @@ function tierLabel(t) {
   return ''
 }
 
+// First comma-separated part of a formatted address — the street line.
+// "22648 Mission Blvd, Hayward, CA 94541, USA" → "22648 Mission Blvd"
+function streetFromAddress(addr) {
+  if (!addr) return null
+  const parts = addr.split(',').map(p => p.trim()).filter(Boolean)
+  return parts[0] || null
+}
+
 function cityFromAddress(addr) {
   if (!addr) return null
   // US-style: "123 Main St, City, ST 94538, USA" — second comma-separated part is the city
@@ -81,12 +89,16 @@ function RestaurantCard({ item, onTap, userLocation }) {
     ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(item.address)}`
     : null
   const tc = tierColors[item.halal_tier] || tierColors.unknown
+  const street = streetFromAddress(item.address)
   const city = cityFromAddress(item.address)
   return (
     <div onClick={() => onTap(item)} style={{ ...card, padding: 16, cursor: 'pointer' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
         <div style={{ flex: 1, paddingRight: 8 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary, marginBottom: 3, lineHeight: 1.3 }}>{item.name}</div>
+          {street && (
+            <div style={{ fontSize: 12, color: '#6A7A8A', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{street}</div>
+          )}
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             {city && <div style={{ fontSize: 12, color: '#4a5a6a', fontWeight: 500 }}>📍 {city}</div>}
             {dist !== null && (

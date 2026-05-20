@@ -261,6 +261,8 @@ The piece that makes the data layer self-maintaining. Without it the platform st
 
 **Could be supplemented (not replaced) by**: a user "Report incorrect info" flow on every listing, surfacing reported drift to admin review.
 
+**The next concrete slice (after Phase 4 enrichment proves out):** a Bay Area discovery sweep using Google Places **Text Search** — `"halal restaurants in {city}"` × ~20 Bay Area cities × 3 pages of 20 results = up to ~1,200 candidate places. Cross-reference each against `content` (by `google_place_id` for the ones we've enriched, by name+coords for the rest). Anything in Google's index that we don't have → propose as a new listing. Cost: ~60 Text Search calls (~$2 list price, $0 under Pro SKU). This is the stepping-stone to the full Firecrawl + Apify pipeline above — same general idea, narrower scope, native to Google. Built on top of the same `add-places-via-google.js` pattern that's already in place for manual additions.
+
 ### Why all five phases together are the moat
 - Phase 1+2 alone = ChatGPT with a directory bolted on. Easy to copy.
 - Phase 3+4 added = the knowledge graph is *deeper* than any competitor's, because reviews and menus are distilled into searchable structured text.

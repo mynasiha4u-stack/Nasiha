@@ -66,6 +66,21 @@ function buildDoc({ row, categorySlug, categoryName, attributes }) {
       .join('; ')
     parts.push(`Attributes: ${attrStr}`)
   }
+  // Phase 4: include AI-distilled review insights so chat retrieval matches
+  // semantic queries like "best biryani" or "good for date night".
+  const s = row.ai_enriched_summary
+  if (s && typeof s === 'object') {
+    if (Array.isArray(s.known_for_dishes) && s.known_for_dishes.length)
+      parts.push(`Known for: ${s.known_for_dishes.join(', ')}`)
+    if (s.vibe) parts.push(`Vibe: ${s.vibe}`)
+    if (Array.isArray(s.praise_themes) && s.praise_themes.length)
+      parts.push(`Customers praise: ${s.praise_themes.join(', ')}`)
+    if (Array.isArray(s.complaint_themes) && s.complaint_themes.length)
+      parts.push(`Recurring complaints: ${s.complaint_themes.join(', ')}`)
+    if (s.halal_notes) parts.push(`Halal: ${s.halal_notes}`)
+    if (Array.isArray(s.recommended_for) && s.recommended_for.length)
+      parts.push(`Recommended for: ${s.recommended_for.join(', ')}`)
+  }
   return parts.join('. ').replace(/\s+/g, ' ').trim()
 }
 
@@ -144,7 +159,7 @@ async function main() {
   while (true) {
     const { data, error } = await supabase
       .from('content')
-      .select('id, name, description, address, service_area, metro, tags, category_id, status, updated_at')
+      .select('id, name, description, address, service_area, metro, tags, category_id, status, updated_at, ai_enriched_summary')
       .eq('status', 'published')
       .range(from, from + PAGE - 1)
     if (error) throw error

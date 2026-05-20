@@ -21,6 +21,7 @@
  *     node scripts/add-places-via-google.js [--dry-run]
  */
 
+require('./_loadenv')
 const { createClient } = require('@supabase/supabase-js')
 
 const SUPABASE_URL = 'https://puymhxfhoqryxnjubryw.supabase.co'

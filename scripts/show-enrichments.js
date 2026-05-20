@@ -10,6 +10,7 @@
  *   SUPABASE_SERVICE_ROLE_KEY=... node scripts/show-enrichments.js [--limit N]
  */
 
+require('./_loadenv')
 const { createClient } = require('@supabase/supabase-js')
 
 const SUPABASE_URL = 'https://puymhxfhoqryxnjubryw.supabase.co'

@@ -24,6 +24,7 @@
  *             For 7k rows that's ~6 minutes total wall time.
  */
 
+require('./_loadenv')
 const { createClient } = require('@supabase/supabase-js')
 
 const SUPABASE_URL = 'https://puymhxfhoqryxnjubryw.supabase.co'

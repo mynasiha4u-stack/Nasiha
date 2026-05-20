@@ -14,6 +14,7 @@
  * No real run defaults: pass IDs explicitly via the constant or wait until the 20 list is set.
  */
 
+require('./_loadenv')
 const { enrichRestaurant } = require('./enrich-restaurant')
 const { createClient } = require('@supabase/supabase-js')
 

@@ -19,6 +19,7 @@
  * Module API: enrichRestaurant(contentId) — exported for batch use.
  */
 
+require('./_loadenv')
 const { createClient } = require('@supabase/supabase-js')
 
 const SUPABASE_URL = 'https://puymhxfhoqryxnjubryw.supabase.co'

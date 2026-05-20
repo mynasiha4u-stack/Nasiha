@@ -18,6 +18,7 @@
  *   --force     Re-embed every row, ignoring the hash check.
  */
 
+require('./_loadenv')
 const crypto = require('crypto')
 const { createClient } = require('@supabase/supabase-js')
 

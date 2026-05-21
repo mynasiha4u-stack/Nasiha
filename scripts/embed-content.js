@@ -88,6 +88,9 @@ function buildDoc({ row, categorySlug, categoryName, attributes }) {
       ? s.occasion_tags
       : (Array.isArray(s.recommended_for) ? s.recommended_for : [])
     if (occasions.length) parts.push(`Occasion tags: ${occasions.join(', ')}`)
+    // Minor tags — atmospheric details, not filterable but useful for semantic retrieval
+    if (Array.isArray(s.minor_tags) && s.minor_tags.length)
+      parts.push(`Atmosphere: ${s.minor_tags.join(', ')}`)
   }
   return parts.join('. ').replace(/\s+/g, ' ').trim()
 }

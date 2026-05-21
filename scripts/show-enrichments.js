@@ -57,6 +57,7 @@ async function main() {
     // Prefer new occasion_tags; fall back to old recommended_for for any pre-revamp rows
     const occasions = s.occasion_tags?.length ? s.occasion_tags : s.recommended_for
     if (occasions?.length) console.log(`  occasion tags:  ${occasions.join(', ')}`)
+    if (s.minor_tags?.length) console.log(`  minor tags:     ${s.minor_tags.join(' · ')}`)
     if (s.based_on) console.log(`  distilled from: ${s.based_on.sampled_reviews ?? s.based_on.review_count ?? '?'} reviews (${s.based_on.avg_rating ?? '?'}/5 avg)`)
     console.log()
   }

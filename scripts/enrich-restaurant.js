@@ -113,8 +113,8 @@ OUTPUT SCHEMA:
   "halal_notes": "What the reviews and restaurant info actually say about halal status. Possible values: explicit halal claim with detail, implicit (no alcohol / Muslim-owned cues), unclear, or null. If unclear, say 'No explicit halal information in reviews — verify with restaurant.' Never assume halal without evidence.",
   "occasion_tags": [
     "Array drawn ONLY from this fixed vocabulary of 13 tags. Multiple tags allowed. Include a tag ONLY if reviews or venue characteristics genuinely support it:",
-    "date_night              — quieter atmosphere, ambiance suitable for adult conversation, dressier or memorable setting",
-    "family_with_kids        — kid menu, high chairs, tolerant of noise/mess, family-portion options",
+    "date_night              — Ambiance suited to focused adult conversation: quieter, dimmer, or visually intentional. Not just 'nice decor' — it's about whether a couple could have an undisturbed conversation. Counter-service spots and loud family restaurants do NOT qualify even if the food is great.",
+    "family_with_kids        — Casual atmosphere where children can sit, eat, and be a little noisy without disturbing other diners or seeming out of place. About social fit, NOT kids' menus or dish suitability. Most casual restaurants qualify; fine-dining and quiet adult-focused spots do not.",
     "big_groups              — accommodates 8+, long tables, family-style platters, group reservations",
     "outdoor_seating         — patio, sidewalk seating, garden",
     "late_night              — open past 10pm with full menu",
@@ -124,7 +124,7 @@ OUTPUT SCHEMA:
     "takeout_friendly        — well-suited for takeout (sturdy packaging, items travel well, dedicated pickup)",
     "large_catering_orders   — explicitly takes catering, party trays, or large group orders",
     "vegetarian_friendly     — meaningful vegetarian selection beyond a token dish; reviewers mention vegetarian options favorably",
-    "solo_friendly           — comfortable to eat alone (counter/bar seating, quick meals, no awkwardness mentioned)",
+    "solo_friendly           — Comfortable to eat alone without feeling conspicuous: counter seats, casual lighting, normal to see solo diners. Excludes fine-dining and date-focused spots where eating alone would feel out of place.",
     "cheap_eats              — under ~\\$15/person for a full meal; reviewers note value or affordable pricing",
     "If the reviews don't support a tag, leave it off. Do not guess. Better to return [] than to invent.",
     "DO NOT invent tags outside this list of 13."

@@ -69,18 +69,25 @@ function buildDoc({ row, categorySlug, categoryName, attributes }) {
   }
   // Phase 4: include AI-distilled review insights so chat retrieval matches
   // semantic queries like "best biryani" or "good for date night".
+  // Handles BOTH the post-revamp schema (occasion_tags, signature_strength,
+  // good_for_summary) AND the pre-revamp schema (recommended_for) gracefully.
   const s = row.ai_enriched_summary
   if (s && typeof s === 'object') {
+    if (s.good_for_summary) parts.push(`Best for: ${s.good_for_summary}`)
+    if (s.signature_strength) parts.push(`Signature strength: ${s.signature_strength}`)
     if (Array.isArray(s.known_for_dishes) && s.known_for_dishes.length)
-      parts.push(`Known for: ${s.known_for_dishes.join(', ')}`)
+      parts.push(`Known for dishes: ${s.known_for_dishes.join(', ')}`)
     if (s.vibe) parts.push(`Vibe: ${s.vibe}`)
     if (Array.isArray(s.praise_themes) && s.praise_themes.length)
       parts.push(`Customers praise: ${s.praise_themes.join(', ')}`)
     if (Array.isArray(s.complaint_themes) && s.complaint_themes.length)
       parts.push(`Recurring complaints: ${s.complaint_themes.join(', ')}`)
     if (s.halal_notes) parts.push(`Halal: ${s.halal_notes}`)
-    if (Array.isArray(s.recommended_for) && s.recommended_for.length)
-      parts.push(`Recommended for: ${s.recommended_for.join(', ')}`)
+    // Prefer new occasion_tags; fall back to old recommended_for for legacy rows
+    const occasions = (Array.isArray(s.occasion_tags) && s.occasion_tags.length)
+      ? s.occasion_tags
+      : (Array.isArray(s.recommended_for) ? s.recommended_for : [])
+    if (occasions.length) parts.push(`Occasion tags: ${occasions.join(', ')}`)
   }
   return parts.join('. ').replace(/\s+/g, ' ').trim()
 }

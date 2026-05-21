@@ -40,17 +40,24 @@ async function main() {
   for (const r of data) {
     const s = r.ai_enriched_summary || {}
     const cityish = (r.address || '').split(',').slice(1, 2).join('').trim()
+    // Confidence shown inline with rating — most important quality signal up top
+    const conf = s.confidence ? ` · confidence: ${s.confidence}` : ''
     console.log('═'.repeat(80))
     console.log(`${r.name}${cityish ? ' · ' + cityish : ''}`)
-    console.log(`Google: ${r.google_rating ?? '?'}/5  ·  ${r.google_review_count ?? '?'} reviews  ·  ${r.photos?.length || 0} photos`)
+    console.log(`Google: ${r.google_rating ?? '?'}/5  ·  ${r.google_review_count ?? '?'} reviews  ·  ${r.photos?.length || 0} photos${conf}`)
     console.log('─'.repeat(80))
+    // Tagline first if present — captures the "who is this for" in one line
+    if (s.good_for_summary) console.log(`  tagline:        ${s.good_for_summary}`)
+    if (s.signature_strength) console.log(`  signature:      ${s.signature_strength}`)
     if (s.vibe) console.log(`  vibe:           ${s.vibe}`)
     if (s.known_for_dishes?.length) console.log(`  known for:      ${s.known_for_dishes.join(', ')}`)
     if (s.praise_themes?.length) console.log(`  praise:         ${s.praise_themes.join(' · ')}`)
     if (s.complaint_themes?.length) console.log(`  complaints:     ${s.complaint_themes.join(' · ')}`)
     if (s.halal_notes) console.log(`  halal notes:    ${s.halal_notes}`)
-    if (s.recommended_for?.length) console.log(`  good for:       ${s.recommended_for.join(', ')}`)
-    if (s.based_on) console.log(`  distilled from: ${s.based_on.sampled_reviews ?? '?'} sampled reviews (${s.based_on.avg_rating ?? '?'}/5 avg)`)
+    // Prefer new occasion_tags; fall back to old recommended_for for any pre-revamp rows
+    const occasions = s.occasion_tags?.length ? s.occasion_tags : s.recommended_for
+    if (occasions?.length) console.log(`  occasion tags:  ${occasions.join(', ')}`)
+    if (s.based_on) console.log(`  distilled from: ${s.based_on.sampled_reviews ?? s.based_on.review_count ?? '?'} reviews (${s.based_on.avg_rating ?? '?'}/5 avg)`)
     console.log()
   }
   console.log('═'.repeat(80))

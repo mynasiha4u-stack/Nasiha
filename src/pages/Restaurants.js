@@ -88,9 +88,10 @@ function RestaurantCard({ item, onTap, userLocation }) {
     : item.address
     ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(item.address)}`
     : null
-  const tc = tierColors[item.halal_tier] || tierColors.unknown
   const street = streetFromAddress(item.address)
   const city = cityFromAddress(item.address)
+  // Halal badge intentionally NOT rendered on cards. Nasiha is not a halal
+  // certification body; inclusion in the directory is the only implicit signal.
   return (
     <div onClick={() => onTap(item)} style={{ ...card, padding: 16, cursor: 'pointer' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
@@ -106,9 +107,6 @@ function RestaurantCard({ item, onTap, userLocation }) {
             )}
           </div>
         </div>
-        {item.halal_tier && item.halal_tier !== 'unknown' && (
-          <span style={{ background: tc.bg, color: tc.color, fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6, whiteSpace: 'nowrap', flexShrink: 0 }}>{tierLabel(item.halal_tier)}</span>
-        )}
       </div>
       {(item.cuisine_clean || (item.types && item.types.length > 0)) && (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
@@ -454,16 +452,10 @@ export function RestaurantDetail() {
     load()
   }, [slug])
 
-  // Build a badge from halal_tier + types for ListingDetail
-  let badge = ''
-  let badgeColor = { bg: '#F7F3EE', color: '#3A4A5A' }
-  if (item) {
-    if (item.halal_tier === 'hfsaa_zabihah') { badge = 'HFSAA Zabihah'; badgeColor = { bg: '#E3F2FD', color: '#0288D1' } }
-    else if (item.halal_tier === 'fully_halal') { badge = 'Fully Halal'; badgeColor = { bg: '#E8F5E9', color: '#2E7D32' } }
-    else if (item.halal_tier === 'partially_halal') { badge = 'Partially Halal'; badgeColor = { bg: '#FFF8E1', color: '#9A6D00' } }
-  }
-
+  // Halal-tier badge intentionally NOT passed. Nasiha is not a halal certification
+  // body; we don't make halal claims publicly. halal_tier data remains in
+  // attributes for chat retrieval / future admin tooling only.
   return (
-    <ListingDetail item={item} loading={loading} typeBadge={badge} typeColor={badgeColor} notFoundLabel="Restaurant not found" />
+    <ListingDetail item={item} loading={loading} notFoundLabel="Restaurant not found" />
   )
 }

@@ -71,9 +71,24 @@ function buildDoc({ row, categorySlug, categoryName, attributes }) {
   // semantic queries like "best biryani" or "good for date night".
   // Handles BOTH the post-revamp schema (occasion_tags, signature_strength,
   // good_for_summary) AND the pre-revamp schema (recommended_for) gracefully.
+  // Also folds in Nasiha's editorial layer (pro_tip, must_order, tagline_override)
+  // and applies nasiha_tag_overrides so the embedded doc matches what's surfaced.
   const s = row.ai_enriched_summary
+
+  // Editorial tagline takes priority over AI-derived good_for_summary
+  const tagline = (row.nasiha_tagline_override && row.nasiha_tagline_override.trim())
+    || s?.good_for_summary
+  if (tagline) parts.push(`Best for: ${tagline}`)
+
+  // Nasiha Pro Tip — high-signal editorial content, surface prominently in doc
+  if (row.nasiha_pro_tip) parts.push(`Nasiha pro tip: ${row.nasiha_pro_tip}`)
+
+  // nasiha_must_order is authoritative — embed alongside Claude's known_for_dishes
+  if (Array.isArray(row.nasiha_must_order) && row.nasiha_must_order.length) {
+    parts.push(`Must order (Nasiha pick): ${row.nasiha_must_order.join(', ')}`)
+  }
+
   if (s && typeof s === 'object') {
-    if (s.good_for_summary) parts.push(`Best for: ${s.good_for_summary}`)
     if (s.signature_strength) parts.push(`Signature strength: ${s.signature_strength}`)
     if (Array.isArray(s.known_for_dishes) && s.known_for_dishes.length)
       parts.push(`Known for dishes: ${s.known_for_dishes.join(', ')}`)
@@ -83,12 +98,15 @@ function buildDoc({ row, categorySlug, categoryName, attributes }) {
     if (Array.isArray(s.complaint_themes) && s.complaint_themes.length)
       parts.push(`Recurring complaints: ${s.complaint_themes.join(', ')}`)
     if (s.halal_notes) parts.push(`Halal: ${s.halal_notes}`)
-    // Prefer new occasion_tags; fall back to old recommended_for for legacy rows
-    const occasions = (Array.isArray(s.occasion_tags) && s.occasion_tags.length)
+    // Apply tag overrides to compute effective tags. Fall back to recommended_for for legacy rows.
+    const baseTags = (Array.isArray(s.occasion_tags) && s.occasion_tags.length)
       ? s.occasion_tags
       : (Array.isArray(s.recommended_for) ? s.recommended_for : [])
-    if (occasions.length) parts.push(`Occasion tags: ${occasions.join(', ')}`)
-    // Minor tags — atmospheric details, not filterable but useful for semantic retrieval
+    const ov = row.nasiha_tag_overrides || {}
+    const forceAdd = Array.isArray(ov.force_add) ? ov.force_add : []
+    const forceRemove = new Set(Array.isArray(ov.force_remove) ? ov.force_remove : [])
+    const effective = [...new Set([...baseTags, ...forceAdd])].filter(t => !forceRemove.has(t))
+    if (effective.length) parts.push(`Occasion tags: ${effective.join(', ')}`)
     if (Array.isArray(s.minor_tags) && s.minor_tags.length)
       parts.push(`Atmosphere: ${s.minor_tags.join(', ')}`)
   }
@@ -170,7 +188,7 @@ async function main() {
   while (true) {
     const { data, error } = await supabase
       .from('content')
-      .select('id, name, description, address, service_area, metro, tags, category_id, status, updated_at, ai_enriched_summary')
+      .select('id, name, description, address, service_area, metro, tags, category_id, status, updated_at, ai_enriched_summary, nasiha_tag_overrides, nasiha_pro_tip, nasiha_must_order, nasiha_tagline_override')
       .eq('status', 'published')
       .range(from, from + PAGE - 1)
     if (error) throw error

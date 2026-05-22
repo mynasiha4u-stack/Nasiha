@@ -27,6 +27,7 @@ import SchoolsMap from './pages/SchoolsMap'
 import Lawyers, { LawyerDetail } from './pages/Lawyers'
 import Chat from './pages/Chat'
 import ChatLauncher from './components/ChatLauncher'
+import AdminCurate from './pages/AdminCurate'
 
 export default function App() {
   return (
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="/submit" element={<SubmitListing />} />
           <Route path="/my-listings" element={<MyListings />} />
           <Route path="/admin/review" element={<AdminReview />} />
+          <Route path="/admin/curate" element={<AdminCurate />} />
           <Route path="/jummah" element={<Jummah />} />
           <Route path="/events" element={<Events />} />
           <Route path="/events/:slug" element={<EventDetailPage />} />

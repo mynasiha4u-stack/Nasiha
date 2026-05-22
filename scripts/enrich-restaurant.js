@@ -88,6 +88,8 @@ CORE RULES — read carefully, these are non-negotiable:
    - One reviewer mentions it with concrete specifics (a named dish, a specific scenario, a verifiable fact)
    Single vague mentions ("good service," "loved the food") do not qualify.
 
+   This evidence standard applies to ALL occasion tags — they must be ACTIVELY supported, not "it doesn't disqualify." A taqueria isn't vegetarian_friendly just because it has a bean burrito. A loud diner isn't quiet enough for date_night just because the music isn't bad. The default for any tag is NOT INCLUDED unless reviews actively prove it.
+
 3. Specific beats general, every time. "Chapli kabab with house green chutney" beats "good kababs." "Counter-order, 30 seats, gets a midday office crowd" beats "casual." If you cannot be specific, omit the field rather than fill it.
 
 4. Honest about thin data. If only 1-3 reviews are provided or reviews are vague, your summary should be shorter and you should set "confidence": "low". Do not pad. Better to say less and be right than say more and guess.
@@ -123,7 +125,7 @@ OUTPUT SCHEMA:
     "prayer_facilities       — prayer room or accommodations mentioned",
     "takeout_friendly        — well-suited for takeout (sturdy packaging, items travel well, dedicated pickup)",
     "large_catering_orders   — explicitly takes catering, party trays, or large group orders",
-    "vegetarian_friendly     — meaningful vegetarian selection beyond a token dish; reviewers mention vegetarian options favorably",
+    "vegetarian_friendly     — Restaurant is ACTIVELY known for vegetarian/vegan options. Multiple vegetarian dishes explicitly named in reviews as standouts, OR vegetarians actively choose this place over alternatives. Restaurants that happen to serve a few non-meat items DO NOT qualify. A taqueria with a bean burrito does not qualify. A Pakistani restaurant with daal does not qualify unless reviews specifically call out vegetarian selection as a strength.",
     "solo_friendly           — Comfortable to eat alone without feeling conspicuous: counter seats, casual lighting, normal to see solo diners. Excludes fine-dining and date-focused spots where eating alone would feel out of place.",
     "cheap_eats              — under ~\\$15/person for a full meal; reviewers note value or affordable pricing",
     "If the reviews don't support a tag, leave it off. Do not guess. Better to return [] than to invent.",
@@ -132,7 +134,7 @@ OUTPUT SCHEMA:
   "minor_tags": [
     "Free-form short-phrase array of 3-7 atmospheric details that don't deserve to be filterable tags but add color to the listing. Examples: 'long-term ownership', 'menu in Urdu', 'prayer space available', 'Persian-Afghan fusion', 'regulars greeted by name'. Keep each short and supported by reviews. These are NOT user-filterable — distinct from occasion_tags."
   ],
-  "good_for_summary": "One short phrase (5-10 words) capturing the strongest 'who is this place for' takeaway. Used as a tagline. Example: 'Quick weekday lunch for Pakistani office workers.' Not: 'Great food for everyone.'",
+  "good_for_summary": "One short phrase (5-10 words) capturing the strongest 'who is this place for' takeaway. Used as a tagline. MUST be neutral-descriptive of what the restaurant IS — NEVER a judgment, NEVER a warning, NEVER the word 'avoid'. Even for poorly-rated places, describe what they are, not whether to go. Example GOOD: 'Quick weekday lunch for Pakistani office workers.' Example BAD: 'Great food for everyone.' Example BAD for low-rated place: 'Family Pakistani spot, lots of complaints about service' — leave the complaints out of the tagline; describe what it IS. Acceptable: 'Casual family Pakistani spot in Hayward.'",
   "based_on": {
     "review_count": "integer — number of reviews analyzed",
     "avg_rating": "float — average rating from the source"

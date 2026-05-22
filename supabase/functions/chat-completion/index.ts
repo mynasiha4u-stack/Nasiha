@@ -85,6 +85,15 @@ LOCATION + DISTANCE rules:
 - If the user asked about a route (e.g. "on my way from A to B"), the distance is measured to the destination, not along the route. Be honest: "this is close to your destination" rather than claiming it's on the way.
 - Never tell the user to check Google Maps or any external service. You have everything you need.
 
+EDITORIAL LAYER — Nasiha's own voice (priority over AI-derived content):
+- If a listing has "nasiha_pro_tip", that's editorial content authored by Nasiha. Quote or paraphrase it confidently. Prefix attribution as "Nasiha's tip:" or "Nasiha notes:" — this IS the Nasiha voice.
+- If "must_order (editorial, authoritative)" is present, those dishes are Nasiha's authoritative pick. When the user asks "what should I order at X", lead with these. AI-derived "known_for_dishes" are second-priority.
+- If "tagline" is present, you may use it to frame the place quickly.
+
+HALAL HANDLING — never assert halal status as a Nasiha statement:
+- Nasiha is NOT a halal certification body. When asked "is X halal?", hedge: "Reviews suggest...", "Owner indicated halal...", "The restaurant displays halal certification per reviewers..." Never declare halal status with Nasiha's authority.
+- If no halal information is present in the listing's context, say so directly: "I don't have explicit halal confirmation for X in my data — worth confirming with the restaurant directly."
+
 MOSQUES — Jummah times rule:
 - For mosques, if a listing includes a "current_jummah_times" line, those are THE active prayer times for today's season. Use those.
 - The description field may contain older or seasonal times — IGNORE those in favor of current_jummah_times.
@@ -249,18 +258,39 @@ function toPgVector(arr: number[]): string {
   return "[" + arr.join(",") + "]"
 }
 
-function buildContextBlock(listings: any[], jummahByMosqueId: Map<string, string>): string {
+// Apply nasiha_tag_overrides on top of ai_enriched_summary.occasion_tags.
+// Mirrors src/lib/listingTags.js#effectiveOccasionTags so chat sees the same
+// tags as the public surfaces. force_remove takes priority over force_add.
+function effectiveOccasionTags(aiSummary: any, overrides: any): string[] {
+  const fromClaude: string[] = Array.isArray(aiSummary?.occasion_tags) ? aiSummary.occasion_tags : []
+  const forceAdd: string[] = Array.isArray(overrides?.force_add) ? overrides.force_add : []
+  const forceRemove = new Set(Array.isArray(overrides?.force_remove) ? overrides.force_remove : [])
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const t of [...fromClaude, ...forceAdd]) {
+    if (forceRemove.has(t) || seen.has(t)) continue
+    out.push(t); seen.add(t)
+  }
+  return out
+}
+
+function buildContextBlock(
+  listings: any[],
+  jummahByMosqueId: Map<string, string>,
+  enrichByContentId: Map<string, any>,
+): string {
   if (listings.length === 0) return "(no listings matched the query)"
   return listings
     .map((l, i) => {
+      const enrich = enrichByContentId.get(l.id) || {}
+      const aiSummary = enrich.ai_enriched_summary
+      const overrides = enrich.nasiha_tag_overrides
       const lines = [`[${i + 1}] ${l.name}`]
       if (l.category_slug) lines.push(`category: ${l.category_slug}`)
       if (l.service_area) lines.push(`city: ${l.service_area}`)
       else if (l.address) lines.push(`address: ${l.address}`)
       if (typeof l.distance_miles === "number") {
         lines.push(`distance_miles: ${l.distance_miles.toFixed(1)}`)
-        // Drive-time estimate using the Bay Area proxy. Frame it as an estimate;
-        // see LOCATION+DISTANCE rules in the system prompt.
         const estMin = Math.round(l.distance_miles * MIN_PER_MILE)
         lines.push(`estimate_minutes: ${estMin}`)
       }
@@ -269,11 +299,33 @@ function buildContextBlock(listings: any[], jummahByMosqueId: Map<string, string
       if (l.website) lines.push(`website: ${l.website}`)
       if (l.instagram) lines.push(`instagram: ${l.instagram}`)
       if (l.url_slug) lines.push(`url_slug: ${l.url_slug}`)
-      // Mosques: inject live current-season Jummah times so the model can't
-      // accidentally cite stale times from a description that hardcodes them.
+
+      // Mosques: inject live current-season Jummah times
       if (l.category_slug === "mosques" && jummahByMosqueId.has(l.id)) {
         lines.push(`current_jummah_times: ${jummahByMosqueId.get(l.id)}`)
       }
+
+      // Editorial layer + AI enrichment
+      const tagline = enrich.nasiha_tagline_override?.trim() || aiSummary?.good_for_summary
+      if (tagline) lines.push(`tagline: ${tagline}`)
+      if (enrich.nasiha_pro_tip) lines.push(`nasiha_pro_tip: ${enrich.nasiha_pro_tip}`)
+      if (Array.isArray(enrich.nasiha_must_order) && enrich.nasiha_must_order.length) {
+        lines.push(`must_order (editorial, authoritative): ${enrich.nasiha_must_order.join(", ")}`)
+      }
+      if (aiSummary) {
+        if (aiSummary.signature_strength) lines.push(`signature: ${aiSummary.signature_strength}`)
+        if (aiSummary.vibe) lines.push(`vibe: ${aiSummary.vibe}`)
+        if (Array.isArray(aiSummary.known_for_dishes) && aiSummary.known_for_dishes.length)
+          lines.push(`known_for_dishes: ${aiSummary.known_for_dishes.join(", ")}`)
+        if (Array.isArray(aiSummary.praise_themes) && aiSummary.praise_themes.length)
+          lines.push(`praise: ${aiSummary.praise_themes.join("; ")}`)
+        if (aiSummary.halal_notes) lines.push(`halal_notes: ${aiSummary.halal_notes}`)
+        if (Array.isArray(aiSummary.minor_tags) && aiSummary.minor_tags.length)
+          lines.push(`minor_tags: ${aiSummary.minor_tags.join(", ")}`)
+      }
+      const occasions = effectiveOccasionTags(aiSummary, overrides)
+      if (occasions.length) lines.push(`occasion_tags: ${occasions.join(", ")}`)
+
       if (l.description) {
         const desc = l.description.replace(/\s+/g, " ").slice(0, 400)
         lines.push(`about: ${desc}${l.description.length > 400 ? "…" : ""}`)
@@ -281,6 +333,20 @@ function buildContextBlock(listings: any[], jummahByMosqueId: Map<string, string
       return lines.join("\n")
     })
     .join("\n---\n")
+}
+
+// Fetch editorial + enrichment fields for retrieved listings. We deliberately
+// don't include these in the match_content RPC return (keeps the SQL function
+// stable and avoids JSONB ser overhead on rows that wouldn't be in the final N).
+async function fetchEnrichmentForListings(supabase: any, listings: any[]): Promise<Map<string, any>> {
+  const ids = listings.map(l => l.id)
+  if (ids.length === 0) return new Map()
+  const { data, error } = await supabase
+    .from("content")
+    .select("id, ai_enriched_summary, nasiha_tag_overrides, nasiha_tagline_override, nasiha_pro_tip, nasiha_must_order")
+    .in("id", ids)
+  if (error || !data) return new Map()
+  return new Map(data.map((r: any) => [r.id, r]))
 }
 
 // Returns true if the current instant is in US Pacific Daylight Time (March–November).
@@ -408,8 +474,14 @@ serve(async (req) => {
   // otherwise cause the chat to cite winter times in summer (and vice versa).
   const jummahByMosqueId = await fetchJummahForMosques(supabaseAdmin, listings)
 
+  // 2c. Fetch editorial + AI enrichment fields for the retrieved listings.
+  // This is what lets the chat see nasiha_pro_tip, nasiha_must_order, and
+  // apply tag overrides without those fields needing to be in match_content's
+  // return shape.
+  const enrichByContentId = await fetchEnrichmentForListings(supabaseAdmin, listings)
+
   // 3. Build the context block
-  const contextBlock = buildContextBlock(listings, jummahByMosqueId)
+  const contextBlock = buildContextBlock(listings, jummahByMosqueId, enrichByContentId)
   const userPrompt = `User question: ${message}\n\nLISTINGS:\n${contextBlock}\n\nAnswer the user using only these listings.`
 
   // 4. Call Anthropic with streaming

@@ -1,7 +1,15 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BottomNav from './BottomNav'
 import { colors, headerGradient, card, radius } from '../theme'
+import { supabase } from '../lib/supabase'
+import {
+  effectiveOccasionTags,
+  effectiveTagline,
+  rankTagsByRarity,
+  fetchTagCounts,
+  tagMeta,
+} from '../lib/listingTags'
 
 export function cleanText(text) {
   if (!text) return ''
@@ -115,12 +123,16 @@ export default function ListingDetail({ item, typeBadge, typeColor, loading, not
       <div style={{ background: headerGradient, padding: '52px 20px 24px' }}>
         <button onClick={() => navigate(-1)} style={{ fontSize: 13, fontWeight: 700, color: colors.deep, marginBottom: 14, display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: radius.full }}>← Back</button>
         {item.image_url && <img src={item.image_url} alt={item.name} style={{ width: '100%', borderRadius: radius.md, marginBottom: 14, objectFit: 'cover', maxHeight: 200 }} />}
-        {typeBadge && <span style={{ background: 'rgba(28,43,58,0.1)', color: '#1C2B3A', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: radius.full, marginBottom: 10, display: 'inline-block' }}>{typeBadge}</span>}
+        {/* typeBadge intentionally omitted — Nasiha does NOT render halal/category badges
+            on public listing surfaces. Halal status is an admin-internal field. */}
         <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1C2B3A', lineHeight: 1.3, marginBottom: 6 }}>{item.name}</h1>
-        <div style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)' }}>📍 {item.metro}{item.address ? ` · ${item.address.split(',')[0]}` : ''}</div>
+        <EditorialTagline item={item} />
+        <div style={{ fontSize: 13, color: 'rgba(28,43,58,0.65)', marginTop: 6 }}>📍 {item.metro}{item.address ? ` · ${item.address.split(',')[0]}` : ''}</div>
+        <GoogleRatingLine item={item} />
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
+        <NasihaProTip item={item} />
         <ActionButtons item={item} />
         <ContactRibbon item={item} />
         {(item.display_lat || item.address) && (
@@ -140,6 +152,7 @@ export default function ListingDetail({ item, typeBadge, typeColor, loading, not
           </div>
         )}
         {children}
+        <EnrichmentBlock item={item} />
         {item.description && (
           <div style={{ ...card, padding: 16 }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary, marginBottom: 10 }}>About</div>
@@ -149,5 +162,170 @@ export default function ListingDetail({ item, typeBadge, typeColor, loading, not
       </div>
       <BottomNav />
     </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// Editorial + enrichment sub-components
+// ─────────────────────────────────────────────────────────────
+
+function EditorialTagline({ item }) {
+  const tagline = effectiveTagline(item)
+  if (!tagline) return null
+  return (
+    <div style={{ fontSize: 14, color: '#3A4A5A', fontStyle: 'italic', marginTop: 4, lineHeight: 1.4 }}>
+      {tagline}
+    </div>
+  )
+}
+
+function GoogleRatingLine({ item }) {
+  if (item.google_rating == null && item.google_review_count == null) return null
+  return (
+    <div style={{ fontSize: 12, color: 'rgba(28,43,58,0.65)', marginTop: 4 }}>
+      {item.google_rating != null && <span style={{ fontWeight: 700 }}>★ {Number(item.google_rating).toFixed(1)}</span>}
+      {item.google_review_count != null && <span>{item.google_rating != null ? '  ·  ' : ''}{Number(item.google_review_count).toLocaleString()} reviews</span>}
+    </div>
+  )
+}
+
+function NasihaProTip({ item }) {
+  if (!item.nasiha_pro_tip || !item.nasiha_pro_tip.trim()) return null
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg, #FFF8E1 0%, #FFF3CD 100%)',
+      border: '1px solid #F4C430',
+      borderRadius: radius.md,
+      padding: '14px 16px',
+      marginBottom: 14,
+    }}>
+      <div style={{ fontSize: 12, fontWeight: 800, color: '#9A6D00', marginBottom: 6, letterSpacing: 0.2 }}>
+        💡 NASIHA PRO TIP
+      </div>
+      <div style={{ fontSize: 14, color: '#5A4500', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+        {item.nasiha_pro_tip}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Renders Claude's enrichment (vibe, known_for, signature, occasion tags, praise,
+ * minor tags) — augmented with editorial nasiha_must_order taking priority, and
+ * nasiha_tag_overrides applied. Complaint themes are NOT rendered publicly.
+ */
+function EnrichmentBlock({ item }) {
+  const s = item?.ai_enriched_summary
+  if (!s && (!Array.isArray(item?.nasiha_must_order) || item.nasiha_must_order.length === 0)) return null
+
+  const [tagCounts, setTagCounts] = useState(null)
+  useEffect(() => {
+    let cancelled = false
+    fetchTagCounts(supabase).then(m => { if (!cancelled) setTagCounts(m) })
+    return () => { cancelled = true }
+  }, [])
+
+  const mustOrder = Array.isArray(item.nasiha_must_order) ? item.nasiha_must_order : []
+  const claudeDishes = Array.isArray(s?.known_for_dishes) ? s.known_for_dishes : []
+  // Dedup: don't show a Claude dish if it's already in must_order (case-insensitive)
+  const mustOrderLower = new Set(mustOrder.map(d => (d || '').toLowerCase()))
+  const claudeDishesFiltered = claudeDishes.filter(d => !mustOrderLower.has((d || '').toLowerCase()))
+
+  const occasions = effectiveOccasionTags(item)
+  const occasionsCapped = rankTagsByRarity(occasions, tagCounts || new Map(), 4)
+  const minor = Array.isArray(s?.minor_tags) ? s.minor_tags : []
+  const praise = Array.isArray(s?.praise_themes) ? s.praise_themes : []
+
+  return (
+    <>
+      {/* What it's known for — must_order chips first, then Claude's known_for_dishes */}
+      {(mustOrder.length > 0 || claudeDishesFiltered.length > 0) && (
+        <div style={{ ...card, padding: 16 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary, marginBottom: 10 }}>What it's known for</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {mustOrder.map(d => (
+              <span key={'must-' + d} style={{
+                background: '#FFF3CD', color: '#9A6D00', border: '1.5px solid #F4C430',
+                fontSize: 12, fontWeight: 800, padding: '5px 10px', borderRadius: 999,
+              }}>★ {d} · must order</span>
+            ))}
+            {claudeDishesFiltered.map(d => (
+              <span key={'kfd-' + d} style={{
+                background: '#F7F3EE', color: '#3A4A5A',
+                fontSize: 12, fontWeight: 600, padding: '5px 10px', borderRadius: 999,
+              }}>{d}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Vibe */}
+      {s?.vibe && (
+        <div style={{ ...card, padding: 16 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary, marginBottom: 8 }}>Vibe</div>
+          <div style={{ fontSize: 14, color: colors.textPrimary, lineHeight: 1.5 }}>{s.vibe}</div>
+        </div>
+      )}
+
+      {/* Signature strength — styled callout */}
+      {s?.signature_strength && (
+        <div style={{
+          ...card, padding: 16,
+          background: 'linear-gradient(135deg, #FFF7ED 0%, #FFEFD5 100%)',
+          border: '1px solid rgba(194,65,12,0.25)',
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: colors.brand, marginBottom: 6, letterSpacing: 0.2 }}>SIGNATURE STRENGTH</div>
+          <div style={{ fontSize: 14, color: '#5A2C0C', lineHeight: 1.5 }}>{s.signature_strength}</div>
+        </div>
+      )}
+
+      {/* Occasion tags — capped at top 4 by rarity */}
+      {occasionsCapped.length > 0 && (
+        <div style={{ ...card, padding: 16 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary, marginBottom: 10 }}>Good for</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {occasionsCapped.map(t => {
+              const m = tagMeta(t)
+              return (
+                <span key={t} style={{
+                  background: '#E0F7F5', color: '#0F766E',
+                  fontSize: 12, fontWeight: 700, padding: '5px 10px', borderRadius: 999,
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                }}>
+                  <span>{m.emoji}</span>{m.label}
+                </span>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Minor tags — small text chips below */}
+      {minor.length > 0 && (
+        <div style={{ ...card, padding: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: colors.textMuted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Details</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+            {minor.map((t, i) => (
+              <span key={i} style={{
+                background: 'transparent', color: '#6A7A8A',
+                fontSize: 11, padding: '3px 8px', borderRadius: 6,
+                border: '1px solid rgba(0,0,0,0.08)',
+              }}>{t}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Praise themes — what reviewers consistently like */}
+      {praise.length > 0 && (
+        <div style={{ ...card, padding: 16 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary, marginBottom: 10 }}>What reviewers consistently praise</div>
+          <ul style={{ margin: 0, paddingLeft: 18, color: colors.textPrimary, fontSize: 13, lineHeight: 1.6 }}>
+            {praise.map((p, i) => <li key={i}>{p}</li>)}
+          </ul>
+        </div>
+      )}
+      {/* complaint_themes intentionally NOT rendered publicly — internal-only signal for chat. */}
+    </>
   )
 }

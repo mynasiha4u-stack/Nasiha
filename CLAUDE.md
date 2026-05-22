@@ -263,6 +263,40 @@ The piece that makes the data layer self-maintaining. Without it the platform st
 
 **The next concrete slice (after Phase 4 enrichment proves out):** a Bay Area discovery sweep using Google Places **Text Search** — `"halal restaurants in {city}"` × ~20 Bay Area cities × 3 pages of 20 results = up to ~1,200 candidate places. Cross-reference each against `content` (by `google_place_id` for the ones we've enriched, by name+coords for the rest). Anything in Google's index that we don't have → propose as a new listing. Cost: ~60 Text Search calls (~$2 list price, $0 under Pro SKU). This is the stepping-stone to the full Firecrawl + Apify pipeline above — same general idea, narrower scope, native to Google. Built on top of the same `add-places-via-google.js` pattern that's already in place for manual additions.
 
+### Phase X — Community Reviews with Moderation Queue
+Logged-in Nasiha users (the general public, NOT the Nasiha editorial team) can leave reviews on listings. Reviews enter an admin moderation queue at `status: 'pending'`. Nas or designated moderators approve or reject from `/admin/reviews`. Approved reviews display on the listing in a separate **Community Reviews** section, **clearly distinguished from the Nasiha Pro Tip editorial layer**, AND feed the chat retrieval layer. Each community review is attributed to the user who wrote it ("Reviewed by Sarah K"). Rejected reviews are hidden but retained for record.
+
+**Critical distinction:** community reviews are NOT the Nasiha voice. They're individual community members. The listing page shows them as a separate section, not blended with the Pro Tip (which IS the Nasiha voice).
+
+Schema sketch:
+```
+community_reviews (
+  id UUID PK,
+  content_id UUID FK → content.id,
+  user_id UUID FK → auth.users.id,
+  rating INT,
+  review_text TEXT,
+  status TEXT CHECK (status IN ('pending','approved','rejected')),
+  moderator_notes TEXT,
+  created_at TIMESTAMPTZ,
+  approved_at TIMESTAMPTZ
+)
+```
+
+### Phase X+1 — Conversational Review Capture
+When a chat user expresses intent to visit a restaurant ("I'll check out Bundoo Khan"), the chat sets a soft follow-up flag against that user + that listing. In a future session (days later, configurable cadence), the chat may organically ask "Did you end up trying Bundoo Khan?" If the user shares an impression, the chat asks **"Mind if I share that with the community as a quick review?"** — strictly opt-in.
+
+If yes, the response is captured as a `community_reviews` entry with `status: 'pending'`, attributed to the user, fed into the moderation queue (Phase X).
+
+**Why this is the unlock:** traditional review forms fail because people don't sit down to "write a review" — they naturally *talk about food* after eating. The chat captures the talking. Most thoughtful, useful reviews in the wild are conversational fragments — those are exactly what we want.
+
+Real implementation has subtleties to design when this phase is built:
+- **Restaurant disambiguation** — which Pakwan did they mean? Latest in-chat retrieval should bind.
+- **Sentiment detection** — distinguish "I went and loved it" from "I tried it, it was meh" so the moderation queue gets useful priors.
+- **Opt-in language** — never pushy, always clearly opt-in, single-question.
+- **Frequency limits** — don't ask the same user about the same place twice; back off after one decline.
+- **False-positive guards** — don't fire on "I'll check Bundoo Khan online" or other non-visit intents.
+
 ### Why all five phases together are the moat
 - Phase 1+2 alone = ChatGPT with a directory bolted on. Easy to copy.
 - Phase 3+4 added = the knowledge graph is *deeper* than any competitor's, because reviews and menus are distilled into searchable structured text.

@@ -343,7 +343,7 @@ async function fetchEnrichmentForListings(supabase: any, listings: any[]): Promi
   if (ids.length === 0) return new Map()
   const { data, error } = await supabase
     .from("content")
-    .select("id, ai_enriched_summary, nasiha_tag_overrides, nasiha_tagline_override, nasiha_pro_tip, nasiha_must_order")
+    .select("id, ai_enriched_summary, nasiha_tag_overrides, nasiha_tagline_override, nasiha_pro_tip, nasiha_must_order, photos, image_url")
     .in("id", ids)
   if (error || !data) return new Map()
   return new Map(data.map((r: any) => [r.id, r]))
@@ -530,17 +530,24 @@ serve(async (req) => {
       geocode_exception: lastGeocodeDebug.exception,
       google_key_set: !!Deno.env.get("GOOGLE_MAPS_API_KEY"),
     },
-    listings: listings.map((l: any) => ({
-      id: l.id,
-      name: l.name,
-      category: l.category_slug,
-      city: l.service_area,
-      url_slug: l.url_slug,
-      distance_miles: l.distance_miles,
-      vec_rank: l.vec_rank,
-      fts_rank: l.fts_rank,
-      rrf_score: l.rrf_score,
-    })),
+    listings: listings.map((l: any) => {
+      const enrich = enrichByContentId.get(l.id) || {}
+      const leadPhoto = (Array.isArray(enrich.photos) && enrich.photos.length > 0 && enrich.photos[0])
+        || enrich.image_url
+        || null
+      return {
+        id: l.id,
+        name: l.name,
+        category: l.category_slug,
+        city: l.service_area,
+        url_slug: l.url_slug,
+        distance_miles: l.distance_miles,
+        photo_url: leadPhoto,
+        vec_rank: l.vec_rank,
+        fts_rank: l.fts_rank,
+        rrf_score: l.rrf_score,
+      }
+    }),
   }
   const retrievalEvent = `event: retrieval\ndata: ${JSON.stringify(retrievalSummary)}\n\n`
 

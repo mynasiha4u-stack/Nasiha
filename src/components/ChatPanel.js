@@ -310,34 +310,61 @@ function CitationStrip({ listings, onTap }) {
   return (
     <div style={{ width: '100%', overflowX: 'auto', scrollbarWidth: 'none' }}>
       <div style={{ display: 'flex', gap: 8, paddingBottom: 4 }}>
-        {listings.map(l => {
-          const route = listingRoute(l)
-          const dist = typeof l.distance_miles === 'number' ? l.distance_miles : null
-          return (
-            <button
-              key={l.id}
-              onClick={() => route && onTap(route)}
-              disabled={!route}
-              style={{
-                flex: '0 0 auto', maxWidth: 200,
-                background: 'white', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12,
-                padding: '8px 10px', textAlign: 'left',
-                cursor: route ? 'pointer' : 'default',
-                display: 'flex', flexDirection: 'column', gap: 2,
-              }}
-            >
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#1C2B3A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.name}</div>
-              <div style={{ fontSize: 10, color: '#6A7A8A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span>{l.city ? `${categoryEmoji(l.category)} ${l.city}` : categoryEmoji(l.category)}</span>
-                {dist != null && (
-                  <span style={{ color: colors.brand, fontWeight: 700 }}>· {dist.toFixed(1)} mi</span>
-                )}
-              </div>
-            </button>
-          )
-        })}
+        {listings.map(l => (
+          <CitationCard key={l.id} l={l} onTap={onTap} />
+        ))}
       </div>
     </div>
+  )
+}
+
+function CitationCard({ l, onTap }) {
+  const route = listingRoute(l)
+  const dist = typeof l.distance_miles === 'number' ? l.distance_miles : null
+  const [imgFailed, setImgFailed] = useState(false)
+  const photoUrl = l.photo_url
+  const showPlaceholder = !photoUrl || imgFailed
+
+  return (
+    <button
+      onClick={() => route && onTap(route)}
+      disabled={!route}
+      style={{
+        flex: '0 0 auto', width: 150,
+        background: 'white', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12,
+        padding: 0, textAlign: 'left',
+        cursor: route ? 'pointer' : 'default',
+        display: 'flex', flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Lead image — 150×72, photos[0] from enrichment with placeholder fallback */}
+      {showPlaceholder ? (
+        <div style={{
+          width: '100%', height: 72,
+          background: 'linear-gradient(135deg, #FFE8DC 0%, #FED7BB 100%)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 24,
+        }}>{categoryEmoji(l.category)}</div>
+      ) : (
+        <img
+          src={photoUrl}
+          alt={l.name}
+          loading="lazy"
+          onError={() => setImgFailed(true)}
+          style={{ width: '100%', height: 72, objectFit: 'cover', display: 'block' }}
+        />
+      )}
+      <div style={{ padding: '6px 8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#1C2B3A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.name}</div>
+        <div style={{ fontSize: 10, color: '#6A7A8A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span>{l.city ? `${categoryEmoji(l.category)} ${l.city}` : categoryEmoji(l.category)}</span>
+          {dist != null && (
+            <span style={{ color: colors.brand, fontWeight: 700 }}>· {dist.toFixed(1)} mi</span>
+          )}
+        </div>
+      </div>
+    </button>
   )
 }
 

@@ -71,8 +71,19 @@ function buildInfoHtml(r, userLocation, detourMiles, detourMinutes) {
     detourHtml = `<div style="display:inline-flex;align-items:center;gap:4px;background:#E6FAF7;color:#0F766E;font-size:11px;font-weight:700;padding:4px 8px;border-radius:6px;margin-bottom:8px;">${label}</div>`
   }
 
+  // Lead photo for the popup. photos[0] first, image_url fallback, hide on error.
+  const photoUrl = (Array.isArray(r.photos) && r.photos.length > 0 && r.photos[0])
+    || r.image_url
+    || null
+  const photoHtml = photoUrl
+    ? `<img src="${photoUrl.replace(/"/g, '&quot;')}" alt="" loading="lazy"
+         onerror="this.style.display='none'"
+         style="width:100%;height:96px;object-fit:cover;border-radius:6px;margin-bottom:8px;display:block;" />`
+    : ''
+
   return `
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-width:220px;max-width:260px;padding:4px 2px;">
+      ${photoHtml}
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;">
         ${detailUrl
           ? `<a href="${detailUrl}" data-rest-detail="${detailUrl}" style="font-size:14px;font-weight:800;color:#1C2B3A;line-height:1.3;text-decoration:none;flex:1;">${safeName}</a>`
@@ -160,7 +171,7 @@ export default function RestaurantsMap() {
     if (!cat) return
 
     const { data: contentRows } = await supabase.from('content')
-      .select('id, name, url_slug, address, metro, display_lat, display_lng')
+      .select('id, name, url_slug, address, metro, display_lat, display_lng, photos, image_url')
       .eq('category_id', cat.id)
       .eq('status', 'published')
       .gte('display_lat', bounds.south)

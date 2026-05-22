@@ -79,6 +79,44 @@ function cityFromAddress(addr) {
   return null
 }
 
+// Pick the lead image: photos[] from enrichment first, then user-submitted image_url, then null.
+function leadPhotoUrl(item) {
+  if (Array.isArray(item.photos) && item.photos.length > 0 && item.photos[0]) return item.photos[0]
+  if (item.image_url) return item.image_url
+  return null
+}
+
+// Gradient placeholder shown when there's no photo OR the photo fails to load.
+function CardLeadPhoto({ item }) {
+  const [failed, setFailed] = React.useState(false)
+  const url = leadPhotoUrl(item)
+  const showPlaceholder = !url || failed
+  const baseStyle = {
+    width: '100%', height: 160, display: 'block',
+    borderTopLeftRadius: 14, borderTopRightRadius: 14,
+    overflow: 'hidden',
+  }
+  if (showPlaceholder) {
+    return (
+      <div style={{
+        ...baseStyle,
+        background: 'linear-gradient(135deg, #FFE8DC 0%, #FED7BB 100%)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 36,
+      }}>🍽️</div>
+    )
+  }
+  return (
+    <img
+      src={url}
+      alt={item.name}
+      loading="lazy"
+      onError={() => setFailed(true)}
+      style={{ ...baseStyle, objectFit: 'cover' }}
+    />
+  )
+}
+
 function RestaurantCard({ item, onTap, userLocation }) {
   const dist = userLocation && item.display_lat && item.display_lng
     ? distanceMiles(userLocation.lat, userLocation.lng, item.display_lat, item.display_lng)
@@ -93,7 +131,9 @@ function RestaurantCard({ item, onTap, userLocation }) {
   // Halal badge intentionally NOT rendered on cards. Nasiha is not a halal
   // certification body; inclusion in the directory is the only implicit signal.
   return (
-    <div onClick={() => onTap(item)} style={{ ...card, padding: 16, cursor: 'pointer' }}>
+    <div onClick={() => onTap(item)} style={{ ...card, padding: 0, cursor: 'pointer', overflow: 'hidden' }}>
+      <CardLeadPhoto item={item} />
+      <div style={{ padding: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
         <div style={{ flex: 1, paddingRight: 8 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary, marginBottom: 3, lineHeight: 1.3 }}>{item.name}</div>
@@ -133,6 +173,7 @@ function RestaurantCard({ item, onTap, userLocation }) {
             <a href={item.instagram} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ flex: 1, minWidth: 70, background: '#F7F3EE', borderRadius: 10, padding: '8px 0', fontSize: 12, fontWeight: 600, color: colors.textPrimary, textAlign: 'center', textDecoration: 'none' }}>📸 IG</a>
           )}
         </div>
+      </div>
       </div>
     </div>
   )
@@ -194,7 +235,7 @@ export default function Restaurants() {
 
       // Build query: either bounding box around nearbyLocation, or Bay Area
       let query = supabase.from('content')
-        .select('id, name, url_slug, description, phone, email, website, instagram, facebook, address, metro, display_lat, display_lng')
+        .select('id, name, url_slug, description, phone, email, website, instagram, facebook, address, metro, display_lat, display_lng, photos, image_url')
         .eq('category_id', cat.id)
         .eq('status', 'published')
         .not('display_lat', 'is', null)

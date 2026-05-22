@@ -122,7 +122,7 @@ export default function ListingDetail({ item, typeBadge, typeColor, loading, not
     <div style={{ maxWidth: 430, margin: '0 auto', background: colors.surface, minHeight: '100vh', paddingBottom: 80 }}>
       <div style={{ background: headerGradient, padding: '52px 20px 24px' }}>
         <button onClick={() => navigate(-1)} style={{ fontSize: 13, fontWeight: 700, color: colors.deep, marginBottom: 14, display: 'inline-block', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: radius.full }}>← Back</button>
-        {item.image_url && <img src={item.image_url} alt={item.name} style={{ width: '100%', borderRadius: radius.md, marginBottom: 14, objectFit: 'cover', maxHeight: 200 }} />}
+        <PhotoGallery item={item} />
         {/* typeBadge intentionally omitted — Nasiha does NOT render halal/category badges
             on public listing surfaces. Halal status is an admin-internal field. */}
         <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1C2B3A', lineHeight: 1.3, marginBottom: 6 }}>{item.name}</h1>
@@ -168,6 +168,51 @@ export default function ListingDetail({ item, typeBadge, typeColor, loading, not
 // ─────────────────────────────────────────────────────────────
 // Editorial + enrichment sub-components
 // ─────────────────────────────────────────────────────────────
+
+// Horizontal scrollable gallery of all photos[] entries. Falls back to
+// item.image_url when photos is empty. Hides each failed image individually.
+function PhotoGallery({ item }) {
+  const galleryPhotos = Array.isArray(item?.photos) && item.photos.length > 0
+    ? item.photos.filter(Boolean)
+    : (item?.image_url ? [item.image_url] : [])
+  if (galleryPhotos.length === 0) return null
+
+  if (galleryPhotos.length === 1) {
+    // Single image — hero treatment, no scroll
+    return <GalleryImage url={galleryPhotos[0]} alt={item.name} hero />
+  }
+  return (
+    <div style={{
+      display: 'flex', gap: 8,
+      overflowX: 'auto',
+      marginBottom: 14,
+      scrollSnapType: 'x mandatory',
+      scrollbarWidth: 'none',
+      WebkitOverflowScrolling: 'touch',
+    }}>
+      {galleryPhotos.map((url, i) => (
+        <GalleryImage key={i} url={url} alt={item.name} />
+      ))}
+    </div>
+  )
+}
+
+function GalleryImage({ url, alt, hero = false }) {
+  const [failed, setFailed] = React.useState(false)
+  if (failed) return null
+  const style = hero
+    ? { width: '100%', height: 200, objectFit: 'cover', borderRadius: radius.md, marginBottom: 14, display: 'block' }
+    : { flex: '0 0 auto', width: 260, height: 170, objectFit: 'cover', borderRadius: radius.md, scrollSnapAlign: 'start', display: 'block' }
+  return (
+    <img
+      src={url}
+      alt={alt}
+      loading="lazy"
+      onError={() => setFailed(true)}
+      style={style}
+    />
+  )
+}
 
 function EditorialTagline({ item }) {
   const tagline = effectiveTagline(item)

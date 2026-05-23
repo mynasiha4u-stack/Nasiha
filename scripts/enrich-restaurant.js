@@ -48,6 +48,61 @@ async function findPlaceId(name, address) {
   return { place_id: data.candidates[0].place_id, matched: data.candidates[0] }
 }
 
+// ─────────────────────────────────────────────────────────────
+// Defensive checks: address match + place_id uniqueness
+//
+// Why these exist: Google's findplacefromtext often returns the most popular
+// match for a chain name, NOT the one closest to the supplied address. Without
+// these checks, the script would happily assign a Dublin location's place_id
+// to a Fremont row, then hit the UNIQUE constraint on UPDATE. We fail loudly
+// instead, so the operator can supply a more specific lookup (assign-place-id.js).
+// ─────────────────────────────────────────────────────────────
+
+function extractZip(addr) {
+  if (!addr) return null
+  // US 5-digit ZIP. Captures the last one in the string (formatted_address
+  // sometimes has multiple — last is typically the actual delivery zip).
+  const matches = addr.match(/\b\d{5}\b/g)
+  return matches ? matches[matches.length - 1] : null
+}
+
+function extractCity(addr) {
+  if (!addr) return null
+  // Typical format: "Street, City, ST 12345, USA" — second comma-separated chunk is city.
+  const parts = addr.split(',').map(p => p.trim()).filter(Boolean)
+  if (parts.length < 2) return null
+  return parts[1].toLowerCase()
+}
+
+// Loose match: same ZIP is the strongest signal; same city is the fallback.
+// Returns { ok: boolean, reason: string }.
+function addressesLooselyMatch(inputAddr, matchedAddr) {
+  if (!inputAddr || !matchedAddr) return { ok: false, reason: 'one address missing' }
+  const zipA = extractZip(inputAddr)
+  const zipB = extractZip(matchedAddr)
+  if (zipA && zipB) {
+    if (zipA === zipB) return { ok: true, reason: `same zip ${zipA}` }
+    return { ok: false, reason: `zip mismatch ${zipA} vs ${zipB}` }
+  }
+  const cityA = extractCity(inputAddr)
+  const cityB = extractCity(matchedAddr)
+  if (cityA && cityB) {
+    if (cityA === cityB) return { ok: true, reason: `same city ${cityA} (no zip)` }
+    return { ok: false, reason: `city mismatch ${cityA} vs ${cityB} (no zip)` }
+  }
+  // Couldn't extract either — be conservative
+  return { ok: false, reason: 'could not extract zip or city from one of the addresses' }
+}
+
+async function placeIdAlreadyTaken(placeId, ownContentId) {
+  const { data } = await supabase.from('content')
+    .select('id, name, address')
+    .eq('google_place_id', placeId)
+    .neq('id', ownContentId)
+    .maybeSingle()
+  return data || null
+}
+
 async function getPlaceDetails(placeId) {
   const fields = [
     'name', 'formatted_address', 'formatted_phone_number', 'website',
@@ -230,11 +285,34 @@ async function enrichRestaurant(contentId) {
     .single()
   if (rowErr || !row) throw new Error(`Content row not found: ${contentId}`)
 
-  // 2. Find or reuse place_id
+  // 2. Find or reuse place_id (with defensive checks when looking up fresh)
   let placeId = row.google_place_id
   if (!placeId) {
     const lookup = await findPlaceId(row.name, row.address)
     if (lookup.error) throw new Error(`Place lookup failed: ${lookup.error} ${lookup.message}`)
+
+    // (a) Address-match verification — refuse if Google returned a different zip/city.
+    const matched = lookup.matched || {}
+    const cmp = addressesLooselyMatch(row.address, matched.formatted_address)
+    if (!cmp.ok) {
+      throw new Error(
+        `Address mismatch: row says "${row.address}" but Google returned ` +
+        `"${matched.formatted_address}" for "${matched.name}" (reason: ${cmp.reason}). ` +
+        `Likely Google returned a sister location. Refusing to assign place_id. ` +
+        `Resolve via scripts/assign-place-id.js with the correct Google Maps URL.`
+      )
+    }
+
+    // (b) Place_id uniqueness check — refuse if the place_id already belongs to a different row.
+    const dup = await placeIdAlreadyTaken(lookup.place_id, contentId)
+    if (dup) {
+      throw new Error(
+        `place_id ${lookup.place_id} already assigned to "${dup.name}" (${dup.id}) at "${dup.address}". ` +
+        `Google likely returned the wrong sister-location place. Refusing to assign. ` +
+        `Resolve via scripts/assign-place-id.js with the correct Google Maps URL.`
+      )
+    }
+
     placeId = lookup.place_id
   }
 

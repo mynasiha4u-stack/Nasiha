@@ -21,6 +21,29 @@ function gradientFor(name) {
   return `linear-gradient(135deg, hsl(${h}, 55%, 75%), hsl(${(h + 50) % 360}, 60%, 60%))`
 }
 
+function RecLeadPhoto({ r }) {
+  const [failed, setFailed] = useState(false)
+  const url = (Array.isArray(r.photos) && r.photos.length > 0 && r.photos[0]) || r.image_url || null
+  const base = { width: 86, height: '100%', flexShrink: 0 }
+  if (!url || failed) {
+    return (
+      <div style={{
+        ...base, background: gradientFor(r.name),
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28,
+      }}>🍽️</div>
+    )
+  }
+  return (
+    <img
+      src={url}
+      alt={r.name || ''}
+      loading="lazy"
+      onError={() => setFailed(true)}
+      style={{ ...base, objectFit: 'cover', display: 'block' }}
+    />
+  )
+}
+
 function cityFromAddress(addr) {
   if (!addr) return null
   const parts = addr.split(',').map(p => p.trim()).filter(Boolean)
@@ -139,13 +162,10 @@ export default function RecommendationStrip({ items, userLocation, onCardTap, on
           userSelect: 'none',
         }}
       >
-        {/* Photo placeholder strip on the left */}
-        <div style={{
-          width: 86, flexShrink: 0,
-          background: gradientFor(r.name),
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 28,
-        }}>🍽️</div>
+        {/* Photo strip on the left — photos[0] from enrichment, image_url fallback,
+            gradient + emoji as last-resort placeholder */}
+        <RecLeadPhoto r={r} />
+
 
         {/* Content */}
         <div style={{ flex: 1, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>

@@ -42,25 +42,31 @@ Nasiha is a **community marketplace, not a curated directory.** Anyone signs up 
 - `/account` — Hub: My Listings + Admin Review (admins only) + Email Prefs + Profile
 - `/account/profile`, `/account/email` — Settings
 - `/admin/review` — Admin queue: approve/reject submissions, fires Resend email
+- `/admin/curate` — **Nasiha editorial cockpit** (Phase 4). Admin-only. Side-by-side Claude AI enrichment vs editable Nasiha fields (nasiha_pro_tip, nasiha_must_order, nasiha_tagline_override, nasiha_tag_overrides). Has search + "Needs Review" queue sorted by Google review count DESC.
+- `/chat` — **Full-page chat** (Phase 2). Floating ✨ launcher button on every page also opens a drawer with the same component. Conversation history persisted for auth users.
 - `/submit` — Submit a listing (category-aware, supports `?cat=X`, `?edit=ID`, `?duplicate=ID`)
 - `/my-listings` — User's submissions: edit / pause / duplicate / share / delete
-- `/restaurants` + `/restaurants/:slug` + `/restaurants/map`
+- `/restaurants` + `/restaurants/:slug` + `/restaurants/map` — list cards now show street address + photos[0] lead image; detail page renders enrichment (Pro Tip box, must_order chips, vibe, signature, occasion tags); map popup includes thumbnail; halal badges intentionally NOT rendered publicly.
 - `/jummah` + `/jummah/:slug` + `/jummah/map`
 - `/events` + `/events/:slug` + `/events/map`
 - `/childcare` + `/childcare/:slug` + `/childcare/map`
 - `/lawyers` + `/lawyers/:slug`
 - `/full-time-islamic-schools` + `/full-time-islamic-schools/:slug`
 - `/desserts-catering-event-planning` + `/:slug` — Combined catering + desserts via tags column
-- `/home-cooked-food-catering` + `/:slug` — Home cooks (Near Me + Featured sort, ✨ MyNasiha Picks band, city-level only, no map)
+- `/home-cooked-food-catering` + `/:slug` — Home cooks (Near Me + A-Z sort, ✨ MyNasiha Picks band, city-level only, no map)
 - `/map` — Main map with category filters
 
-## Current DB Counts (approximate)
-- **Restaurants: ~24 imported + 6,916 in KML pending import = ~7,000 target**
+## Current DB Counts (as of 2026-05-23)
+- **Restaurants: 6,934 published total** (KML import was global — only ~390 are Bay Area; rest are Toronto, Texas, etc.)
+- **Bay Area restaurants: 390** — of these, **287 enriched** (74% — Phase 4 Slice 1 + sweep); 9 sweep-failure rows in cleanup; remaining backlog ~94 not yet enriched
+- **Individual review signals**: 1,465 (Google reviews stored in `signals` table)
+- **Photos uploaded to Supabase Storage**: ~861 (3 per enriched restaurant)
 - Home cooks: 85 (65 published, 20 draft)
 - Mosques: 70 | Childcare: 40 | Islamic schools: 40 | Lawyers: 19
 - Desserts/catering + event services: 102 (merged via tags after Migration 5)
 - Events: live from iCal feeds, refreshed daily
-- Total content rows: 7,527+
+- Embedded rows (`content_embeddings`): ~7,400 (everything published, re-embedded nightly via cron when source_hash changes)
+- After dedup (Migration 5 + dedup-listings.js run): ~7,400 content rows total
 
 ## Shared Components — REUSE, DO NOT REINVENT
 - `src/components/ListingDetail.js` — standard detail page for ALL categories
@@ -99,21 +105,50 @@ Nasiha is a **community marketplace, not a curated directory.** Anyone signs up 
 
 ## Database (Supabase `content` table)
 All listings share one `content` table with `category_id`. Key columns:
+
+**Core fields**
 - `name, description, address, display_lat, display_lng, image_url, url_slug`
 - `phone, email, website, instagram, facebook, whatsapp`
-- `category_id, status` (`draft` | `pending` | `published` | `rejected`)
+- `category_id, status` (`draft` | `pending` | `published` | `rejected` | `archived`)
 - `owner_id` (auth.users), `submitted_by`, `submitted_at`, `reviewed_at`, `review_notes`
-- `tags TEXT[]` (Migration 5) — multi-category labels (e.g. ['desserts', 'event-services'])
-- `featured BOOLEAN` — drives "MyNasiha Pick" surface (planned)
+- `tags TEXT[]` (Migration 5) — multi-category labels
+- `featured BOOLEAN` — drives "MyNasiha Pick" surface
 - `location_area` — Peninsula / East Bay / South Bay / Fremont / etc.
-- `service_area` — for home cooks, the city the cook is based in (e.g. "Fremont", "San Jose"). **City-level only, never a street address — privacy by design.** Drives the "📍 Based in {city}" card display and the Near Me proximity sort on `/home-cooked-food-catering`. Populated for all 65 published home cooks by Migrations 7/8/8b.
+- `service_area` — for home cooks, city only, privacy by design (Migrations 7/8/8b)
+- `metro` — 'Bay Area' is the primary one
+- `internal_notes` — admin notes; archive script appends archival reason here
+- `jummah_times JSONB` — mosques' winter/summer time slots (s1j, s1iq, w1j, w1iq, ...)
+
+**Phase 4 enrichment fields** (Migrations 13–16):
+- `google_place_id TEXT UNIQUE` — Google Places canonical id (partial unique index where not null)
+- `google_rating NUMERIC`, `google_review_count INT` — pulled at enrichment time
+- `photos TEXT[]` — array of Supabase Storage URLs (up to 3 per enriched listing), pulled from Google Places Photo
+- `ai_enriched_summary JSONB` — Claude-distilled review insights. Shape:
+  `{ known_for_dishes: [], signature_strength, vibe, praise_themes: [], complaint_themes: [], halal_notes, occasion_tags: [], minor_tags: [], good_for_summary, based_on, confidence }`
+  - `occasion_tags` drawn from fixed 13-vocab (date_night, family_with_kids, big_groups, outdoor_seating, late_night, quick_lunch, business_meeting, prayer_facilities, takeout_friendly, large_catering_orders, vegetarian_friendly, solo_friendly, cheap_eats)
+- `ai_enriched_at TIMESTAMPTZ` — when distillation last ran (cron skips if source_hash unchanged)
+- `halal_verification TEXT` (Migration 14) — admin-only field, NOT publicly displayed. Values: `'certified' | 'owner_confirmed' | 'sign_in_restaurant' | 'community_vouched' | 'implied' | 'unverified' | null`. Nasiha is not a halal certification body; this is internal only.
+
+**Editorial layer fields** (Migrations 15–16) — Nasiha's own voice, admin-editable via `/admin/curate`:
+- `nasiha_pro_tip TEXT` — insider tip (1–3 sentences), displayed as "💡 Nasiha Pro Tip" callout on listing
+- `nasiha_must_order TEXT[]` — authoritative dish picks, displayed FIRST in "What it's known for" before Claude's known_for_dishes
+- `nasiha_tagline_override TEXT` — replaces AI good_for_summary on public display when set
+- `nasiha_reviewer TEXT` — internal-only contributor name (never displayed publicly)
+- `nasiha_tag_overrides JSONB` — `{ force_add: [], force_remove: [] }` for correcting Claude's occasion_tags
 
 Related tables:
 - `categories` — slug, name
-- `attributes` — content_id, attribute_name, attribute_value (key/value tags: cuisine, event_type, etc.)
+- `attributes` — content_id, attribute_name, attribute_value (key/value tags: cuisine, event_type, halal_tier, etc.)
 - `user_profiles` — display_name, is_admin, notify_on_review, newsletter_subscribed, beehiiv_subscriber_id, has_password
 - `auth.users` — managed by Supabase Auth
-- (Future) `chat_conversations`, `chat_messages`, `reviews`
+- `content_embeddings` (Migration 9) — `content_id, embedding VECTOR(1536), model, source_hash, embedded_at`. HNSW index on cosine ops. Re-embedded nightly when source_hash changes.
+- `chat_conversations` + `chat_messages` (Migration 9) — chat history for logged-in users. RLS-gated.
+- `signals` (Migration 13) — per-source individual signals (Google reviews now, Yelp/IG/WhatsApp later). UNIQUE(source, source_id). 1,465 rows currently.
+- `nasiha_signature_dishes` (Migration 15) — table for future "Top Dishes in the Bay" editorial. Schema ready, public page not built yet.
+
+Postgres functions:
+- `match_content(query_embedding, query_text, match_count, category_filter, near_lat, near_lng, radius_miles)` — hybrid retrieval (vector + FTS via RRF), distance-aware. Latest version is Migration 12 (radius-first candidate selection + distance-primary sort when geo present, fixed Pakwan-missing bug).
+- `get_occasion_tag_counts()` (Migration 16) — returns frequency of each occasion_tag across published rows. Used by render layer to cap visible tags at top 3-4 by rarity (more distinctive = surface first).
 
 ## Mosque Jummah Times — Specific Rules
 - **Official mosque websites only** as source. Never Yelp, Facebook, or third-party aggregators.
@@ -124,29 +159,59 @@ Related tables:
 ## iCal Event Feeds (sync via `node sync-events.js`, daily 6 AM Pacific via GitHub Actions)
 MCC East Bay, ICF Fremont, SRVIC San Ramon, WVMA Los Gatos (iCal); MCA Santa Clara, Lamorinda (Google Cal)
 
-## Edge Functions (deployed via Supabase dashboard "Via editor")
+## Edge Functions
+Deployed via Supabase dashboard's Code tab OR (preferred since the inline editor breaks on this project) via Supabase CLI: `supabase functions deploy <name>`.
+
 - `subscribe-newsletter` — creates Supabase user (no password) + Beehiiv subscribe with `reactivate_existing: true`, `send_welcome_email: true`
 - `check-email` — two-step auth (returns `not_found` / `subscriber_no_password` / `full_user`)
 - `send-notification-email` — fires on admin approve/reject, Resend templates respect `notify_on_review` preference
+- **`chat-completion`** (Phase 1+) — the main chat backend. Embeds user message via OpenAI → runs `match_content` RPC → applies tag overrides + editorial fields → streams Anthropic Haiku 4.5 response. Has location-aware retrieval (Google Geocoding for location intent), drive-time proxy (2.5 min/mile), Jummah times injection for mosques, system prompt enforcing "never hallucinate, hedge on halal status."
 
 ## Supabase Secrets Set
 - `RESEND_API_KEY` — Resend, domain verified for `mynasiha.com`
 - `BEEHIIV_API_KEY`, `BEEHIIV_PUBLICATION_ID`
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (auto-provided)
-- **NOT yet set:** `ANTHROPIC_API_KEY` (needed for chat — create at console.anthropic.com → API Keys)
+- `ANTHROPIC_API_KEY` — for chat-completion edge function + intent extraction
+- `OPENAI_API_KEY` — for query embedding in chat-completion
+- `GOOGLE_MAPS_API_KEY` — server-side key restricted to Geocoding + Places APIs. **NOT the same as `REACT_APP_GOOGLE_MAPS_API_KEY`** (which is browser-referrer-restricted). Used by chat geocoding + scripts.
 
 ## Storage
-- Bucket `listing-images` — 5MB max per upload, public SELECT, authenticated INSERT/DELETE namespaced to `user.id`
+- Bucket `listing-images` — 5MB max per upload, public SELECT, authenticated INSERT/DELETE namespaced to `user.id`. Phase 4 enrichment also writes Google Places photos here at path `google/<place_id>/{0,1,2}.jpg`.
 
 ## SQL Migrations
 
 **Run / done:**
-- `migration_5_tags_and_merge.sql` — added `tags TEXT[]` column, backfilled from category slugs, merged 66Strawberries + Ladle n Wok duplicates tagged `['desserts', 'event-services']`
-- `migration_6_homecook_attributes.sql` — backfilled 123 cuisine/service tags for 83 home cooks from CSV `filters` column
-- `migration_7` / `migration_8` / `migration_8b` — added `service_area` column and backfilled it for all 65 published home cooks (city-level only)
+- `migration_5_tags_and_merge.sql` — `tags TEXT[]` column, backfilled, merged 66Strawberries + Ladle n Wok dups
+- `migration_6_homecook_attributes.sql` — 123 cuisine/service tags backfilled for 83 home cooks
+- `migration_7` / `migration_8` / `migration_8b` — `service_area` column + backfill for 65 published home cooks (city-level only)
+- `migration_9_chat_backend.sql` — **Phase 1.** pgvector extension; `content_embeddings` table with HNSW cosine index; `chat_conversations` + `chat_messages` tables with RLS; `match_content()` Postgres function (hybrid vector + FTS retrieval via Reciprocal Rank Fusion). FTS uses OR-of-tokens (revised from initial AND to fix recall issues).
+- `migration_10_geographic_retrieval.sql` — adds `near_lat/near_lng/radius_miles` parameters to `match_content()`; returns `display_lat/display_lng/distance_miles`; soft distance ranking when geo set.
+- `migration_11_radius_first_retrieval.sql` — fixed the **Pakwan-missing bug**: when has_radius, pre-filter candidates to within radius BEFORE applying vector/FTS ranking. Otherwise top-50 semantic candidates filtered out geographically-relevant places.
+- `migration_12_distance_sort_no_hard_radius.sql` — current production version. has_geo (with or without radius) → distance ASC is primary sort; RRF is tiebreaker. Mimics Restaurants page "Nearest" behavior.
+- `migration_13_signals_and_enrichment.sql` — **Phase 4.** `signals` table (generic, multi-source) with UNIQUE(source, source_id); content gains `ai_enriched_summary JSONB, ai_enriched_at, google_place_id (partial UNIQUE), google_rating, google_review_count, photos TEXT[]`.
+- `migration_14_halal_verification.sql` — `halal_verification TEXT` column on content (admin-only, never displayed).
+- `migration_15_nasiha_editorial.sql` — editorial layer: `nasiha_pro_tip, nasiha_must_order, nasiha_reviewer` columns + `nasiha_signature_dishes` table for future "Top Dishes in the Bay" page.
+- `migration_16_tag_overrides_and_curate.sql` — `nasiha_tag_overrides JSONB`, `nasiha_tagline_override TEXT`, `get_occasion_tag_counts()` function (returns tag frequencies for rarity-based display capping).
 
 **Deferred:**
 - `migration_step2_drop_old_columns.sql` — drops legacy `location_address` / `location_area` columns. **Do not run until verified safe.**
+
+## Node Scripts (`scripts/*.js`)
+All auto-load keys from `.env.scripts.local` at project root via `scripts/_loadenv.js` — no need to type env vars inline. Most have `--dry-run` mode.
+
+- `embed-content.js` — generates/refreshes content_embeddings for every published row. Incremental via SHA-256 source_hash. Runs nightly via GitHub Actions.
+- `sweep-enrich.js` — runs `enrich-restaurant.js` over all Bay Area restaurants. Idempotent (skips already-enriched). ~3 min for 363 rows.
+- `enrich-restaurant.js` — single-restaurant Phase 4 pipeline: find_place → place_details → upload 3 photos → upsert reviews to signals → Claude distillation → UPDATE content. **Has defensive checks (address-match + place_id uniqueness) to prevent sister-location bugs.**
+- `add-places-via-google.js` — for adding new content rows from a list of {name, city} via Google Places lookup. Used for genuine KML gaps. Idempotent.
+- `assign-place-id.js` — assigns a specific Google place_id to a row from a Google Maps URL. Used to fix sister-location mistakes. Verifies + auto-enriches.
+- `audit-place-id-matches.js` — read-only audit; categorizes every enriched row's place_id as MATCH/MISMATCH/AMBIGUOUS/ERROR by comparing Google's formatted address to stored address.
+- `archive-listings.js` — sets status='archived' on hardcoded list of bad rows (permanently closed / phantom / duplicates).
+- `fix-shawarmaji-keeper.js` — one-off cleanup script (Shawarmaji Oakland keeper had wrong address).
+- `backfill-addresses.js` — reverse-geocoded coords → addresses for all 7,335 rows that lacked an address. Has retry-with-backoff.
+- `dedup-listings.js` — finds near-duplicates by name + ~100m coord cluster, merges with description concat. Has --dry-run.
+- `show-enrichments.js` — display all enriched listings or `--random N` for city-diverse spot-check sample.
+- `test-chat.js` — CLI test of `chat-completion` edge function. Prints retrieval + streamed answer + debug payload.
+- `batch-enrich.js` — runs enrich-restaurant on a hardcoded list of content IDs (Slice 1 test set, 29 restaurants).
 
 ## Working Preferences (CRITICAL)
 - **One step at a time.** No multi-step sequences. Each instruction is one literal action.
@@ -162,6 +227,16 @@ MCC East Bay, ICF Fremont, SRVIC San Ramon, WVMA Los Gatos (iCal); MCA Santa Cla
 - Nas pushes back hard on overengineering — listen
 
 ## What's Pending Right Now (Active Work)
+
+### Phase 4 sweep cleanup — IN PROGRESS, RESUME WHEN READY
+After the 363-restaurant Bay Area sweep completed (commit `ffe1ff2`), 9 rows failed in 3 buckets. All cleanup tooling is built. Steps 1-8 queued — see memory file `phase4_cleanup_resume.md`. TL;DR:
+
+1. `assign-place-id.js` for Mirchi Cafe Fremont (URL in memory file)
+2. `archive-listings.js --dry-run` → confirm → `archive-listings.js`
+3. `fix-shawarmaji-keeper.js --dry-run` → confirm → `fix-shawarmaji-keeper.js`
+4. Re-enrich Chaat Cafe + 3 Ike's Sandwiches (transient fetch fails)
+5. Final `sweep-enrich.js` to confirm 0 failures
+6. `audit-place-id-matches.js` to triage any MISMATCH rows from before defensive checks landed
 
 ### Home page — quick fixes (next up, not started)
 - **Upcoming events row → horizontal scroll** with a half-card peeking on the right edge, so scrollability is visually obvious
@@ -340,8 +415,8 @@ Auto-detect Google Forms, Eventbrite, Luma URLs in iCal event descriptions → r
 - **Housing** — apartments, rooms, Muslim-friendly landlords
 - **Jobs** — Muslim-friendly employers, community job posts
 
-### KML import — 6,916 halal restaurants
-Source: `/mnt/user-data/uploads/Halal_Map.kml`. Big import job, needs dedup against existing 24 restaurants, geocode validation, attribute extraction.
+### KML import — DONE (became the 6,934 restaurant base layer)
+The KML was imported, dedup'd (Migration 5 + `dedup-listings.js` run), reverse-geocoded for addresses (`backfill-addresses.js`, 7,335 rows). Caveat: most of the import was NOT Bay Area (Toronto, Texas, Houston, etc.). Only ~390 are Bay Area. The non-Bay-Area rows exist in the DB but are not currently surfaced anywhere. Could be revisited if Nasiha expands to other metros.
 
 ### Vercel deployment + `mynasiha.com` public launch
 - DNS records ready in Hostinger
@@ -373,12 +448,27 @@ The `desserts-catering-event-planning` page queries BOTH `dessert-catering` and 
 - **Home cooks: city-level location only, never street address.** Privacy by design. `service_area` holds the city (e.g. "Fremont"), and `display_lat/display_lng` are the city centroid, not the cook's actual home. There is no map page for home cooks for the same reason. ~20 home cooks did originally provide full street addresses in their submissions; the plan (not built) is to store those in a private, never-displayed column for more precise distance sorting in chat — but **the user-facing surface stays city-only forever.**
 
 ## Recent Commits (top of main, newest first)
-- `0868dc0` — Home Cooks rebuild: Near Me/Featured sort, Google reverse-geocode city detect cached in localStorage, city dropdown override, ✨ MyNasiha Picks band, "Based in {city}" + distance chips, all six contact buttons, description trailer stripping
+- `ffe1ff2` — Phase 4 cleanup: defensive checks (enrich-restaurant) + audit-place-id-matches + assign-place-id + archive-listings + fix-shawarmaji-keeper. Resolves the 9 sweep failures.
+- `8f84708` — RecommendationStrip: render photos[0] (with image_url fallback)
+- `16a7c1e` — Photos: render across 4 surfaces (list cards, map popup, chat citations, detail gallery) + halal badges stripped from public
+- `3ced55c` — show-enrichments: `--random N` mode for city-diverse spot-check sampling
+- `0bca9e2` — Phase 4 v3: editorial layer + tag overrides + admin curate (/admin/curate) + ListingDetail rendering of editorial fields + chat-completion applies overrides + tag rarity capping
+- `7c0c420` — Phase 4: editorial layer migration (15) + refined occasion_tag defs + sweep-enrich
+- `409e1d6` — Phase 4: revised prompt v2 + halal_verification column (Migration 14) + minor_tags
+- `0bae5fc` — Phase 4: production-quality distillation prompt (no filler words, evidence threshold, specific beats general, honest about thin data)
+- `1590774` — scripts: auto-load keys from `.env.scripts.local` (no more inline env vars)
+- `e599f0a` — Phase 4 (Migration 13): enrichment pipeline (Google reviews → Claude distill → ai_enriched_summary)
+- `2a65554` — Restaurants: show street address on list cards under restaurant name
+- `fdbe48f` + `0bbc88a` — dedup-listings: 54 dup groups merged, 83 rows deleted
+- `d851d23` — chat: drop hard radius filter (mimic Restaurants page); stop suggesting Google
+- `a2a9d33` — chat-completion: drive-time estimate (~2.5 min/mile, honestly framed)
+- `7a5c07c` — match_content (Migration 11): radius-first retrieval (fix Pakwan-missing bug)
+- `3cdc2ad` — scripts: reverse-geocoding address backfill (incremental, --dry-run); ended up filling 7,335 of 7,400 addresses
+- `8138619` — Chat: location-aware retrieval (Migration 10 — geocode → distance-biased match_content)
+- `b088d4c` — **Phase 2 (chat UI): floating launcher + drawer + /chat route + Event Planning primer**
+- `1bb26b2` — **Phase 1 (Migration 9): pgvector + content_embeddings + match_content RPC + chat-completion Edge Function + nightly re-embed cron**
+- `0868dc0` — Home Cooks rebuild: Near Me/Featured sort, geolocation auto-detect, city dropdown, ✨ Picks band, six contact buttons
 - `c271ca1` — Home Cooks page + Migration 6 to backfill cuisine/service tags
-- `68b157d` — Add search bar to Events page (was the only one missing)
-- `0c9b0b4` — EventPlanning: shorter filter labels (Type/Service/Delivery)
-- `80ecda5` — EventPlanning uses FilterDropdown for consistency with Restaurants
-- `f6c8e05` — Home event cards use same image logic as Events page (shared isValidImageUrl)
 - `da19ebb` — Account hub + email preferences + approval/rejection emails
 - `f91c78e` — Admin review dashboard at /admin/review
 - `4b38931` — Newsletter integration + two-step auth flow

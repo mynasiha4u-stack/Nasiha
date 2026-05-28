@@ -45,8 +45,8 @@ const TO_ARCHIVE = [
   },
   {
     id: '023d7ac1-adab-4854-9c74-71053a812fd9',
-    label: 'The Halal Guys (5338 Curie St, Fremont) — phantom',
-    reason: 'Archived 2026-05-23: no Halal Guys exists at this address per Google Maps. Likely a phantom KML import row. The real Fremont Halal Guys is at Pacific Commons (separate row, correctly enriched).',
+    label: 'The Halal Guys (5338 Curie St, Fremont) — duplicate',
+    reason: 'Archived 2026-05-28: duplicate of Pacific Commons Halal Guys (content_id 72279cea-9b17-4d01-b22a-4d3e012cd445). Curie St and Pacific Commons Blvd describe the same physical restaurant at the Pacific Commons mall in Fremont — different street references for one location. The Pacific Commons row already holds the correct place_id, AI enrichment, 3 photos, and Google rating; archiving this dup loses nothing.',
   },
   {
     id: 'fd7c888c-e96b-4b07-a8fe-0871a4d5722e',

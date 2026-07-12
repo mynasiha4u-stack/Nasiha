@@ -9,8 +9,20 @@ const http = require('http')
 const { createClient } = require('@supabase/supabase-js')
 const fs = require('fs')
 
-// Load .env from current directory or parent
-const envPaths = ['.env', '../.env', require('os').homedir() + '/Desktop/mynasiha/.env']
+// Load env from .env AND .env.scripts.local (both files coexist — .env holds
+// REACT_APP_* keys for the React app; .env.scripts.local holds server-side
+// secrets like SUPABASE_SERVICE_ROLE_KEY that must never end up in the React
+// bundle). Loop through all candidates so both files load (unlike the old
+// `break` on first hit).
+const envPaths = [
+  '.env',
+  '.env.scripts.local',
+  '../.env',
+  '../.env.scripts.local',
+  require('os').homedir() + '/Desktop/mynasiha/.env',
+  require('os').homedir() + '/Desktop/mynasiha/.env.scripts.local',
+]
+const loadedFrom = []
 for (const p of envPaths) {
   try {
     const env = fs.readFileSync(p, 'utf8')
@@ -18,20 +30,36 @@ for (const p of envPaths) {
       const idx = line.indexOf('=')
       if (idx > 0) {
         const k = line.substring(0, idx).trim()
-        const v = line.substring(idx + 1).trim()
+        let v = line.substring(idx + 1).trim()
+        if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+          v = v.slice(1, -1)
+        }
         if (k && v) process.env[k] = v
       }
     })
-    console.log('Loaded .env from', p)
-    break
+    loadedFrom.push(p)
   } catch {}
 }
+if (loadedFrom.length) console.log('Loaded env from:', loadedFrom.join(', '))
+
 if (!process.env.REACT_APP_GOOGLE_MAPS_API_KEY) {
   console.log('⚠️  No Google Maps API key found — geocoding will be skipped')
 }
 
 const SUPABASE_URL = 'https://puymhxfhoqryxnjubryw.supabase.co'
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1eW1oeGZob3FyeXhuanVicnl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MjY2OTMsImV4cCI6MjA5MTAwMjY5M30.yP_jGHNmJcGKaKXF7O-ctJaO8iqhujqZ8AKSGc_yGSY'
+// SERVICE ROLE key — required to bypass RLS on the `content` table for INSERT.
+// (The anon key that used to live here silently broke once RLS was tightened
+// on May 12, 2026; see fail-rate check in main() for how we now alarm on
+// silent breakage instead of exiting 0.)
+// GitHub Actions provides this via workflow secret; local runs load it from
+// .env.scripts.local.
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+if (!SUPABASE_KEY) {
+  console.error('❌ SUPABASE_SERVICE_ROLE_KEY not set — cannot write to Supabase.')
+  console.error('   Local: add it to .env.scripts.local at the project root.')
+  console.error('   CI:    set the GitHub Secret and pass via workflow env block.')
+  process.exit(1)
+}
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 const EVENTS_CATEGORY_ID = 'd916a550-c316-40a9-9582-35836417b6cb'
 
@@ -250,15 +278,15 @@ async function syncFeed(feed) {
   console.log(`\nFetching ${feed.mosque}...`)
   let raw
   try { raw = await fetchUrl(feed.url) }
-  catch (err) { console.log(`  ❌ Failed: ${err.message}`); return }
-  if (!raw.includes('BEGIN:VCALENDAR')) { console.log(`  ❌ Not iCal`); return }
+  catch (err) { console.log(`  ❌ Failed: ${err.message}`); return { feed: feed.mosque, fetched: false, found: 0, attempted: 0, inserted: 0, skipped: 0, errored: 0 } }
+  if (!raw.includes('BEGIN:VCALENDAR')) { console.log(`  ❌ Not iCal`); return { feed: feed.mosque, fetched: false, found: 0, attempted: 0, inserted: 0, skipped: 0, errored: 0 } }
 
   const events = parseICal(raw)
   const now = new Date().toISOString()
   const future = events.filter(e => e.dtstart && e.dtstart > now)
   console.log(`  Found ${future.length} upcoming events`)
 
-  let inserted = 0, skipped = 0
+  let inserted = 0, skipped = 0, errored = 0
 
   for (const event of future) {
     const slug = makeSlug(event.summary, event.dtstart)
@@ -312,13 +340,16 @@ async function syncFeed(feed) {
     })
 
     if (error) {
+      errored++
       console.log(`  ❌ ${error.message}`)
     } else {
       inserted++
       console.log(`  ✅ ${event.summary.substring(0, 55)} [${types.join('+')}] [${audiences.join('+')}]`)
     }
   }
-  console.log(`  Done — ${inserted} inserted, ${skipped} already existed`)
+  const attempted = inserted + errored
+  console.log(`  Done — ${inserted} inserted, ${skipped} already existed, ${errored} failed`)
+  return { feed: feed.mosque, fetched: true, found: future.length, attempted, inserted, skipped, errored }
 }
 
 // Backfill missing data on existing events
@@ -398,8 +429,51 @@ async function backfill() {
 async function main() {
   console.log('🕌 Nasiha Event Sync')
   console.log('====================')
-  for (const feed of FEEDS) await syncFeed(feed)
+
+  const results = []
+  for (const feed of FEEDS) {
+    const r = await syncFeed(feed)
+    if (r) results.push(r)
+  }
+
   await backfill()
+
+  // Aggregate across feeds
+  const feedsFetched = results.filter(r => r.fetched).length
+  const feedsWithEvents = results.filter(r => r.found > 0).length
+  const totalFound = results.reduce((n, r) => n + r.found, 0)
+  const totalAttempted = results.reduce((n, r) => n + r.attempted, 0)
+  const totalInserted = results.reduce((n, r) => n + r.inserted, 0)
+  const totalSkipped = results.reduce((n, r) => n + r.skipped, 0)
+  const totalErrored = results.reduce((n, r) => n + r.errored, 0)
+
+  console.log('\n──── Sync summary ────')
+  console.log(`  Feeds:      ${feedsFetched}/${FEEDS.length} fetched (${feedsWithEvents} had events)`)
+  console.log(`  Found:      ${totalFound} future events across feeds`)
+  console.log(`  Attempted:  ${totalAttempted} inserts (after dedup skip)`)
+  console.log(`  Inserted:   ${totalInserted}`)
+  console.log(`  Skipped:    ${totalSkipped}  (already in DB, url_slug already existed)`)
+  console.log(`  Errored:    ${totalErrored}`)
+
+  // Fail-rate guard — the whole point of this file's overhaul.
+  //
+  // A "skipped" event is normal: iCal feeds return the same event day after
+  // day; once we've inserted it, subsequent runs correctly skip. That's fine.
+  //
+  // An "errored" event is a real insert failure — RLS violation, DB timeout,
+  // schema mismatch, etc. Small number of errors per run is tolerable (transient
+  // stuff), but if the majority of ATTEMPTED inserts fail, something is
+  // structurally broken and we want the workflow to go RED so it emails us
+  // instead of exiting 0 like it did silently for weeks.
+  //
+  // Only apply the guard when we actually attempted inserts. If every feed
+  // just deduped its events (attempted=0), that's a healthy no-op — don't
+  // alarm on it.
+  if (totalAttempted >= 5 && totalErrored / totalAttempted > 0.5) {
+    console.error(`\n❌ ${totalErrored} of ${totalAttempted} insert attempts failed (>50%). Exiting 1 so CI surfaces the failure.`)
+    process.exit(1)
+  }
+
   console.log('\n✅ Done')
 }
-main().catch(console.error)
+main().catch(e => { console.error(e); process.exit(1) })
